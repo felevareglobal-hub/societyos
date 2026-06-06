@@ -1,0 +1,1091 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SocietyOS</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f1f5f9;color:#0f172a;min-height:100vh}
+/* LOGIN */
+.login-wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#1a3c6e,#2563eb);padding:20px}
+.login-box{background:#fff;border-radius:16px;padding:36px 32px;width:100%;max-width:400px;box-shadow:0 20px 60px rgba(0,0,0,.25)}
+.login-logo{text-align:center;margin-bottom:24px}
+.login-logo h1{font-size:22px;font-weight:700;color:#1a3c6e}
+.login-logo p{font-size:12px;color:#94a3b8;margin-top:4px}
+.lf{margin-bottom:14px}
+.lf label{display:block;font-size:11px;font-weight:600;color:#64748b;text-transform:uppercase;letter-spacing:.4px;margin-bottom:5px}
+.lf input{width:100%;padding:10px 12px;border:1px solid #e2e8f0;border-radius:8px;font-size:13px;outline:none}
+.lf input:focus{border-color:#2563eb}
+.login-btn{width:100%;padding:11px;background:#2563eb;color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer}
+.login-btn:hover{background:#1d4ed8}
+.login-err{color:#ef4444;font-size:12px;margin-top:8px;text-align:center;min-height:18px}
+.forgot-link{text-align:center;margin-top:12px;font-size:12px;color:#2563eb;cursor:pointer;text-decoration:underline}
+/* APP */
+.app{display:none;height:100vh;overflow:hidden}
+.app.show{display:flex}
+.sidebar{width:230px;background:#1a3c6e;color:#fff;display:flex;flex-direction:column;flex-shrink:0;overflow-y:auto}
+.sb-logo{padding:16px 14px 10px;border-bottom:1px solid rgba(255,255,255,.12)}
+.sb-logo h2{font-size:14px;font-weight:700}
+.sb-logo p{font-size:10px;opacity:.5;margin-top:3px}
+.sb-soc{padding:10px 8px;border-bottom:1px solid rgba(255,255,255,.1)}
+.sb-soc select{width:100%;padding:7px 9px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);border-radius:6px;color:#fff;font-size:12px;outline:none}
+.sb-soc select option{background:#1a3c6e}
+.sb-sec{padding:10px 8px 3px;font-size:9px;letter-spacing:1px;opacity:.4;text-transform:uppercase;font-weight:600}
+.ni{display:flex;align-items:center;gap:9px;padding:9px 11px;border-radius:6px;cursor:pointer;font-size:12.5px;margin:1px 5px;opacity:.72;transition:background .15s;user-select:none}
+.ni:hover{background:rgba(255,255,255,.1);opacity:1}
+.ni.active{background:rgba(255,255,255,.2);opacity:1;font-weight:600}
+.ni i{font-size:16px;flex-shrink:0}
+.sb-bottom{margin-top:auto;padding:10px 6px}
+.main{flex:1;overflow-y:auto;display:flex;flex-direction:column}
+.topbar{background:#fff;border-bottom:1px solid #e2e8f0;padding:12px 20px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.topbar h1{font-size:16px;font-weight:600}
+.topbar p{font-size:11px;color:#64748b;margin-top:2px}
+.topbar-right{display:flex;align-items:center;gap:10px}
+.user-pill{display:flex;align-items:center;gap:6px;padding:5px 10px;background:#f1f5f9;border-radius:20px;font-size:12px;cursor:pointer}
+.content{padding:18px 20px;flex:1}
+/* PAGES */
+.page{display:none}
+.page.show{display:block}
+/* STATS */
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:18px}
+.sc{background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:14px 16px}
+.sc .lb{font-size:11px;color:#64748b;margin-bottom:6px}
+.sc .vl{font-size:26px;font-weight:700}
+.sc .sb{font-size:10px;color:#94a3b8;margin-top:2px}
+/* CARD */
+.card{background:#fff;border:1px solid #e2e8f0;border-radius:10px;overflow:hidden;margin-bottom:16px}
+.card-head{padding:12px 16px;border-bottom:1px solid #f1f5f9;display:flex;align-items:center;justify-content:space-between;background:#fafafa}
+.card-head h3{font-size:13px;font-weight:600}
+.card-body{padding:14px}
+.tw{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+/* TABLE */
+.tbl-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:12px}
+th{text-align:left;padding:8px 11px;font-size:10px;font-weight:600;color:#64748b;border-bottom:1px solid #f1f5f9;background:#fafafa;text-transform:uppercase;letter-spacing:.4px;white-space:nowrap}
+td{padding:9px 11px;border-bottom:1px solid #f8fafc;vertical-align:middle}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:#fafafa}
+/* BADGE */
+.badge{display:inline-flex;align-items:center;padding:2px 8px;border-radius:20px;font-size:10px;font-weight:600;white-space:nowrap}
+.bg{background:#f1f5f9;color:#475569}.bb{background:#dbeafe;color:#1e40af}.bgr{background:#dcfce7;color:#166534}.br{background:#fee2e2;color:#991b1b}.ba{background:#fef3c7;color:#92400e}.bp{background:#ede9fe;color:#5b21b6}
+/* MODAL */
+.mo{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:200;align-items:center;justify-content:center;padding:16px}
+.mo.show{display:flex}
+.md{background:#fff;border-radius:12px;width:680px;max-height:92vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.2)}
+.md-head{padding:14px 20px;border-bottom:1px solid #f1f5f9;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:#fff;z-index:1}
+.md-head h3{font-size:14px;font-weight:600}
+.md-close{background:none;border:none;cursor:pointer;color:#94a3b8;font-size:18px;padding:4px;border-radius:4px}
+.md-body{padding:20px}
+.md-foot{padding:12px 20px;border-top:1px solid #f1f5f9;display:flex;justify-content:flex-end;gap:8px;position:sticky;bottom:0;background:#fff}
+/* FORM */
+.fg{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.fi{display:flex;flex-direction:column;gap:4px}
+.fi.full{grid-column:1/-1}
+.fi label{font-size:11px;font-weight:600;color:#64748b;text-transform:uppercase;letter-spacing:.3px}
+.fi input,.fi select,.fi textarea{padding:8px 10px;border:1px solid #e2e8f0;border-radius:7px;font-size:12.5px;background:#fff;color:#0f172a;outline:none;font-family:inherit}
+.fi input:focus,.fi select:focus,.fi textarea:focus{border-color:#2563eb}
+.fi textarea{resize:vertical;min-height:64px}
+.fd{font-size:10px;font-weight:700;color:#2563eb;text-transform:uppercase;letter-spacing:.8px;grid-column:1/-1;padding-top:10px;margin-top:4px;border-top:1px solid #f1f5f9}
+/* BUTTONS */
+.btn{padding:7px 14px;border-radius:7px;font-size:12.5px;cursor:pointer;border:1px solid #e2e8f0;background:#fff;color:#0f172a;display:inline-flex;align-items:center;gap:5px;font-family:inherit;font-weight:500}
+.btn:hover{background:#f8fafc}
+.btn-p{background:#2563eb;color:#fff;border-color:#2563eb;font-weight:600}
+.btn-p:hover{background:#1d4ed8}
+.ab{background:none;border:none;cursor:pointer;padding:4px 6px;border-radius:5px;color:#94a3b8;font-size:13px}
+.ab:hover{background:#f1f5f9;color:#475569}
+/* FILTER */
+.fb{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:13px}
+.fc{padding:5px 12px;border-radius:20px;font-size:11px;cursor:pointer;border:1px solid #e2e8f0;background:#fff;color:#64748b;font-weight:500}
+.fc:hover{border-color:#2563eb;color:#2563eb}
+.fc.active{background:#2563eb;color:#fff;border-color:#2563eb}
+.sb-bar{display:flex;align-items:center;gap:8px;margin-bottom:13px}
+.sb-bar input{flex:1;padding:8px 11px;border:1px solid #e2e8f0;border-radius:7px;font-size:12.5px;background:#fff;color:#0f172a;outline:none}
+.sb-bar select{padding:8px 10px;border:1px solid #e2e8f0;border-radius:7px;font-size:12px;background:#fff;color:#0f172a;outline:none}
+/* NOTICE */
+.nc{background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:13px 15px;margin-bottom:8px}
+.nc h4{font-size:13px;font-weight:600;margin-bottom:4px}
+.nc p{font-size:12px;color:#64748b;line-height:1.6}
+.nc-meta{display:flex;gap:8px;margin-top:7px;font-size:10px;color:#94a3b8;flex-wrap:wrap}
+/* SOCIETY CARDS */
+.sg{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:18px}
+.scard{background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:16px;cursor:pointer;transition:all .2s}
+.scard:hover{border-color:#2563eb;box-shadow:0 4px 16px rgba(37,99,235,.12)}
+.scard h4{font-size:14px;font-weight:600;margin-bottom:3px}
+.scard p{font-size:11px;color:#64748b}
+.scard-stats{display:flex;gap:12px;margin-top:10px;font-size:11px;color:#64748b}
+/* MISC */
+.empty{text-align:center;padding:36px;color:#94a3b8;font-size:12px}
+.toast{position:fixed;bottom:22px;right:22px;background:#0f172a;color:#fff;padding:10px 16px;border-radius:8px;font-size:12.5px;z-index:999;opacity:0;transform:translateY(8px);transition:all .25s;pointer-events:none}
+.toast.show{opacity:1;transform:translateY(0)}
+.ew{color:#92400e;font-weight:600}.ea{color:#991b1b;font-weight:600}
+@media(max-width:768px){.stats{grid-template-columns:1fr 1fr}.fg{grid-template-columns:1fr}.tw{grid-template-columns:1fr}.sg{grid-template-columns:1fr}.sidebar{position:fixed;z-index:50;height:100vh;transform:translateX(-100%);transition:transform .25s}.sidebar.open{transform:translateX(0)}.md{width:100%;border-radius:12px 12px 0 0;margin-top:auto}.mo{align-items:flex-end;padding:0}}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="login-screen" class="login-wrap">
+  <div class="login-box">
+    <div class="login-logo">
+      <h1><i class="ti ti-building-community"></i> SocietyOS</h1>
+      <p>Multi-Society Management Platform</p>
+    </div>
+    <div class="lf"><label>Email</label><input type="email" id="li-email" placeholder="admin@societyos.com"></div>
+    <div class="lf"><label>Password</label><input type="password" id="li-pass" placeholder="••••••••"></div>
+    <button class="login-btn" id="li-btn" onclick="doLogin()"><i class="ti ti-login" style="margin-right:6px"></i> Sign In</button>
+    <div class="login-err" id="li-err"></div>
+    <div class="forgot-link" onclick="openModal('mo-forgot')">Forgot Password?</div>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app-screen" class="app">
+  <div class="sidebar" id="sidebar">
+    <div class="sb-logo">
+      <h2><i class="ti ti-building-community" style="margin-right:5px"></i>SocietyOS</h2>
+      <p id="sb-role">—</p>
+    </div>
+    <div class="sb-soc" id="soc-switcher-wrap">
+      <select id="soc-switcher" onchange="switchSociety(this.value)">
+        <option value="">— Select Society —</option>
+      </select>
+    </div>
+    <div class="sb-sec">Main</div>
+    <div class="ni active" data-page="dashboard"><i class="ti ti-layout-dashboard"></i> Dashboard</div>
+    <div class="ni" data-page="members"><i class="ti ti-users"></i> Members</div>
+    <div class="ni" data-page="dues"><i class="ti ti-receipt"></i> Maintenance Dues</div>
+    <div class="sb-sec">Facilities</div>
+    <div class="ni" data-page="services"><i class="ti ti-tool"></i> Services &amp; AMC</div>
+    <div class="ni" data-page="amenities"><i class="ti ti-building"></i> Amenities</div>
+    <div class="sb-sec">Communication</div>
+    <div class="ni" data-page="notices"><i class="ti ti-speakerphone"></i> Notices &amp; Complaints</div>
+    <!-- Master Admin nav — injected by JS after login -->
+    <div id="master-nav"></div>
+    <div class="sb-bottom">
+      <div class="ni" id="btn-logout" style="color:#fca5a5;opacity:.8"><i class="ti ti-logout"></i> Sign Out</div>
+    </div>
+  </div>
+
+  <div class="main">
+    <div class="topbar">
+      <div>
+        <h1 id="pg-title">Dashboard</h1>
+        <p id="pg-meta"></p>
+      </div>
+      <div class="topbar-right">
+        <div class="user-pill"><i class="ti ti-user-circle"></i><span id="u-name">Admin</span></div>
+        <button id="mob-menu" style="display:none;background:none;border:none;cursor:pointer;padding:6px" onclick="document.getElementById('sidebar').classList.toggle('open')"><i class="ti ti-menu-2" style="font-size:20px"></i></button>
+      </div>
+    </div>
+    <div class="content">
+
+      <!-- DASHBOARD -->
+      <div class="page show" id="page-dashboard">
+        <div class="stats">
+          <div class="sc"><div class="lb" id="s1l">Societies</div><div class="vl" id="s1v">0</div><div class="sb" id="s1s">Registered</div></div>
+          <div class="sc"><div class="lb">Members</div><div class="vl" id="s2v">0</div><div class="sb">In this society</div></div>
+          <div class="sc"><div class="lb">Dues Pending</div><div class="vl" id="s3v">0</div><div class="sb">Outstanding</div></div>
+          <div class="sc"><div class="lb">Expiring Soon</div><div class="vl" id="s4v">0</div><div class="sb">Services within 30d</div></div>
+        </div>
+        <div class="tw">
+          <div class="card"><div class="card-head"><h3>Services Expiring Soon</h3></div><div class="card-body" id="d-exp"><p class="empty">No expirations</p></div></div>
+          <div class="card"><div class="card-head"><h3>Open Complaints</h3></div><div class="card-body" id="d-comp"><p class="empty">No complaints</p></div></div>
+        </div>
+      </div>
+
+      <!-- SOCIETIES -->
+      <div class="page" id="page-societies">
+        <div style="display:flex;justify-content:flex-end;margin-bottom:14px">
+          <button class="btn btn-p" onclick="openSocietyModal()"><i class="ti ti-plus"></i> Add Society</button>
+        </div>
+        <div class="sg" id="soc-grid"><p class="empty">No societies yet</p></div>
+      </div>
+
+      <!-- ADMINS -->
+      <div class="page" id="page-admins">
+        <div class="card">
+          <div class="card-head"><h3 id="adm-lbl">Admins</h3><button class="btn btn-p" onclick="openAdminModal()"><i class="ti ti-plus"></i> Add Admin</button></div>
+          <div class="tbl-wrap">
+            <table><thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Society</th><th></th></tr></thead>
+            <tbody id="adm-tbody"></tbody></table>
+          </div>
+        </div>
+      </div>
+
+      <!-- MEMBERS -->
+      <div class="page" id="page-members">
+        <div class="sb-bar">
+          <i class="ti ti-search" style="color:#94a3b8"></i>
+          <input type="text" id="mem-search" placeholder="Search name, flat, mobile…" oninput="renderMembers()">
+          <select id="mem-wing" onchange="renderMembers()"><option value="">All Wings</option></select>
+        </div>
+        <div class="card">
+          <div class="card-head"><h3 id="mem-lbl">Members</h3><button class="btn btn-p" onclick="openMemberModal(-1)"><i class="ti ti-plus"></i> Add Member</button></div>
+          <div class="tbl-wrap"><table><thead><tr><th>Flat</th><th>Name</th><th>Mobile</th><th>Type</th><th>Status</th><th>Vehicle</th><th></th></tr></thead><tbody id="mem-tbody"></tbody></table></div>
+        </div>
+      </div>
+
+      <!-- DUES -->
+      <div class="page" id="page-dues">
+        <div class="fb">
+          <div class="fc active" data-filter="dues-all">All</div>
+          <div class="fc" data-filter="dues-pending">Pending</div>
+          <div class="fc" data-filter="dues-paid">Paid</div>
+          <div class="fc" data-filter="dues-overdue">Overdue</div>
+        </div>
+        <div class="card">
+          <div class="card-head"><h3>Maintenance Dues</h3><button class="btn btn-p" onclick="openDuesModal()"><i class="ti ti-plus"></i> Add Record</button></div>
+          <div class="tbl-wrap"><table><thead><tr><th>Flat</th><th>Month</th><th>Amount (₹)</th><th>Due Date</th><th>Status</th><th>Mode</th><th></th></tr></thead><tbody id="dues-tbody"></tbody></table></div>
+        </div>
+      </div>
+
+      <!-- SERVICES -->
+      <div class="page" id="page-services">
+        <div class="fb">
+          <div class="fc active" data-filter="svc-all">All</div>
+          <div class="fc" data-filter="svc-Safety">Safety</div>
+          <div class="fc" data-filter="svc-Utilities">Utilities</div>
+          <div class="fc" data-filter="svc-Infrastructure">Infrastructure</div>
+          <div class="fc" data-filter="svc-Housekeeping">Housekeeping</div>
+          <div class="fc" data-filter="svc-expiring">⚠ Expiring Soon</div>
+        </div>
+        <div class="card">
+          <div class="card-head"><h3 id="svc-lbl">Services &amp; AMC</h3><button class="btn btn-p" onclick="openSvcModal(-1)"><i class="ti ti-plus"></i> Add Service</button></div>
+          <div class="tbl-wrap"><table><thead><tr><th>Service</th><th>Category</th><th>Vendor</th><th>Amount (₹)</th><th>Expiry</th><th>Status</th><th></th></tr></thead><tbody id="svc-tbody"></tbody></table></div>
+        </div>
+      </div>
+
+      <!-- AMENITIES -->
+      <div class="page" id="page-amenities">
+        <div class="fb">
+          <div class="fc active" data-filter="amen-all">All</div>
+          <div class="fc" data-filter="amen-operational">Operational</div>
+          <div class="fc" data-filter="amen-maintenance">Under Maintenance</div>
+          <div class="fc" data-filter="amen-inactive">Inactive</div>
+        </div>
+        <div class="card">
+          <div class="card-head"><h3 id="amen-lbl">Amenities</h3><button class="btn btn-p" onclick="openAmenModal(-1)"><i class="ti ti-plus"></i> Add Amenity</button></div>
+          <div class="tbl-wrap"><table><thead><tr><th>Amenity</th><th>Type</th><th>Location</th><th>Timings</th><th>Capacity</th><th>Charges</th><th>Status</th><th>Last Serviced</th><th></th></tr></thead><tbody id="amen-tbody"></tbody></table></div>
+        </div>
+      </div>
+
+      <!-- NOTICES -->
+      <div class="page" id="page-notices">
+        <div class="fb">
+          <div class="fc active" data-filter="not-all">All</div>
+          <div class="fc" data-filter="not-notice">Notices</div>
+          <div class="fc" data-filter="not-complaint">Complaints</div>
+          <div class="fc" data-filter="not-open">Open</div>
+          <div class="fc" data-filter="not-resolved">Resolved</div>
+        </div>
+        <div style="display:flex;justify-content:flex-end;margin-bottom:12px">
+          <button class="btn btn-p" onclick="openNoticeModal()"><i class="ti ti-plus"></i> Post Notice / Complaint</button>
+        </div>
+        <div id="not-list"></div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- ===== MODALS ===== -->
+
+<!-- FORGOT PASSWORD -->
+<div class="mo" id="mo-forgot">
+  <div class="md" style="max-width:400px">
+    <div class="md-head"><h3>Reset Password</h3><button class="md-close" onclick="closeModal('mo-forgot')"><i class="ti ti-x"></i></button></div>
+    <div class="md-body">
+      <p style="font-size:13px;color:#64748b;margin-bottom:16px">Enter your email and a new password.</p>
+      <div class="fg">
+        <div class="fi full"><label>Email *</label><input type="email" id="fp-email" placeholder="your@email.com"></div>
+        <div class="fi full"><label>New Password *</label><input type="password" id="fp-pass" placeholder="Min 6 characters"></div>
+        <div class="fi full"><label>Confirm Password *</label><input type="password" id="fp-pass2" placeholder="Repeat password"></div>
+      </div>
+      <div id="fp-msg" style="margin-top:10px;font-size:12px"></div>
+    </div>
+    <div class="md-foot">
+      <button class="btn" onclick="closeModal('mo-forgot')">Cancel</button>
+      <button class="btn btn-p" onclick="doResetPass()"><i class="ti ti-key"></i> Reset Password</button>
+    </div>
+  </div>
+</div>
+
+<!-- SOCIETY MODAL -->
+<div class="mo" id="mo-society">
+  <div class="md" style="max-width:560px">
+    <div class="md-head"><h3 id="soc-modal-title">Add Society</h3><button class="md-close" onclick="closeModal('mo-society')"><i class="ti ti-x"></i></button></div>
+    <div class="md-body"><div class="fg">
+      <div class="fi full"><label>Society Name *</label><input id="s-name" placeholder="e.g. Sunrise Heights CHS"></div>
+      <div class="fi full"><label>Address</label><textarea id="s-addr" rows="2"></textarea></div>
+      <div class="fi"><label>Registration No.</label><input id="s-reg"></div>
+      <div class="fi"><label>City</label><input id="s-city" placeholder="Mumbai"></div>
+      <div class="fi"><label>State</label><input id="s-state" placeholder="Maharashtra"></div>
+      <div class="fi"><label>Pincode</label><input id="s-pin"></div>
+      <div class="fi"><label>Total Units</label><input id="s-units" type="number"></div>
+      <div class="fi"><label>Wings / Blocks</label><input id="s-wings" placeholder="A,B,C,D"></div>
+      <div class="fi"><label>Secretary Name</label><input id="s-sec"></div>
+      <div class="fi"><label>Secretary Phone</label><input id="s-secph" type="tel"></div>
+      <div class="fi"><label>Default Maintenance (₹)</label><input id="s-maint" type="number"></div>
+    </div></div>
+    <div class="md-foot">
+      <button class="btn" onclick="closeModal('mo-society')">Cancel</button>
+      <button class="btn btn-p" onclick="saveSociety()"><i class="ti ti-check"></i> Save Society</button>
+    </div>
+  </div>
+</div>
+
+<!-- ADMIN MODAL -->
+<div class="mo" id="mo-admin">
+  <div class="md" style="max-width:460px">
+    <div class="md-head"><h3>Add Admin</h3><button class="md-close" onclick="closeModal('mo-admin')"><i class="ti ti-x"></i></button></div>
+    <div class="md-body"><div class="fg">
+      <div class="fi full"><label>Full Name *</label><input id="a-name"></div>
+      <div class="fi full"><label>Email *</label><input id="a-email" type="email"></div>
+      <div class="fi full"><label>Password *</label><input id="a-pass" type="password" placeholder="Min 6 characters"></div>
+      <div class="fi"><label>Role</label><select id="a-role"><option value="society_admin">Society Admin</option><option value="master">Master Admin</option></select></div>
+      <div class="fi"><label>Assign Society</label><select id="a-soc"><option value="">— None —</option></select></div>
+    </div></div>
+    <div class="md-foot">
+      <button class="btn" onclick="closeModal('mo-admin')">Cancel</button>
+      <button class="btn btn-p" onclick="saveAdmin()"><i class="ti ti-check"></i> Save Admin</button>
+    </div>
+  </div>
+</div>
+
+<!-- MEMBER MODAL -->
+<div class="mo" id="mo-member">
+  <div class="md">
+    <div class="md-head"><h3 id="mem-modal-title">Add Member</h3><button class="md-close" onclick="closeModal('mo-member')"><i class="ti ti-x"></i></button></div>
+    <div class="md-body"><div class="fg">
+      <div class="fd">Flat Details</div>
+      <div class="fi"><label>Wing *</label><select id="m-wing"></select></div>
+      <div class="fi"><label>Flat Number *</label><input id="m-flat"></div>
+      <div class="fi"><label>Floor</label><input id="m-floor"></div>
+      <div class="fi"><label>Flat Type</label><select id="m-ftype"><option>1 BHK</option><option>2 BHK</option><option>3 BHK</option><option>4 BHK</option><option>Studio</option></select></div>
+      <div class="fi"><label>Carpet Area (sq.ft)</label><input id="m-area" type="number"></div>
+      <div class="fi"><label>Ownership</label><select id="m-own"><option>Owner</option><option>Tenant</option></select></div>
+      <div class="fd">Primary Member</div>
+      <div class="fi"><label>Full Name *</label><input id="m-name"></div>
+      <div class="fi"><label>Date of Birth</label><input id="m-dob" type="date"></div>
+      <div class="fi"><label>Gender</label><select id="m-gen"><option>Male</option><option>Female</option><option>Other</option></select></div>
+      <div class="fi"><label>Aadhaar</label><input id="m-aadh" maxlength="14" placeholder="XXXX XXXX XXXX"></div>
+      <div class="fi"><label>Mobile *</label><input id="m-mob" type="tel"></div>
+      <div class="fi"><label>Alternate Mobile</label><input id="m-mob2" type="tel"></div>
+      <div class="fi full"><label>Email</label><input id="m-email" type="email"></div>
+      <div class="fi"><label>Occupation</label><input id="m-occ"></div>
+      <div class="fi"><label>Move-In Date</label><input id="m-movein" type="date"></div>
+      <div class="fd">Family</div>
+      <div class="fi"><label>Adults</label><input id="m-adults" type="number" value="1" min="1"></div>
+      <div class="fi"><label>Children</label><input id="m-children" type="number" value="0" min="0"></div>
+      <div class="fi full"><label>Family Members</label><input id="m-family"></div>
+      <div class="fi"><label>Pets</label><select id="m-pets"><option>None</option><option>Dog</option><option>Cat</option><option>Other</option></select></div>
+      <div class="fi"><label>Domestic Staff</label><input id="m-staff"></div>
+      <div class="fd">Vehicles</div>
+      <div class="fi"><label>Vehicle 1 No.</label><input id="m-v1" placeholder="MH01AB1234"></div>
+      <div class="fi"><label>Vehicle 1 Type</label><select id="m-v1t"><option>None</option><option>Car</option><option>Two-Wheeler</option><option>SUV</option></select></div>
+      <div class="fi"><label>Vehicle 2 No.</label><input id="m-v2"></div>
+      <div class="fi"><label>Vehicle 2 Type</label><select id="m-v2t"><option>None</option><option>Car</option><option>Two-Wheeler</option><option>SUV</option></select></div>
+      <div class="fd">Other Details</div>
+      <div class="fi"><label>Agreement Start</label><input id="m-ags" type="date"></div>
+      <div class="fi"><label>Agreement End</label><input id="m-age" type="date"></div>
+      <div class="fi"><label>Parking Slot</label><input id="m-park"></div>
+      <div class="fi"><label>Status</label><select id="m-stat"><option value="active">Active</option><option value="inactive">Inactive</option><option value="notice_period">Notice Period</option></select></div>
+      <div class="fi full"><label>Emergency Contact</label><input id="m-emerg"></div>
+      <div class="fi full"><label>Notes</label><textarea id="m-notes"></textarea></div>
+    </div></div>
+    <div class="md-foot">
+      <button class="btn" onclick="closeModal('mo-member')">Cancel</button>
+      <button class="btn btn-p" onclick="saveMember()"><i class="ti ti-check"></i> Save Member</button>
+    </div>
+  </div>
+</div>
+
+<!-- DUES MODAL -->
+<div class="mo" id="mo-dues">
+  <div class="md" style="max-width:540px">
+    <div class="md-head"><h3>Add Maintenance Record</h3><button class="md-close" onclick="closeModal('mo-dues')"><i class="ti ti-x"></i></button></div>
+    <div class="md-body"><div class="fg">
+      <div class="fi"><label>Flat *</label><select id="d-flat"></select></div>
+      <div class="fi"><label>Month *</label><select id="d-month"><option>January 2026</option><option>February 2026</option><option>March 2026</option><option>April 2026</option><option>May 2026</option><option selected>June 2026</option><option>July 2026</option><option>August 2026</option><option>September 2026</option><option>October 2026</option><option>November 2026</option><option>December 2026</option></select></div>
+      <div class="fi"><label>Amount (₹) *</label><input id="d-amt" type="number"></div>
+      <div class="fi"><label>Due Date *</label><input id="d-due" type="date"></div>
+      <div class="fi"><label>Status</label><select id="d-stat"><option value="pending">Pending</option><option value="paid">Paid</option><option value="overdue">Overdue</option></select></div>
+      <div class="fi"><label>Payment Date</label><input id="d-pdate" type="date"></div>
+      <div class="fi"><label>Payment Mode</label><select id="d-mode"><option>—</option><option>Cash</option><option>UPI</option><option>Bank Transfer</option><option>Cheque</option></select></div>
+      <div class="fi"><label>Transaction Ref.</label><input id="d-txn"></div>
+      <div class="fi"><label>Late Fee (₹)</label><input id="d-late" type="number" value="0"></div>
+      <div class="fi"><label>Discount (₹)</label><input id="d-disc" type="number" value="0"></div>
+      <div class="fi full"><label>Remarks</label><textarea id="d-rem" rows="2"></textarea></div>
+    </div></div>
+    <div class="md-foot">
+      <button class="btn" onclick="closeModal('mo-dues')">Cancel</button>
+      <button class="btn btn-p" onclick="saveDues()"><i class="ti ti-check"></i> Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- SERVICE MODAL -->
+<div class="mo" id="mo-svc">
+  <div class="md">
+    <div class="md-head"><h3 id="svc-modal-title">Add Service / AMC</h3><button class="md-close" onclick="closeModal('mo-svc')"><i class="ti ti-x"></i></button></div>
+    <div class="md-body"><div class="fg">
+      <div class="fd">Service Details</div>
+      <div class="fi"><label>Service *</label>
+        <select id="sv-name" onchange="onSvcChange()">
+          <optgroup label="Safety"><option>Fire Fighting</option><option>Security</option><option>CCTV</option></optgroup>
+          <optgroup label="Utilities"><option>Electricity</option><option>Water Supply</option><option>Water Pump</option><option>Pump</option><option>Gas</option><option>Air Conditioning</option></optgroup>
+          <optgroup label="Infrastructure"><option>Plumbing</option><option>Electric Work</option><option>Water Tank Cleaning</option><option>Road Repair</option><option>Leakage</option><option>Structural Repair</option><option>Water Proofing</option></optgroup>
+          <optgroup label="Housekeeping"><option>House Keeping</option><option>Garden</option><option>Insurance</option></optgroup>
+          <option value="__custom__">Other…</option>
+        </select>
+      </div>
+      <div class="fi" id="sv-custom-wrap" style="display:none"><label>Custom Name</label><input id="sv-custom"></div>
+      <div class="fi"><label>Category</label><select id="sv-cat"><option>Safety</option><option>Utilities</option><option>Infrastructure</option><option>Housekeeping</option></select></div>
+      <div class="fi"><label>Service Type</label><select id="sv-type"><option>AMC (Annual)</option><option>One-Time</option><option>Monthly Contract</option><option>Quarterly</option><option>On-Call</option></select></div>
+      <div class="fd">Vendor</div>
+      <div class="fi"><label>Vendor Name *</label><input id="sv-vend"></div>
+      <div class="fi"><label>Vendor Phone</label><input id="sv-vph" type="tel"></div>
+      <div class="fi full"><label>Vendor Address</label><input id="sv-vaddr"></div>
+      <div class="fi"><label>Contact Person</label><input id="sv-cp"></div>
+      <div class="fi"><label>Vendor Email</label><input id="sv-vemail" type="email"></div>
+      <div class="fd">Contract</div>
+      <div class="fi"><label>Start Date</label><input id="sv-start" type="date"></div>
+      <div class="fi"><label>Expiry Date</label><input id="sv-exp" type="date"></div>
+      <div class="fi"><label>Amount (₹)</label><input id="sv-amt" type="number"></div>
+      <div class="fi"><label>Payment Frequency</label><select id="sv-freq"><option>Annual</option><option>Monthly</option><option>Quarterly</option><option>One-Time</option></select></div>
+      <div class="fi"><label>Last Service</label><input id="sv-last" type="date"></div>
+      <div class="fi"><label>Next Service</label><input id="sv-next" type="date"></div>
+      <div class="fi"><label>Status</label><select id="sv-stat"><option value="active">Active</option><option value="expired">Expired</option><option value="pending_renewal">Pending Renewal</option><option value="inactive">Inactive</option></select></div>
+      <div class="fi"><label>Doc Ref.</label><input id="sv-doc"></div>
+      <div class="fi full"><label>Notes</label><textarea id="sv-notes" rows="2"></textarea></div>
+    </div></div>
+    <div class="md-foot">
+      <button class="btn" onclick="closeModal('mo-svc')">Cancel</button>
+      <button class="btn btn-p" onclick="saveSvc()"><i class="ti ti-check"></i> Save Service</button>
+    </div>
+  </div>
+</div>
+
+<!-- AMENITY MODAL -->
+<div class="mo" id="mo-amen">
+  <div class="md" style="max-width:560px">
+    <div class="md-head"><h3 id="amen-modal-title">Add Amenity</h3><button class="md-close" onclick="closeModal('mo-amen')"><i class="ti ti-x"></i></button></div>
+    <div class="md-body"><div class="fg">
+      <div class="fi"><label>Amenity *</label>
+        <select id="an-name" onchange="document.getElementById('an-cw').style.display=this.value==='__custom__'?'flex':'none'">
+          <option>Swimming Pool</option><option>Gymnasium</option><option>Theatre / Mini Cinema</option><option>Cafeteria</option><option>Library</option><option>Club House</option><option>Salon</option><option>Banquet Hall</option><option>Creche</option><option>Yoga Room</option><option>Dance Room</option><option>Study Area</option><option>Garden / Landscape</option><option value="__custom__">Other…</option>
+        </select>
+      </div>
+      <div class="fi" id="an-cw" style="display:none"><label>Custom Name</label><input id="an-custom"></div>
+      <div class="fi"><label>Type</label><select id="an-type"><option>Recreation</option><option>Sports</option><option>Wellness</option><option>Education</option><option>Commercial</option><option>Social</option><option>Outdoor</option></select></div>
+      <div class="fi"><label>Location</label><input id="an-loc" placeholder="Ground Floor, Wing A"></div>
+      <div class="fi"><label>Capacity (persons)</label><input id="an-cap" type="number"></div>
+      <div class="fi"><label>Timings</label><input id="an-tim" placeholder="6 AM – 10 PM"></div>
+      <div class="fi"><label>Days Open</label><input id="an-days" placeholder="All Days"></div>
+      <div class="fi"><label>Booking Required?</label><select id="an-book"><option>No</option><option>Yes</option></select></div>
+      <div class="fi"><label>Charges</label><input id="an-chg" placeholder="Free / ₹500 per hr"></div>
+      <div class="fi"><label>In-Charge</label><input id="an-ic"></div>
+      <div class="fi"><label>In-Charge Contact</label><input id="an-icc" type="tel"></div>
+      <div class="fi"><label>Last Serviced</label><input id="an-ls" type="date"></div>
+      <div class="fi"><label>Next Service</label><input id="an-ns" type="date"></div>
+      <div class="fi"><label>Status</label><select id="an-stat"><option value="operational">Operational</option><option value="maintenance">Under Maintenance</option><option value="inactive">Inactive</option></select></div>
+      <div class="fi full"><label>Remarks / Rules</label><textarea id="an-notes" rows="2"></textarea></div>
+    </div></div>
+    <div class="md-foot">
+      <button class="btn" onclick="closeModal('mo-amen')">Cancel</button>
+      <button class="btn btn-p" onclick="saveAmen()"><i class="ti ti-check"></i> Save Amenity</button>
+    </div>
+  </div>
+</div>
+
+<!-- NOTICE MODAL -->
+<div class="mo" id="mo-notice">
+  <div class="md" style="max-width:480px">
+    <div class="md-head"><h3>Post Notice / Complaint</h3><button class="md-close" onclick="closeModal('mo-notice')"><i class="ti ti-x"></i></button></div>
+    <div class="md-body"><div class="fg">
+      <div class="fi"><label>Type *</label><select id="n-type"><option value="notice">Notice</option><option value="complaint">Complaint</option></select></div>
+      <div class="fi"><label>Category</label><select id="n-cat"><option>General</option><option>Maintenance</option><option>Security</option><option>Noise</option><option>Parking</option><option>Cleanliness</option><option>Water / Electricity</option><option>Amenity</option><option>Society Meeting</option><option>Other</option></select></div>
+      <div class="fi full"><label>Title *</label><input id="n-title"></div>
+      <div class="fi full"><label>Description *</label><textarea id="n-body" rows="3"></textarea></div>
+      <div class="fi"><label>Posted By</label><input id="n-by"></div>
+      <div class="fi"><label>Flat (if complaint)</label><select id="n-flat"><option value="">—</option></select></div>
+      <div class="fi"><label>Priority</label><select id="n-pri"><option value="normal">Normal</option><option value="urgent">Urgent</option><option value="low">Low</option></select></div>
+      <div class="fi"><label>Status</label><select id="n-stat"><option value="open">Open</option><option value="in_progress">In Progress</option><option value="resolved">Resolved</option></select></div>
+    </div></div>
+    <div class="md-foot">
+      <button class="btn" onclick="closeModal('mo-notice')">Cancel</button>
+      <button class="btn btn-p" onclick="saveNotice()"><i class="ti ti-check"></i> Post</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ═══════════════════════════════════════════════
+// CONFIG
+// ═══════════════════════════════════════════════
+const URL  = 'https://mbmrzyhcjivrbiaayiah.supabase.co';
+const KEY  = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1ibXJ6eWhjaml2cmJpYWF5aWFoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA2NDc4NDIsImV4cCI6MjA5NjIyMzg0Mn0.ozK0aUNvYfogJeLVnwkgGjBxGtHI_xl2f0P22GiTgAU';
+
+// ═══════════════════════════════════════════════
+// DB HELPERS
+// ═══════════════════════════════════════════════
+async function dbQ(table, query='', method='GET', body=null) {
+  const r = await fetch(`${URL}/rest/v1/${table}${query}`, {
+    method,
+    headers: { 'apikey':KEY, 'Authorization':'Bearer '+KEY, 'Content-Type':'application/json', 'Prefer':'return=representation' },
+    body: body ? JSON.stringify(body) : null
+  });
+  const txt = await r.text();
+  if (!r.ok) throw new Error(txt);
+  return txt ? JSON.parse(txt) : [];
+}
+const GET    = (t,q)    => dbQ(t,q);
+const POST   = (t,b)    => dbQ(t,'','POST',b);
+const PATCH  = (t,id,b) => dbQ(t,`?id=eq.${id}`,'PATCH',b);
+const DELETE = (t,id)   => dbQ(t,`?id=eq.${id}`,'DELETE');
+
+// ═══════════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════════
+let CU=null, CS=null, allSocs=[];
+let members=[], dues=[], services=[], amenities=[], notices=[];
+let editMem=-1, editSvc=-1, editAmen=-1, editSocId=null;
+let duesF='all', svcF='all', amenF='all', notF='all';
+
+// ═══════════════════════════════════════════════
+// UTILS
+// ═══════════════════════════════════════════════
+const $  = id => document.getElementById(id);
+const fv = id => ($( id)||{value:''}).value;
+const sv = (id,v) => { const e=$(id); if(e) e.value=v||''; };
+function toast(msg,ok=true){ const t=$('toast'); t.textContent=msg; t.style.background=ok?'#0f172a':'#991b1b'; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),2800); }
+function openModal(id)  { $(id).classList.add('show'); }
+function closeModal(id) { $(id).classList.remove('show'); }
+function daysUntil(d)   { if(!d) return 9999; return Math.ceil((new Date(d)-new Date())/86400000); }
+function wings()        { return (CS?.wings||'A,B,C,D').split(',').map(w=>w.trim()); }
+
+// ═══════════════════════════════════════════════
+// NAVIGATION — single event delegation on sidebar
+// ═══════════════════════════════════════════════
+const PAGE_TITLES = {
+  dashboard:'Dashboard', societies:'All Societies', admins:'Manage Admins',
+  members:'Member Registry', dues:'Maintenance Dues', services:'Services & AMC',
+  amenities:'Amenities', notices:'Notices & Complaints'
+};
+const PAGE_META = {
+  dashboard: ()=> CS ? CS.name : 'Select a society',
+  societies: ()=> 'All registered societies',
+  admins:    ()=> 'Society & master admins',
+  members:   ()=> CS ? CS.name+' — Members' : '',
+  dues:      ()=> CS ? CS.name+' — Dues' : '',
+  services:  ()=> CS ? CS.name+' — Services' : '',
+  amenities: ()=> CS ? CS.name+' — Amenities' : '',
+  notices:   ()=> CS ? CS.name+' — Notices' : ''
+};
+
+function goPage(id) {
+  // Hide all pages
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('show'));
+  // Deactivate all nav items
+  document.querySelectorAll('.ni').forEach(n=>n.classList.remove('active'));
+  // Show target page
+  const pg = $('page-'+id);
+  if (!pg) { toast('Page not found: '+id, false); return; }
+  pg.classList.add('show');
+  // Activate matching nav item
+  const ni = document.querySelector('.ni[data-page="'+id+'"]');
+  if (ni) ni.classList.add('active');
+  // Update topbar
+  $('pg-title').textContent = PAGE_TITLES[id]||id;
+  $('pg-meta').textContent  = PAGE_META[id] ? PAGE_META[id]() : '';
+  // Load data
+  if (id==='dashboard') refreshDashboard();
+  if (id==='societies') renderSocieties();
+  if (id==='admins')    renderAdmins();
+  if (id==='members')   renderMembers();
+  if (id==='dues')      renderDues();
+  if (id==='services')  renderSvc();
+  if (id==='amenities') renderAmen();
+  if (id==='notices')   renderNotices();
+  // Close sidebar on mobile
+  if (window.innerWidth<768) $('sidebar').classList.remove('open');
+}
+
+// Attach sidebar nav click via delegation
+document.addEventListener('DOMContentLoaded', function() {
+  // Nav items
+  $('sidebar').addEventListener('click', function(e) {
+    const ni = e.target.closest('.ni[data-page]');
+    if (ni) { goPage(ni.dataset.page); return; }
+    // Logout
+    if (e.target.closest('#btn-logout')) doLogout();
+  });
+  // Filter chips
+  document.addEventListener('click', function(e) {
+    const fc = e.target.closest('.fc[data-filter]');
+    if (!fc) return;
+    const f = fc.dataset.filter;
+    // Deactivate siblings
+    fc.closest('.fb').querySelectorAll('.fc').forEach(c=>c.classList.remove('active'));
+    fc.classList.add('active');
+    if (f.startsWith('dues-')) { duesF=f.replace('dues-',''); renderDues(); }
+    if (f.startsWith('svc-'))  { svcF=f.replace('svc-','');   renderSvc(); }
+    if (f.startsWith('amen-')) { amenF=f.replace('amen-',''); renderAmen(); }
+    if (f.startsWith('not-'))  { notF=f.replace('not-','');   renderNotices(); }
+  });
+  // Mobile menu
+  if (window.innerWidth<768) $('mob-menu').style.display='block';
+  // Enter key on login
+  document.addEventListener('keydown', e => {
+    if (e.key==='Enter' && $('login-screen').style.display!=='none') doLogin();
+  });
+});
+
+// ═══════════════════════════════════════════════
+// AUTH
+// ═══════════════════════════════════════════════
+async function doLogin() {
+  const email = fv('li-email').trim().toLowerCase();
+  const pass  = fv('li-pass').trim();
+  $('li-err').textContent='';
+  if (!email||!pass) { $('li-err').textContent='Enter email and password'; return; }
+  $('li-btn').textContent='Signing in…'; $('li-btn').disabled=true;
+  try {
+    // Fetch all admins then match client-side — avoids any query encoding issues
+    const all = await GET('admins','?order=email');
+    const match = all.filter(a => a.email.toLowerCase()===email && a.password_hash===pass);
+    if (!match.length) {
+      $('li-err').textContent='Invalid email or password';
+      $('li-btn').textContent='Sign In'; $('li-btn').disabled=false;
+      return;
+    }
+    CU = match[0];
+    // Show app
+    $('login-screen').style.display='none';
+    $('app-screen').classList.add('show');
+    $('u-name').textContent=CU.name;
+    $('sb-role').textContent=CU.role==='master'?'Master Admin':'Society Admin';
+
+    if (CU.role==='master') {
+      // Inject master nav
+      $('master-nav').innerHTML = `
+        <div class="sb-sec">Master Admin</div>
+        <div class="ni" data-page="societies"><i class="ti ti-building-skyscraper"></i> All Societies</div>
+        <div class="ni" data-page="admins"><i class="ti ti-shield-check"></i> Manage Admins</div>`;
+      // Load all societies into switcher
+      await loadAllSocs();
+    } else {
+      // Society admin — hide switcher, load their society
+      $('soc-switcher-wrap').style.display='none';
+      if (CU.society_id) {
+        const socs = await GET('societies',`?id=eq.${CU.society_id}`);
+        CS = socs[0]||null;
+        if (CS) await loadSocData();
+      }
+    }
+    goPage('dashboard');
+  } catch(e) {
+    $('li-err').textContent='Connection error: '+e.message;
+  }
+  $('li-btn').textContent='Sign In'; $('li-btn').disabled=false;
+}
+
+function doLogout() {
+  CU=null; CS=null; allSocs=[];
+  $('app-screen').classList.remove('show');
+  $('login-screen').style.display='flex';
+  $('master-nav').innerHTML='';
+  $('soc-switcher-wrap').style.display='block';
+  $('li-pass').value='';
+}
+
+async function doResetPass() {
+  const email=fv('fp-email').trim().toLowerCase();
+  const pass=fv('fp-pass').trim();
+  const pass2=fv('fp-pass2').trim();
+  const msg=$('fp-msg');
+  if (!email||!pass||!pass2) { msg.style.color='#ef4444'; msg.textContent='All fields required'; return; }
+  if (pass.length<6) { msg.style.color='#ef4444'; msg.textContent='Password must be at least 6 characters'; return; }
+  if (pass!==pass2) { msg.style.color='#ef4444'; msg.textContent='Passwords do not match'; return; }
+  try {
+    const r = await GET('admins',`?email=eq.${encodeURIComponent(email)}`);
+    if (!r.length) { msg.style.color='#ef4444'; msg.textContent='No account found with this email'; return; }
+    await PATCH('admins',r[0].id,{password_hash:pass});
+    msg.style.color='#16a34a'; msg.textContent='✓ Password reset! You can now log in.';
+    setTimeout(()=>closeModal('mo-forgot'),2000);
+  } catch(e) { msg.style.color='#ef4444'; msg.textContent='Error: '+e.message; }
+}
+
+// ═══════════════════════════════════════════════
+// SOCIETIES
+// ═══════════════════════════════════════════════
+async function loadAllSocs() {
+  allSocs = await GET('societies','?order=name');
+  const sel=$('soc-switcher');
+  sel.innerHTML='<option value="">— Select Society —</option>'+allSocs.map(s=>`<option value="${s.id}">${s.name}</option>`).join('');
+  if (allSocs.length) { sel.value=allSocs[0].id; await switchSociety(allSocs[0].id); }
+}
+
+async function switchSociety(id) {
+  if (!id) return;
+  CS = allSocs.find(s=>s.id===id)||null;
+  if (CS) await loadSocData();
+  refreshDashboard();
+}
+
+async function loadSocData() {
+  if (!CS) return;
+  const id=CS.id;
+  [members,dues,services,amenities,notices] = await Promise.all([
+    GET('members',`?society_id=eq.${id}&order=name`),
+    GET('dues',`?society_id=eq.${id}&order=created_at.desc`),
+    GET('services',`?society_id=eq.${id}&order=name`),
+    GET('amenities',`?society_id=eq.${id}&order=name`),
+    GET('notices',`?society_id=eq.${id}&order=created_at.desc`)
+  ]);
+}
+
+function renderSocieties() {
+  const g=$('soc-grid');
+  if (!allSocs.length) { g.innerHTML='<p class="empty">No societies yet. Add your first one.</p>'; return; }
+  g.innerHTML=allSocs.map(s=>`
+    <div class="scard">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start">
+        <div><h4>${s.name}</h4><p>${[s.city,s.state].filter(Boolean).join(' · ')||'—'}</p></div>
+        <div style="display:flex;gap:4px">
+          <button class="ab" onclick="editSociety('${s.id}')" title="Edit"><i class="ti ti-edit"></i></button>
+          <button class="ab" onclick="deleteSociety('${s.id}')" style="color:#ef4444" title="Delete"><i class="ti ti-trash"></i></button>
+        </div>
+      </div>
+      <div class="scard-stats">
+        <span><i class="ti ti-home"></i> ${s.total_units||'—'} units</span>
+        <span><i class="ti ti-user"></i> ${s.secretary_name||'—'}</span>
+      </div>
+      <div style="margin-top:8px"><span class="badge bb" style="font-size:9px">${s.registration_no||'No Reg No.'}</span></div>
+    </div>`).join('');
+}
+
+function openSocietyModal(id=null) {
+  editSocId=id;
+  const s=id?allSocs.find(x=>x.id===id):null;
+  sv('s-name',s?.name); sv('s-addr',s?.address); sv('s-reg',s?.registration_no);
+  sv('s-city',s?.city); sv('s-state',s?.state); sv('s-pin',s?.pincode);
+  sv('s-units',s?.total_units); sv('s-wings',s?.wings); sv('s-sec',s?.secretary_name);
+  sv('s-secph',s?.secretary_phone); sv('s-maint',s?.default_maintenance);
+  $('soc-modal-title').textContent=id?'Edit Society':'Add Society';
+  openModal('mo-society');
+}
+function editSociety(id) { openSocietyModal(id); }
+
+async function saveSociety() {
+  const name=fv('s-name').trim();
+  if (!name) { toast('Society name required',false); return; }
+  const d={name,address:fv('s-addr'),registration_no:fv('s-reg'),city:fv('s-city'),state:fv('s-state'),pincode:fv('s-pin'),total_units:parseInt(fv('s-units'))||null,wings:fv('s-wings'),secretary_name:fv('s-sec'),secretary_phone:fv('s-secph'),default_maintenance:parseFloat(fv('s-maint'))||0};
+  try {
+    if (editSocId) await PATCH('societies',editSocId,d); else await POST('societies',d);
+    await loadAllSocs(); closeModal('mo-society'); renderSocieties(); toast(editSocId?'Society updated':'Society added');
+  } catch(e){toast('Error: '+e.message,false);}
+}
+async function deleteSociety(id) {
+  if (!confirm('Delete this society and ALL its data? This cannot be undone.')) return;
+  try { await DELETE('societies',id); await loadAllSocs(); renderSocieties(); toast('Society deleted'); } catch(e){toast('Error: '+e.message,false);}
+}
+
+// ═══════════════════════════════════════════════
+// ADMINS
+// ═══════════════════════════════════════════════
+async function renderAdmins() {
+  try {
+    const [admins, socs] = await Promise.all([GET('admins','?order=name'), GET('societies','?order=name')]);
+    const sm={};  socs.forEach(s=>sm[s.id]=s.name);
+    $('adm-lbl').textContent=admins.length+' Admin'+(admins.length!==1?'s':'');
+    const tb=$('adm-tbody');
+    if (!admins.length){tb.innerHTML='<tr><td colspan="5" class="empty">No admins found</td></tr>';return;}
+    tb.innerHTML=admins.map(a=>`<tr>
+      <td style="font-weight:600">${a.name}</td>
+      <td style="font-size:11px">${a.email}</td>
+      <td><span class="badge ${a.role==='master'?'bp':'bb'}">${a.role==='master'?'Master':'Society Admin'}</span></td>
+      <td style="font-size:11px">${a.society_id?sm[a.society_id]||'—':'—'}</td>
+      <td><button class="ab" onclick="deleteAdmin('${a.id}')" style="color:#ef4444" title="Delete"><i class="ti ti-trash"></i></button></td>
+    </tr>`).join('');
+  } catch(e){toast('Error loading admins: '+e.message,false);}
+}
+
+async function openAdminModal() {
+  const socs=await GET('societies','?order=name');
+  $('a-soc').innerHTML='<option value="">— None (Master) —</option>'+socs.map(s=>`<option value="${s.id}">${s.name}</option>`).join('');
+  sv('a-name',''); sv('a-email',''); sv('a-pass','');
+  $('a-role').selectedIndex=0;
+  openModal('mo-admin');
+}
+
+async function saveAdmin() {
+  const name=fv('a-name').trim(), email=fv('a-email').trim(), pass=fv('a-pass').trim();
+  if (!name||!email||!pass){toast('Name, email and password required',false);return;}
+  if (pass.length<6){toast('Password min 6 characters',false);return;}
+  try {
+    await POST('admins',{name,email:email.toLowerCase(),password_hash:pass,role:fv('a-role'),society_id:fv('a-soc')||null});
+    closeModal('mo-admin'); renderAdmins(); toast('Admin added');
+  } catch(e){toast('Error: '+(e.message.includes('unique')?'Email already exists':e.message),false);}
+}
+async function deleteAdmin(id) {
+  if (!confirm('Delete this admin?')) return;
+  try{await DELETE('admins',id); renderAdmins(); toast('Admin deleted');}catch(e){toast('Error: '+e.message,false);}
+}
+
+// ═══════════════════════════════════════════════
+// DASHBOARD
+// ═══════════════════════════════════════════════
+function refreshDashboard() {
+  if (CU?.role==='master'){$('s1l').textContent='Societies';$('s1v').textContent=allSocs.length;$('s1s').textContent='Registered';}
+  else{$('s1l').textContent='Units';$('s1v').textContent=CS?.total_units||'—';$('s1s').textContent='Total flats';}
+  $('s2v').textContent=members.length;
+  $('s3v').textContent=dues.filter(d=>d.status==='pending'||d.status==='overdue').length;
+  const exp=services.filter(s=>daysUntil(s.expiry_date)<=30&&daysUntil(s.expiry_date)>=0);
+  $('s4v').textContent=exp.length;
+  $('d-exp').innerHTML=exp.length?'<table style="width:100%;border-collapse:collapse;font-size:12px">'+exp.slice(0,5).map(s=>{const d=daysUntil(s.expiry_date);return`<tr><td style="padding:5px 0;font-weight:600">${s.name}</td><td><span class="badge ${d<=7?'br':'ba'}">${d}d left</span></td></tr>`;}).join('')+'</table>':'<p class="empty">No expirations</p>';
+  const oc=notices.filter(n=>n.type==='complaint'&&n.status==='open');
+  $('d-comp').innerHTML=oc.length?oc.slice(0,4).map(n=>`<div style="padding:6px 0;border-bottom:1px solid #f1f5f9;font-size:12px"><div style="font-weight:600">${n.title}</div><div style="font-size:10px;color:#94a3b8">${n.flat||'General'}</div></div>`).join(''):'<p class="empty" style="color:#16a34a">✓ No open complaints</p>';
+}
+
+// ═══════════════════════════════════════════════
+// MEMBERS
+// ═══════════════════════════════════════════════
+function populateWingSelect() {
+  const w=wings();
+  $('m-wing').innerHTML=w.map(x=>`<option>${x}</option>`).join('');
+  $('mem-wing').innerHTML='<option value="">All Wings</option>'+w.map(x=>`<option>${x}</option>`).join('');
+}
+function renderMembers() {
+  populateWingSelect();
+  const q=(fv('mem-search')||'').toLowerCase(), wf=fv('mem-wing');
+  const fl=members.filter(m=>{
+    const t=(m.name+m.flat+m.wing+(m.mobile||'')+(m.email||'')).toLowerCase();
+    return(!q||t.includes(q))&&(!wf||m.wing===wf);
+  });
+  $('mem-lbl').textContent=fl.length+' Member'+(fl.length!==1?'s':'');
+  const tb=$('mem-tbody');
+  if(!fl.length){tb.innerHTML='<tr><td colspan="7" class="empty">No members found</td></tr>';return;}
+  tb.innerHTML=fl.map((m,i)=>`<tr>
+    <td><strong>${m.wing}-${m.flat}</strong></td>
+    <td><div style="font-weight:600">${m.name}</div><div style="font-size:10px;color:#94a3b8">${m.flat_type||''}</div></td>
+    <td style="font-size:11px">${m.mobile||'—'}</td>
+    <td><span class="badge ${m.ownership==='Tenant'?'bb':'bg'}">${m.ownership||'Owner'}</span></td>
+    <td><span class="badge ${m.status==='active'?'bgr':m.status==='notice_period'?'ba':'bg'}">${m.status||'active'}</span></td>
+    <td style="font-size:11px">${[m.vehicle1_no,m.vehicle2_no].filter(Boolean).join(', ')||'—'}</td>
+    <td>
+      <button class="ab" onclick="openMemberModal(${members.indexOf(m)})" title="Edit"><i class="ti ti-edit"></i></button>
+      <button class="ab" onclick="deleteMember('${m.id}')" style="color:#ef4444" title="Delete"><i class="ti ti-trash"></i></button>
+    </td>
+  </tr>`).join('');
+}
+function openMemberModal(idx=-1) {
+  editMem=idx; populateWingSelect();
+  const m=idx>=0?members[idx]:null;
+  sv('m-wing',m?.wing); sv('m-flat',m?.flat); sv('m-floor',m?.floor); sv('m-ftype',m?.flat_type);
+  sv('m-area',m?.area); sv('m-own',m?.ownership); sv('m-name',m?.name); sv('m-dob',m?.dob);
+  sv('m-gen',m?.gender); sv('m-aadh',m?.aadhaar); sv('m-mob',m?.mobile); sv('m-mob2',m?.mobile2);
+  sv('m-email',m?.email); sv('m-occ',m?.occupation); sv('m-movein',m?.move_in);
+  sv('m-adults',m?.adults||1); sv('m-children',m?.children||0); sv('m-family',m?.family_members);
+  sv('m-pets',m?.pets); sv('m-staff',m?.domestic_staff); sv('m-v1',m?.vehicle1_no);
+  sv('m-v1t',m?.vehicle1_type); sv('m-v2',m?.vehicle2_no); sv('m-v2t',m?.vehicle2_type);
+  sv('m-ags',m?.agree_start); sv('m-age',m?.agree_end); sv('m-park',m?.parking_slot);
+  sv('m-stat',m?.status||'active'); sv('m-emerg',m?.emergency_contact); sv('m-notes',m?.notes);
+  $('mem-modal-title').textContent=idx>=0?'Edit Member':'Add Member';
+  openModal('mo-member');
+}
+async function saveMember() {
+  const name=fv('m-name').trim(), flat=fv('m-flat').trim();
+  if (!name||!flat){toast('Name and flat required',false);return;}
+  const d={society_id:CS.id,wing:fv('m-wing'),flat,floor:fv('m-floor'),flat_type:fv('m-ftype'),area:parseFloat(fv('m-area'))||null,ownership:fv('m-own'),name,dob:fv('m-dob')||null,gender:fv('m-gen'),aadhaar:fv('m-aadh'),mobile:fv('m-mob'),mobile2:fv('m-mob2'),email:fv('m-email'),occupation:fv('m-occ'),move_in:fv('m-movein')||null,adults:parseInt(fv('m-adults'))||1,children:parseInt(fv('m-children'))||0,family_members:fv('m-family'),pets:fv('m-pets'),domestic_staff:fv('m-staff'),vehicle1_no:fv('m-v1'),vehicle1_type:fv('m-v1t'),vehicle2_no:fv('m-v2'),vehicle2_type:fv('m-v2t'),agree_start:fv('m-ags')||null,agree_end:fv('m-age')||null,parking_slot:fv('m-park'),status:fv('m-stat'),emergency_contact:fv('m-emerg'),notes:fv('m-notes')};
+  try {
+    if (editMem>=0) await PATCH('members',members[editMem].id,d); else await POST('members',d);
+    members=await GET('members',`?society_id=eq.${CS.id}&order=name`);
+    closeModal('mo-member'); renderMembers(); toast(editMem>=0?'Member updated':'Member added');
+  } catch(e){toast('Error: '+e.message,false);}
+}
+async function deleteMember(id){if(!confirm('Delete member?'))return;try{await DELETE('members',id);members=members.filter(m=>m.id!==id);renderMembers();toast('Deleted');}catch(e){toast('Error: '+e.message,false);}}
+
+// ═══════════════════════════════════════════════
+// DUES
+// ═══════════════════════════════════════════════
+function populateFlatSelects() {
+  const o=members.map(m=>`<option value="${m.wing}-${m.flat}">${m.wing}-${m.flat} — ${m.name}</option>`).join('');
+  $('d-flat').innerHTML=o;
+  $('n-flat').innerHTML='<option value="">—</option>'+o;
+}
+function renderDues() {
+  const data=duesF==='all'?dues:dues.filter(d=>d.status===duesF);
+  const tb=$('dues-tbody');
+  if(!data.length){tb.innerHTML='<tr><td colspan="7" class="empty">No records</td></tr>';return;}
+  tb.innerHTML=data.map(d=>`<tr>
+    <td><strong>${d.flat||'—'}</strong></td>
+    <td style="font-size:11px">${d.month}</td>
+    <td style="font-weight:600">₹${(Number(d.amount)+Number(d.late_fee||0)-Number(d.discount||0)).toLocaleString('en-IN')}</td>
+    <td style="font-size:11px">${d.due_date||'—'}</td>
+    <td><span class="badge ${d.status==='paid'?'bgr':d.status==='overdue'?'br':'ba'}">${d.status}</span></td>
+    <td style="font-size:11px">${d.payment_mode||'—'}</td>
+    <td>
+      ${d.status!=='paid'?`<button class="ab" onclick="markPaid('${d.id}')" style="color:#16a34a" title="Mark Paid"><i class="ti ti-check"></i></button>`:''}
+      <button class="ab" onclick="deleteDues('${d.id}')" style="color:#ef4444"><i class="ti ti-trash"></i></button>
+    </td>
+  </tr>`).join('');
+}
+function openDuesModal(){populateFlatSelects();openModal('mo-dues');}
+async function saveDues(){
+  if(!fv('d-flat')||!fv('d-amt')){toast('Flat and amount required',false);return;}
+  const d={society_id:CS.id,flat:fv('d-flat'),month:fv('d-month'),amount:parseFloat(fv('d-amt')),due_date:fv('d-due')||null,status:fv('d-stat'),paid_date:fv('d-pdate')||null,payment_mode:fv('d-mode'),txn_ref:fv('d-txn'),late_fee:parseFloat(fv('d-late'))||0,discount:parseFloat(fv('d-disc'))||0,remarks:fv('d-rem')};
+  try{await POST('dues',d);dues=await GET('dues',`?society_id=eq.${CS.id}&order=created_at.desc`);closeModal('mo-dues');renderDues();toast('Record added');}catch(e){toast('Error: '+e.message,false);}
+}
+async function markPaid(id){try{await PATCH('dues',id,{status:'paid',paid_date:new Date().toISOString().split('T')[0]});const d=dues.find(x=>x.id===id);if(d){d.status='paid';}renderDues();toast('Marked as paid');}catch(e){toast('Error: '+e.message,false);}}
+async function deleteDues(id){if(!confirm('Delete?'))return;try{await DELETE('dues',id);dues=dues.filter(d=>d.id!==id);renderDues();toast('Deleted');}catch(e){toast('Error: '+e.message,false);}}
+
+// ═══════════════════════════════════════════════
+// SERVICES
+// ═══════════════════════════════════════════════
+const SVC_CAT={'Fire Fighting':'Safety','Security':'Safety','CCTV':'Safety','Electricity':'Utilities','Water Supply':'Utilities','Water Pump':'Utilities','Pump':'Utilities','Gas':'Utilities','Air Conditioning':'Utilities','Plumbing':'Infrastructure','Electric Work':'Infrastructure','Water Tank Cleaning':'Infrastructure','Road Repair':'Infrastructure','Leakage':'Infrastructure','Structural Repair':'Infrastructure','Water Proofing':'Infrastructure','House Keeping':'Housekeeping','Garden':'Housekeeping','Insurance':'Housekeeping'};
+function onSvcChange(){const v=fv('sv-name');$('sv-custom-wrap').style.display=v==='__custom__'?'flex':'none';const c=SVC_CAT[v];if(c)sv('sv-cat',c);}
+function renderSvc(){
+  let data=services;
+  if(svcF==='expiring')data=data.filter(s=>daysUntil(s.expiry_date)<=30&&daysUntil(s.expiry_date)>=0);
+  else if(svcF!=='all')data=data.filter(s=>s.category===svcF);
+  $('svc-lbl').textContent=data.length+' Service'+(data.length!==1?'s':'');
+  const tb=$('svc-tbody');
+  if(!data.length){tb.innerHTML='<tr><td colspan="7" class="empty">No services yet</td></tr>';return;}
+  tb.innerHTML=data.map((s,i)=>{
+    const d=daysUntil(s.expiry_date);
+    const eh=s.expiry_date?(d<0?`<span class="ea">${s.expiry_date} (Expired)</span>`:d<=30?`<span class="ew">${s.expiry_date} (${d}d)</span>`:s.expiry_date):'—';
+    return`<tr>
+      <td><div style="font-weight:600">${s.name}</div><div style="font-size:10px;color:#94a3b8">${s.service_type||''}</div></td>
+      <td><span class="badge ${s.category==='Safety'?'br':s.category==='Utilities'?'bb':s.category==='Infrastructure'?'bp':'bg'}">${s.category}</span></td>
+      <td style="font-size:11px">${s.vendor||'—'}</td>
+      <td style="font-size:11px">${s.amount?'₹'+Number(s.amount).toLocaleString('en-IN'):'—'}</td>
+      <td style="font-size:11px">${eh}</td>
+      <td><span class="badge ${s.status==='active'?'bgr':s.status==='expired'?'br':s.status==='pending_renewal'?'ba':'bg'}">${s.status}</span></td>
+      <td>
+        <button class="ab" onclick="openSvcModal(${services.indexOf(s)})" title="Edit"><i class="ti ti-edit"></i></button>
+        <button class="ab" onclick="deleteSvc('${s.id}')" style="color:#ef4444"><i class="ti ti-trash"></i></button>
+      </td>
+    </tr>`;
+  }).join('');
+}
+function openSvcModal(idx=-1){
+  editSvc=idx; const s=idx>=0?services[idx]:null;
+  sv('sv-name',s?.name||'Fire Fighting'); $('sv-custom-wrap').style.display='none';
+  sv('sv-cat',s?.category); sv('sv-type',s?.service_type); sv('sv-vend',s?.vendor);
+  sv('sv-vph',s?.vendor_phone); sv('sv-vaddr',s?.vendor_address); sv('sv-cp',s?.contact_person);
+  sv('sv-vemail',s?.email); sv('sv-start',s?.start_date); sv('sv-exp',s?.expiry_date);
+  sv('sv-amt',s?.amount); sv('sv-freq',s?.payment_frequency); sv('sv-last',s?.last_service);
+  sv('sv-next',s?.next_service); sv('sv-stat',s?.status||'active'); sv('sv-doc',s?.doc_ref); sv('sv-notes',s?.notes);
+  $('svc-modal-title').textContent=idx>=0?'Edit Service':'Add Service / AMC';
+  openModal('mo-svc');
+}
+async function saveSvc(){
+  const ne=$('sv-name');
+  const name=ne.value==='__custom__'?fv('sv-custom').trim():ne.value;
+  const vendor=fv('sv-vend').trim();
+  if(!name||!vendor){toast('Service name and vendor required',false);return;}
+  const d={society_id:CS.id,name,category:fv('sv-cat'),service_type:fv('sv-type'),vendor,vendor_phone:fv('sv-vph'),vendor_address:fv('sv-vaddr'),contact_person:fv('sv-cp'),email:fv('sv-vemail'),start_date:fv('sv-start')||null,expiry_date:fv('sv-exp')||null,amount:parseFloat(fv('sv-amt'))||null,payment_frequency:fv('sv-freq'),last_service:fv('sv-last')||null,next_service:fv('sv-next')||null,status:fv('sv-stat'),doc_ref:fv('sv-doc'),notes:fv('sv-notes')};
+  try{if(editSvc>=0)await PATCH('services',services[editSvc].id,d);else await POST('services',d);services=await GET('services',`?society_id=eq.${CS.id}&order=name`);closeModal('mo-svc');renderSvc();toast(editSvc>=0?'Service updated':'Service added');}catch(e){toast('Error: '+e.message,false);}
+}
+async function deleteSvc(id){if(!confirm('Delete?'))return;try{await DELETE('services',id);services=services.filter(s=>s.id!==id);renderSvc();toast('Deleted');}catch(e){toast('Error: '+e.message,false);}}
+
+// ═══════════════════════════════════════════════
+// AMENITIES
+// ═══════════════════════════════════════════════
+function renderAmen(){
+  const data=amenF==='all'?amenities:amenities.filter(a=>a.status===amenF);
+  $('amen-lbl').textContent=data.length+' Amenit'+(data.length===1?'y':'ies');
+  const tb=$('amen-tbody');
+  if(!data.length){tb.innerHTML='<tr><td colspan="9" class="empty">No amenities yet</td></tr>';return;}
+  tb.innerHTML=data.map((a,i)=>`<tr>
+    <td style="font-weight:600">${a.name}</td>
+    <td><span class="badge ${a.type==='Sports'?'bb':a.type==='Wellness'?'bp':a.type==='Recreation'?'bgr':a.type==='Education'?'ba':'bg'}">${a.type||'—'}</span></td>
+    <td style="font-size:11px">${a.location||'—'}</td>
+    <td style="font-size:11px">${a.timings||'—'}</td>
+    <td style="font-size:11px">${a.capacity?a.capacity+' persons':'—'}</td>
+    <td style="font-size:11px">${a.charges||'Free'}</td>
+    <td><span class="badge ${a.status==='operational'?'bgr':a.status==='maintenance'?'ba':'bg'}">${a.status}</span></td>
+    <td style="font-size:11px">${a.last_service||'—'}</td>
+    <td>
+      <button class="ab" onclick="openAmenModal(${amenities.indexOf(a)})" title="Edit"><i class="ti ti-edit"></i></button>
+      <button class="ab" onclick="deleteAmen('${a.id}')" style="color:#ef4444"><i class="ti ti-trash"></i></button>
+    </td>
+  </tr>`).join('');
+}
+function openAmenModal(idx=-1){
+  editAmen=idx; const a=idx>=0?amenities[idx]:null;
+  sv('an-name',a?.name); $('an-cw').style.display='none';
+  sv('an-type',a?.type); sv('an-loc',a?.location); sv('an-cap',a?.capacity);
+  sv('an-tim',a?.timings); sv('an-days',a?.days_open); sv('an-book',a?.booking_required);
+  sv('an-chg',a?.charges); sv('an-ic',a?.incharge); sv('an-icc',a?.incharge_contact);
+  sv('an-ls',a?.last_service); sv('an-ns',a?.next_service); sv('an-stat',a?.status||'operational'); sv('an-notes',a?.notes);
+  $('amen-modal-title').textContent=idx>=0?'Edit Amenity':'Add Amenity';
+  openModal('mo-amen');
+}
+async function saveAmen(){
+  const ne=$('an-name');
+  const name=ne.value==='__custom__'?fv('an-custom').trim():ne.value;
+  if(!name){toast('Amenity name required',false);return;}
+  const d={society_id:CS.id,name,type:fv('an-type'),location:fv('an-loc'),capacity:parseInt(fv('an-cap'))||null,timings:fv('an-tim'),days_open:fv('an-days'),booking_required:fv('an-book'),charges:fv('an-chg'),incharge:fv('an-ic'),incharge_contact:fv('an-icc'),last_service:fv('an-ls')||null,next_service:fv('an-ns')||null,status:fv('an-stat'),notes:fv('an-notes')};
+  try{if(editAmen>=0)await PATCH('amenities',amenities[editAmen].id,d);else await POST('amenities',d);amenities=await GET('amenities',`?society_id=eq.${CS.id}&order=name`);closeModal('mo-amen');renderAmen();toast(editAmen>=0?'Amenity updated':'Amenity added');}catch(e){toast('Error: '+e.message,false);}
+}
+async function deleteAmen(id){if(!confirm('Delete?'))return;try{await DELETE('amenities',id);amenities=amenities.filter(a=>a.id!==id);renderAmen();toast('Deleted');}catch(e){toast('Error: '+e.message,false);}}
+
+// ═══════════════════════════════════════════════
+// NOTICES
+// ═══════════════════════════════════════════════
+function renderNotices(){
+  let data=notices;
+  if(notF==='notice')data=data.filter(n=>n.type==='notice');
+  else if(notF==='complaint')data=data.filter(n=>n.type==='complaint');
+  else if(notF==='open')data=data.filter(n=>n.status==='open');
+  else if(notF==='resolved')data=data.filter(n=>n.status==='resolved');
+  const el=$('not-list');
+  if(!data.length){el.innerHTML='<div class="empty">Nothing posted yet</div>';return;}
+  el.innerHTML=data.map(n=>{
+    const pb=n.priority==='urgent'?'br':n.priority==='low'?'bg':'bb';
+    const sb=n.status==='resolved'?'bgr':n.status==='in_progress'?'bb':'ba';
+    const dt=n.created_at?new Date(n.created_at).toLocaleDateString('en-IN'):'';
+    return`<div class="nc">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px">
+        <div style="flex:1">
+          <div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:6px">
+            <span class="badge ${n.type==='complaint'?'br':'bb'}">${n.type==='complaint'?'Complaint':'Notice'}</span>
+            <span class="badge bg">${n.category||'General'}</span>
+            <span class="badge ${pb}">${n.priority||'normal'}</span>
+            <span class="badge ${sb}">${n.status||'open'}</span>
+          </div>
+          <h4>${n.title}</h4>
+          <p>${n.body}</p>
+          <div class="nc-meta">
+            <span><i class="ti ti-user" style="font-size:11px"></i> ${n.posted_by||'Management'}</span>
+            ${n.flat?`<span><i class="ti ti-home" style="font-size:11px"></i> ${n.flat}</span>`:''}
+            <span><i class="ti ti-calendar" style="font-size:11px"></i> ${dt}</span>
+          </div>
+        </div>
+        <div style="display:flex;gap:4px;flex-shrink:0">
+          ${n.status!=='resolved'?`<button class="ab" onclick="resolveNotice('${n.id}')" style="color:#16a34a" title="Resolve"><i class="ti ti-check"></i></button>`:''}
+          <button class="ab" onclick="deleteNotice('${n.id}')" style="color:#ef4444"><i class="ti ti-trash"></i></button>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+function openNoticeModal(){populateFlatSelects();openModal('mo-notice');}
+async function saveNotice(){
+  const title=fv('n-title').trim(),body=fv('n-body').trim();
+  if(!title||!body){toast('Title and description required',false);return;}
+  const d={society_id:CS.id,type:fv('n-type'),category:fv('n-cat'),title,body,posted_by:fv('n-by')||'Management',flat:fv('n-flat'),priority:fv('n-pri'),status:fv('n-stat')};
+  try{await POST('notices',d);notices=await GET('notices',`?society_id=eq.${CS.id}&order=created_at.desc`);closeModal('mo-notice');renderNotices();toast('Posted');}catch(e){toast('Error: '+e.message,false);}
+}
+async function resolveNotice(id){try{await PATCH('notices',id,{status:'resolved'});const n=notices.find(x=>x.id===id);if(n)n.status='resolved';renderNotices();toast('Marked resolved');}catch(e){toast('Error: '+e.message,false);}}
+async function deleteNotice(id){if(!confirm('Delete?'))return;try{await DELETE('notices',id);notices=notices.filter(n=>n.id!==id);renderNotices();toast('Deleted');}catch(e){toast('Error: '+e.message,false);}}
+
+</script>
+</body>
+</html>
