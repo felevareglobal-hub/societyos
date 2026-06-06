@@ -221,6 +221,10 @@ tr:hover td{background:#fafafa}
     <div class="ni" data-page="amenities"><i class="ti ti-building"></i> Amenities</div>
     <div class="sb-sec">Communication</div>
     <div class="ni" data-page="notices"><i class="ti ti-speakerphone"></i> Notices &amp; Complaints</div>
+    <div class="sb-sec">Finance</div>
+    <div class="ni" data-page="accounts"><i class="ti ti-cash"></i> Accounts</div>
+    <div class="sb-sec">Reports</div>
+    <div class="ni" data-page="reports"><i class="ti ti-chart-bar"></i> Reports & Analytics</div>
     <!-- Master Admin nav — injected by JS after login -->
     <div id="master-nav"></div>
     <div class="sb-bottom">
@@ -360,6 +364,48 @@ tr:hover td{background:#fafafa}
           <button class="btn btn-p" onclick="openNoticeModal()"><i class="ti ti-plus"></i> Post Notice / Complaint</button>
         </div>
         <div id="not-list"></div>
+      </div>
+
+
+      <!-- ACCOUNTS -->
+      <div class="page" id="page-accounts">
+        <!-- Summary Cards -->
+        <div class="stats" id="acc-stats">
+          <div class="sc"><div class="lb">Total Income</div><div class="vl" id="acc-income" style="color:#16a34a">₹0</div><div class="sb">This month</div></div>
+          <div class="sc"><div class="lb">Total Expenses</div><div class="vl" id="acc-expense" style="color:#991b1b">₹0</div><div class="sb">This month</div></div>
+          <div class="sc"><div class="lb">Net Balance</div><div class="vl" id="acc-balance">₹0</div><div class="sb">Income - Expense</div></div>
+          <div class="sc"><div class="lb">Total Records</div><div class="vl" id="acc-count">0</div><div class="sb">All time</div></div>
+        </div>
+        <!-- Filters -->
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:13px;align-items:center">
+          <div class="fb" style="margin:0">
+            <div class="fc active" data-filter="acc-all">All</div>
+            <div class="fc" data-filter="acc-income">Income</div>
+            <div class="fc" data-filter="acc-expense">Expense</div>
+          </div>
+          <select id="acc-month-filter" onchange="renderAccounts()" style="padding:6px 10px;border:1px solid #e2e8f0;border-radius:7px;font-size:12px;background:#fff;outline:none;margin-left:auto">
+            <option value="">All Months</option>
+          </select>
+          <button class="btn" onclick="exportAccountsCSV()" style="gap:5px"><i class="ti ti-download"></i> Export CSV</button>
+        </div>
+        <div class="card">
+          <div class="card-head"><h3 id="acc-lbl">Accounts</h3><button class="btn btn-p" onclick="openAccountModal(-1)"><i class="ti ti-plus"></i> Add Entry</button></div>
+          <div class="tbl-wrap">
+            <table><thead><tr><th>Date</th><th>Type</th><th>Category</th><th>Description</th><th>From / Vendor</th><th>Mode</th><th>Amount (₹)</th><th></th></tr></thead>
+            <tbody id="acc-tbody"></tbody></table>
+          </div>
+        </div>
+      </div>
+
+      <!-- REPORTS -->
+      <div class="page" id="page-reports">
+        <div class="fb">
+          <div class="fc active" data-filter="rep-pl">P&amp;L Summary</div>
+          <div class="fc" data-filter="rep-dues">Dues Collection</div>
+          <div class="fc" data-filter="rep-expiry">Service Expiry</div>
+          <div class="fc" data-filter="rep-members">Member Directory</div>
+        </div>
+        <div id="report-content"></div>
       </div>
 
     </div>
@@ -595,6 +641,31 @@ tr:hover td{background:#fafafa}
   </div>
 </div>
 
+<!-- ACCOUNT MODAL -->
+<div class="mo" id="mo-account">
+  <div class="md" style="max-width:560px">
+    <div class="md-head"><h3 id="acc-modal-title">Add Account Entry</h3><button class="md-close" onclick="closeModal('mo-account')"><i class="ti ti-x"></i></button></div>
+    <div class="md-body"><div class="fg">
+      <div class="fi"><label>Type *</label><select id="ac-type"><option value="income">Income</option><option value="expense">Expense</option></select></div>
+      <div class="fi"><label>Date *</label><input id="ac-date" type="date"></div>
+      <div class="fi"><label>Category *</label><select id="ac-cat">
+        <optgroup label="Income"><option>Maintenance</option><option>Parking Charges</option><option>Hall / Amenity Booking</option><option>Interest Income</option><option>Penalty / Fine</option><option>Donation</option><option>Other Income</option></optgroup>
+        <optgroup label="Expense"><option>AMC / Service Contract</option><option>Repairs & Maintenance</option><option>Salary / Wages</option><option>Electricity Bill</option><option>Water Bill</option><option>Security Charges</option><option>Housekeeping</option><option>Garden Maintenance</option><option>Insurance Premium</option><option>Administrative</option><option>Bank Charges</option><option>Other Expense</option></optgroup>
+      </select></div>
+      <div class="fi"><label>Amount (₹) *</label><input id="ac-amt" type="number" placeholder="0.00"></div>
+      <div class="fi full"><label>Description *</label><input id="ac-desc" placeholder="Brief description"></div>
+      <div class="fi"><label>From / Vendor</label><input id="ac-from" placeholder="Flat no. or vendor name"></div>
+      <div class="fi"><label>Payment Mode</label><select id="ac-mode"><option>—</option><option>Cash</option><option>UPI</option><option>Bank Transfer</option><option>Cheque</option><option>Online</option></select></div>
+      <div class="fi full"><label>Reference / Receipt No.</label><input id="ac-ref" placeholder="Cheque no. / UTR / Receipt no."></div>
+      <div class="fi full"><label>Notes</label><textarea id="ac-notes" rows="2"></textarea></div>
+    </div></div>
+    <div class="md-foot">
+      <button class="btn" onclick="closeModal('mo-account')">Cancel</button>
+      <button class="btn btn-p" onclick="saveAccount()"><i class="ti ti-check"></i> Save Entry</button>
+    </div>
+  </div>
+</div>
+
 <!-- NOTICE MODAL -->
 <div class="mo" id="mo-notice">
   <div class="md" style="max-width:480px">
@@ -680,7 +751,9 @@ const PAGE_META = {
   services:  ()=> CS ? CS.name+' — Services' : '',
   amenities: ()=> CS ? CS.name+' — Amenities' : '',
   notices:   ()=> CS ? CS.name+' — Notices' : '',
-  actlog:    ()=> 'Password changes & admin actions'
+  actlog:    ()=> 'Password changes & admin actions',
+  accounts:  ()=> CS ? CS.name+' — Income & Expenses' : '',
+  reports:   ()=> CS ? CS.name+' — Reports' : ''
 };
 
 function goPage(id) {
@@ -708,6 +781,8 @@ function goPage(id) {
   if (id==='amenities') renderAmen();
   if (id==='notices')   renderNotices();
   if (id==='actlog')    renderActLog();
+  if (id==='accounts')  renderAccounts();
+  if (id==='reports')   renderReports();
   // Close sidebar on mobile
   if (window.innerWidth<768) {
     $('sidebar').classList.remove('open');
@@ -843,12 +918,13 @@ async function switchSociety(id) {
 async function loadSocData() {
   if (!CS) return;
   const id=CS.id;
-  [members,dues,services,amenities,notices] = await Promise.all([
+  [members,dues,services,amenities,notices,accounts] = await Promise.all([
     GET('members',`?society_id=eq.${id}&order=name`),
     GET('dues',`?society_id=eq.${id}&order=created_at.desc`),
     GET('services',`?society_id=eq.${id}&order=name`),
     GET('amenities',`?society_id=eq.${id}&order=name`),
-    GET('notices',`?society_id=eq.${id}&order=created_at.desc`)
+    GET('notices',`?society_id=eq.${id}&order=created_at.desc`),
+    GET('accounts',`?society_id=eq.${id}&order=date.desc`)
   ]);
 }
 
@@ -1262,6 +1338,353 @@ async function doMasterReset() {
     msg.textContent='✓ Password reset successfully!';
     setTimeout(()=>{ closeModal('mo-master-reset'); renderAdmins(); }, 1500);
   } catch(e) { msg.style.color='#ef4444'; msg.textContent='Error: '+e.message; }
+}
+
+// ═══════════════════════════════════════════════
+// ACCOUNTS
+// ═══════════════════════════════════════════════
+let accounts=[], accFilter='all', editAccIdx=-1;
+
+async function loadAccounts() {
+  if (!CS) return;
+  accounts = await GET('accounts', `?society_id=eq.${CS.id}&order=date.desc`);
+}
+
+function populateMonthFilter() {
+  const months = [...new Set(accounts.map(a => a.date?.substring(0,7)))].sort().reverse();
+  const sel = $('acc-month-filter');
+  const cur = sel.value;
+  sel.innerHTML = '<option value="">All Months</option>' + months.map(m => `<option value="${m}" ${m===cur?'selected':''}>${m}</option>`).join('');
+}
+
+function renderAccounts() {
+  populateMonthFilter();
+  const mf = fv('acc-month-filter');
+  let data = accounts;
+  if (accFilter === 'income')  data = data.filter(a => a.type==='income');
+  if (accFilter === 'expense') data = data.filter(a => a.type==='expense');
+  if (mf) data = data.filter(a => a.date?.startsWith(mf));
+
+  // Summary
+  const allInc = accounts.filter(a=>a.type==='income').reduce((s,a)=>s+Number(a.amount),0);
+  const allExp = accounts.filter(a=>a.type==='expense').reduce((s,a)=>s+Number(a.amount),0);
+  const bal = allInc - allExp;
+  $('acc-income').textContent  = '₹'+allInc.toLocaleString('en-IN');
+  $('acc-expense').textContent = '₹'+allExp.toLocaleString('en-IN');
+  $('acc-balance').textContent = '₹'+Math.abs(bal).toLocaleString('en-IN');
+  $('acc-balance').style.color = bal>=0 ? '#16a34a' : '#991b1b';
+  $('acc-count').textContent   = accounts.length;
+  $('acc-lbl').textContent     = data.length + ' Entr' + (data.length===1?'y':'ies');
+
+  const tb = $('acc-tbody');
+  if (!data.length) { tb.innerHTML='<tr><td colspan="8" class="empty">No entries found</td></tr>'; return; }
+  tb.innerHTML = data.map((a,i) => `<tr>
+    <td style="font-size:11px;white-space:nowrap">${a.date||'—'}</td>
+    <td><span class="badge ${a.type==='income'?'bgr':'br'}">${a.type}</span></td>
+    <td style="font-size:11px">${a.category||'—'}</td>
+    <td style="font-weight:500">${a.description||'—'}</td>
+    <td style="font-size:11px">${a.vendor_or_from||'—'}</td>
+    <td style="font-size:11px">${a.payment_mode||'—'}</td>
+    <td style="font-weight:600;color:${a.type==='income'?'#16a34a':'#991b1b'}">
+      ${a.type==='income'?'+':'-'}₹${Number(a.amount).toLocaleString('en-IN')}
+    </td>
+    <td>
+      <button class="ab" onclick="openAccountModal(${accounts.indexOf(a)})" title="Edit"><i class="ti ti-edit"></i></button>
+      <button class="ab" onclick="deleteAccount('${a.id}')" style="color:#ef4444"><i class="ti ti-trash"></i></button>
+    </td>
+  </tr>`).join('');
+}
+
+function openAccountModal(idx=-1) {
+  editAccIdx=idx;
+  const a = idx>=0 ? accounts[idx] : null;
+  sv('ac-type', a?.type||'income');
+  sv('ac-date', a?.date||new Date().toISOString().split('T')[0]);
+  sv('ac-cat',  a?.category);
+  sv('ac-amt',  a?.amount);
+  sv('ac-desc', a?.description);
+  sv('ac-from', a?.vendor_or_from);
+  sv('ac-mode', a?.payment_mode);
+  sv('ac-ref',  a?.reference);
+  sv('ac-notes',a?.notes);
+  $('acc-modal-title').textContent = idx>=0 ? 'Edit Entry' : 'Add Account Entry';
+  openModal('mo-account');
+}
+
+async function saveAccount() {
+  const desc = fv('ac-desc').trim(), amt = fv('ac-amt');
+  if (!desc||!amt) { toast('Description and amount required', false); return; }
+  const d = {
+    society_id: CS.id, type: fv('ac-type'), category: fv('ac-cat'),
+    description: desc, amount: parseFloat(amt), date: fv('ac-date')||null,
+    payment_mode: fv('ac-mode'), reference: fv('ac-ref'),
+    vendor_or_from: fv('ac-from'), notes: fv('ac-notes')
+  };
+  try {
+    if (editAccIdx>=0) await PATCH('accounts', accounts[editAccIdx].id, d);
+    else await POST('accounts', d);
+    accounts = await GET('accounts', `?society_id=eq.${CS.id}&order=date.desc`);
+    closeModal('mo-account'); renderAccounts();
+    toast(editAccIdx>=0 ? 'Entry updated' : 'Entry added');
+  } catch(e) { toast('Error: '+e.message, false); }
+}
+
+async function deleteAccount(id) {
+  if (!confirm('Delete this entry?')) return;
+  try {
+    await DELETE('accounts', id);
+    accounts = accounts.filter(a=>a.id!==id);
+    renderAccounts(); toast('Deleted');
+  } catch(e) { toast('Error: '+e.message, false); }
+}
+
+function exportAccountsCSV() {
+  const rows = [['Date','Type','Category','Description','From/Vendor','Mode','Amount']];
+  accounts.forEach(a => rows.push([a.date,a.type,a.category,a.description,a.vendor_or_from||'',a.payment_mode||'',a.amount]));
+  const csv = rows.map(r=>r.map(x=>`"${x||''}"`).join(',')).join('\n');
+  const blob = new Blob([csv], {type:'text/csv'});
+  const url  = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href=url; link.download=`accounts_${CS?.name||'society'}_${new Date().toISOString().split('T')[0]}.csv`;
+  link.click(); URL.revokeObjectURL(url);
+  toast('CSV downloaded');
+}
+
+// Hook filter chips for accounts
+document.addEventListener('DOMContentLoaded', function() {
+  document.addEventListener('click', function(e) {
+    const fc = e.target.closest('.fc[data-filter]');
+    if (!fc) return;
+    const f = fc.dataset.filter;
+    if (f.startsWith('acc-')) { accFilter=f.replace('acc-',''); renderAccounts(); }
+    if (f.startsWith('rep-')) { repFilter=f.replace('rep-',''); renderReports(); }
+  });
+});
+
+// ═══════════════════════════════════════════════
+// REPORTS & ANALYTICS
+// ═══════════════════════════════════════════════
+let repFilter = 'pl';
+
+async function renderReports() {
+  const rc = $('report-content');
+  rc.innerHTML = '<p class="empty">Loading report…</p>';
+  if (!CS) { rc.innerHTML='<p class="empty">Please select a society first</p>'; return; }
+  if (repFilter==='pl')       await reportPL(rc);
+  if (repFilter==='dues')     await reportDues(rc);
+  if (repFilter==='expiry')   await reportExpiry(rc);
+  if (repFilter==='members')  await reportMembers(rc);
+}
+
+async function reportPL(rc) {
+  if (!accounts.length) accounts = await GET('accounts', `?society_id=eq.${CS.id}&order=date.desc`);
+  const totalInc = accounts.filter(a=>a.type==='income').reduce((s,a)=>s+Number(a.amount),0);
+  const totalExp = accounts.filter(a=>a.type==='expense').reduce((s,a)=>s+Number(a.amount),0);
+  const net = totalInc - totalExp;
+
+  // Category breakdown
+  const incCats={}, expCats={};
+  accounts.forEach(a => {
+    if (a.type==='income')  incCats[a.category]  = (incCats[a.category]||0)  + Number(a.amount);
+    if (a.type==='expense') expCats[a.category] = (expCats[a.category]||0) + Number(a.amount);
+  });
+
+  // Monthly trend
+  const monthly={};
+  accounts.forEach(a => {
+    const m = a.date?.substring(0,7)||'Unknown';
+    if (!monthly[m]) monthly[m]={income:0,expense:0};
+    if (a.type==='income')  monthly[m].income  += Number(a.amount);
+    if (a.type==='expense') monthly[m].expense += Number(a.amount);
+  });
+  const months = Object.keys(monthly).sort().slice(-6);
+
+  rc.innerHTML = `
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:16px">
+      <div class="sc"><div class="lb">Total Income</div><div class="vl" style="color:#16a34a;font-size:20px">₹${totalInc.toLocaleString('en-IN')}</div></div>
+      <div class="sc"><div class="lb">Total Expenses</div><div class="vl" style="color:#991b1b;font-size:20px">₹${totalExp.toLocaleString('en-IN')}</div></div>
+      <div class="sc"><div class="lb">Net Balance</div><div class="vl" style="color:${net>=0?'#16a34a':'#991b1b'};font-size:20px">₹${Math.abs(net).toLocaleString('en-IN')}<span style="font-size:12px;margin-left:4px">${net>=0?'Surplus':'Deficit'}</span></div></div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:16px">
+      <div class="card">
+        <div class="card-head"><h3>Income Breakdown</h3><button class="btn btn-sm" onclick="exportReportCSV('pl-income')"><i class="ti ti-download"></i> CSV</button></div>
+        <div class="card-body">
+          ${Object.keys(incCats).length ? Object.entries(incCats).sort((a,b)=>b[1]-a[1]).map(([k,v])=>`
+            <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid #f1f5f9;font-size:12px">
+              <span>${k}</span>
+              <span style="font-weight:600;color:#16a34a">₹${v.toLocaleString('en-IN')}</span>
+            </div>`).join('') : '<p class="empty">No income records</p>'}
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-head"><h3>Expense Breakdown</h3><button class="btn btn-sm" onclick="exportReportCSV('pl-expense')"><i class="ti ti-download"></i> CSV</button></div>
+        <div class="card-body">
+          ${Object.keys(expCats).length ? Object.entries(expCats).sort((a,b)=>b[1]-a[1]).map(([k,v])=>`
+            <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid #f1f5f9;font-size:12px">
+              <span>${k}</span>
+              <span style="font-weight:600;color:#991b1b">₹${v.toLocaleString('en-IN')}</span>
+            </div>`).join('') : '<p class="empty">No expense records</p>'}
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-head"><h3>Monthly Trend (Last 6 Months)</h3></div>
+      <div class="card-body">
+        ${months.length ? `
+        <div style="overflow-x:auto">
+          <table style="width:100%;border-collapse:collapse;font-size:12px">
+            <thead><tr><th style="text-align:left;padding:8px;background:#fafafa;border-bottom:1px solid #f1f5f9">Month</th><th style="text-align:right;padding:8px;background:#fafafa;border-bottom:1px solid #f1f5f9;color:#16a34a">Income</th><th style="text-align:right;padding:8px;background:#fafafa;border-bottom:1px solid #f1f5f9;color:#991b1b">Expense</th><th style="text-align:right;padding:8px;background:#fafafa;border-bottom:1px solid #f1f5f9">Net</th></tr></thead>
+            <tbody>
+              ${months.map(m=>{const r=monthly[m];const n=r.income-r.expense;return`<tr>
+                <td style="padding:8px;border-bottom:1px solid #f8fafc;font-weight:500">${m}</td>
+                <td style="padding:8px;border-bottom:1px solid #f8fafc;text-align:right;color:#16a34a">₹${r.income.toLocaleString('en-IN')}</td>
+                <td style="padding:8px;border-bottom:1px solid #f8fafc;text-align:right;color:#991b1b">₹${r.expense.toLocaleString('en-IN')}</td>
+                <td style="padding:8px;border-bottom:1px solid #f8fafc;text-align:right;font-weight:600;color:${n>=0?'#16a34a':'#991b1b'}">₹${Math.abs(n).toLocaleString('en-IN')} ${n>=0?'▲':'▼'}</td>
+              </tr>`;}).join('')}
+            </tbody>
+          </table>
+        </div>` : '<p class="empty">No data yet</p>'}
+      </div>
+    </div>`;
+}
+
+async function reportDues(rc) {
+  const total   = dues.length;
+  const paid    = dues.filter(d=>d.status==='paid');
+  const pending = dues.filter(d=>d.status==='pending');
+  const overdue = dues.filter(d=>d.status==='overdue');
+  const totalAmt   = dues.reduce((s,d)=>s+Number(d.amount||0),0);
+  const collectedAmt = paid.reduce((s,d)=>s+Number(d.amount||0),0);
+  const pendingAmt = (pending.concat(overdue)).reduce((s,d)=>s+Number(d.amount||0),0);
+  const rate = total ? Math.round(paid.length/total*100) : 0;
+
+  rc.innerHTML = `
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px">
+      <div class="sc"><div class="lb">Total Billed</div><div class="vl" style="font-size:18px">₹${totalAmt.toLocaleString('en-IN')}</div></div>
+      <div class="sc"><div class="lb">Collected</div><div class="vl" style="color:#16a34a;font-size:18px">₹${collectedAmt.toLocaleString('en-IN')}</div></div>
+      <div class="sc"><div class="lb">Pending</div><div class="vl" style="color:#991b1b;font-size:18px">₹${pendingAmt.toLocaleString('en-IN')}</div></div>
+      <div class="sc"><div class="lb">Collection Rate</div><div class="vl" style="color:${rate>=75?'#16a34a':rate>=50?'#92400e':'#991b1b'};font-size:18px">${rate}%</div></div>
+    </div>
+    <div class="card">
+      <div class="card-head"><h3>Dues Collection Report</h3><button class="btn btn-sm" onclick="exportReportCSV('dues')"><i class="ti ti-download"></i> Export CSV</button></div>
+      <div class="tbl-wrap">
+        <table><thead><tr><th>Flat</th><th>Month</th><th>Amount (₹)</th><th>Due Date</th><th>Status</th><th>Payment Mode</th><th>Paid Date</th></tr></thead>
+        <tbody>
+          ${dues.length ? dues.map(d=>`<tr>
+            <td style="font-weight:600">${d.flat||'—'}</td>
+            <td style="font-size:11px">${d.month||'—'}</td>
+            <td style="font-weight:600">₹${Number(d.amount||0).toLocaleString('en-IN')}</td>
+            <td style="font-size:11px">${d.due_date||'—'}</td>
+            <td><span class="badge ${d.status==='paid'?'bgr':d.status==='overdue'?'br':'ba'}">${d.status}</span></td>
+            <td style="font-size:11px">${d.payment_mode||'—'}</td>
+            <td style="font-size:11px">${d.paid_date||'—'}</td>
+          </tr>`).join('') : '<tr><td colspan="7" class="empty">No dues records</td></tr>'}
+        </tbody></table>
+      </div>
+    </div>`;
+}
+
+async function reportExpiry(rc) {
+  const expired  = services.filter(s=>daysUntil(s.expiry_date)<0);
+  const soon     = services.filter(s=>daysUntil(s.expiry_date)>=0&&daysUntil(s.expiry_date)<=30);
+  const upcoming = services.filter(s=>daysUntil(s.expiry_date)>30&&daysUntil(s.expiry_date)<=90);
+  const safe     = services.filter(s=>daysUntil(s.expiry_date)>90);
+
+  rc.innerHTML = `
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px">
+      <div class="sc"><div class="lb">Expired</div><div class="vl" style="color:#991b1b">${expired.length}</div></div>
+      <div class="sc"><div class="lb">Expiring in 30 days</div><div class="vl" style="color:#92400e">${soon.length}</div></div>
+      <div class="sc"><div class="lb">Expiring in 90 days</div><div class="vl" style="color:#1d4ed8">${upcoming.length}</div></div>
+      <div class="sc"><div class="lb">Safe (&gt;90 days)</div><div class="vl" style="color:#16a34a">${safe.length}</div></div>
+    </div>
+    <div class="card">
+      <div class="card-head"><h3>Service Expiry Report</h3><button class="btn btn-sm" onclick="exportReportCSV('expiry')"><i class="ti ti-download"></i> Export CSV</button></div>
+      <div class="tbl-wrap">
+        <table><thead><tr><th>Service</th><th>Category</th><th>Vendor</th><th>Contact</th><th>Expiry Date</th><th>Days Left</th><th>Status</th></tr></thead>
+        <tbody>
+          ${services.length ? services.sort((a,b)=>daysUntil(a.expiry_date)-daysUntil(b.expiry_date)).map(s=>{
+            const d=daysUntil(s.expiry_date);
+            const dLabel=d<0?'Expired':d===9999?'No date':d+'d left';
+            const dColor=d<0?'#991b1b':d<=30?'#92400e':d<=90?'#1d4ed8':'#16a34a';
+            return`<tr>
+              <td style="font-weight:600">${s.name}</td>
+              <td><span class="badge ${s.category==='Safety'?'br':s.category==='Utilities'?'bb':s.category==='Infrastructure'?'bp':'bg'}">${s.category}</span></td>
+              <td style="font-size:11px">${s.vendor||'—'}</td>
+              <td style="font-size:11px">${s.vendor_phone||'—'}</td>
+              <td style="font-size:11px">${s.expiry_date||'—'}</td>
+              <td style="font-weight:600;color:${dColor}">${dLabel}</td>
+              <td><span class="badge ${s.status==='active'?'bgr':s.status==='expired'?'br':'ba'}">${s.status}</span></td>
+            </tr>`;}).join('') : '<tr><td colspan="7" class="empty">No services found</td></tr>'}
+        </tbody></table>
+      </div>
+    </div>`;
+}
+
+async function reportMembers(rc) {
+  const owners  = members.filter(m=>m.ownership==='Owner');
+  const tenants = members.filter(m=>m.ownership==='Tenant');
+  const active  = members.filter(m=>m.status==='active');
+  const vehicles= members.reduce((s,m)=>s+[m.vehicle1_no,m.vehicle2_no].filter(Boolean).length,0);
+
+  rc.innerHTML = `
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px">
+      <div class="sc"><div class="lb">Total Members</div><div class="vl">${members.length}</div></div>
+      <div class="sc"><div class="lb">Owners</div><div class="vl" style="color:#1d4ed8">${owners.length}</div></div>
+      <div class="sc"><div class="lb">Tenants</div><div class="vl" style="color:#5b21b6">${tenants.length}</div></div>
+      <div class="sc"><div class="lb">Vehicles Registered</div><div class="vl">${vehicles}</div></div>
+    </div>
+    <div class="card">
+      <div class="card-head"><h3>Member Directory</h3><button class="btn btn-sm" onclick="exportReportCSV('members')"><i class="ti ti-download"></i> Export CSV</button></div>
+      <div class="tbl-wrap">
+        <table><thead><tr><th>Flat</th><th>Name</th><th>Mobile</th><th>Email</th><th>Type</th><th>Status</th><th>Move-In</th><th>Parking</th><th>Vehicles</th></tr></thead>
+        <tbody>
+          ${members.length ? members.map(m=>`<tr>
+            <td style="font-weight:600">${m.wing}-${m.flat}</td>
+            <td>${m.name}</td>
+            <td style="font-size:11px">${m.mobile||'—'}</td>
+            <td style="font-size:11px">${m.email||'—'}</td>
+            <td><span class="badge ${m.ownership==='Tenant'?'bp':'bb'}">${m.ownership||'Owner'}</span></td>
+            <td><span class="badge ${m.status==='active'?'bgr':'bg'}">${m.status||'active'}</span></td>
+            <td style="font-size:11px">${m.move_in||'—'}</td>
+            <td style="font-size:11px">${m.parking_slot||'—'}</td>
+            <td style="font-size:11px">${[m.vehicle1_no,m.vehicle2_no].filter(Boolean).join(', ')||'—'}</td>
+          </tr>`).join('') : '<tr><td colspan="9" class="empty">No members found</td></tr>'}
+        </tbody></table>
+      </div>
+    </div>`;
+}
+
+function exportReportCSV(type) {
+  let rows=[], filename='';
+  if (type==='dues') {
+    rows=[['Flat','Month','Amount','Due Date','Status','Payment Mode','Paid Date']];
+    dues.forEach(d=>rows.push([d.flat,d.month,d.amount,d.due_date,d.status,d.payment_mode||'',d.paid_date||'']));
+    filename=`dues_${CS?.name||'society'}`;
+  } else if (type==='expiry') {
+    rows=[['Service','Category','Vendor','Phone','Expiry Date','Days Left','Status']];
+    services.forEach(s=>rows.push([s.name,s.category,s.vendor||'',s.vendor_phone||'',s.expiry_date||'',daysUntil(s.expiry_date)<9999?daysUntil(s.expiry_date):'',s.status]));
+    filename=`services_${CS?.name||'society'}`;
+  } else if (type==='members') {
+    rows=[['Flat','Name','Mobile','Email','Type','Status','Move-In','Parking','Vehicle 1','Vehicle 2']];
+    members.forEach(m=>rows.push([m.wing+'-'+m.flat,m.name,m.mobile||'',m.email||'',m.ownership||'',m.status||'',m.move_in||'',m.parking_slot||'',m.vehicle1_no||'',m.vehicle2_no||'']));
+    filename=`members_${CS?.name||'society'}`;
+  } else if (type==='pl-income') {
+    rows=[['Date','Category','Description','From','Mode','Amount']];
+    accounts.filter(a=>a.type==='income').forEach(a=>rows.push([a.date,a.category,a.description,a.vendor_or_from||'',a.payment_mode||'',a.amount]));
+    filename=`income_${CS?.name||'society'}`;
+  } else if (type==='pl-expense') {
+    rows=[['Date','Category','Description','Vendor','Mode','Amount']];
+    accounts.filter(a=>a.type==='expense').forEach(a=>rows.push([a.date,a.category,a.description,a.vendor_or_from||'',a.payment_mode||'',a.amount]));
+    filename=`expense_${CS?.name||'society'}`;
+  }
+  if (!rows.length) { toast('No data to export', false); return; }
+  const csv  = rows.map(r=>r.map(x=>`"${x||''}"`).join(',')).join('\n');
+  const blob = new Blob([csv],{type:'text/csv'});
+  const url  = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href=url; link.download=filename+'_'+new Date().toISOString().split('T')[0]+'.csv';
+  link.click(); URL.revokeObjectURL(url);
+  toast('CSV downloaded ✓');
 }
 
 // ── MOBILE SIDEBAR ────────────────────────────────────────
