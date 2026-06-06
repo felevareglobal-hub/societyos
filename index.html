@@ -270,7 +270,7 @@ tr:hover td{background:#fafafa}
         <div class="card">
           <div class="card-head"><h3 id="adm-lbl">Admins</h3><button class="btn btn-p" onclick="openAdminModal()"><i class="ti ti-plus"></i> Add Admin</button></div>
           <div class="tbl-wrap">
-            <table><thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Society</th><th></th></tr></thead>
+            <table><thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Society</th><th>Current Password</th><th>Actions</th></tr></thead>
             <tbody id="adm-tbody"></tbody></table>
           </div>
         </div>
@@ -330,6 +330,20 @@ tr:hover td{background:#fafafa}
         <div class="card">
           <div class="card-head"><h3 id="amen-lbl">Amenities</h3><button class="btn btn-p" onclick="openAmenModal(-1)"><i class="ti ti-plus"></i> Add Amenity</button></div>
           <div class="tbl-wrap"><table><thead><tr><th>Amenity</th><th>Type</th><th>Location</th><th>Timings</th><th>Capacity</th><th>Charges</th><th>Status</th><th>Last Serviced</th><th></th></tr></thead><tbody id="amen-tbody"></tbody></table></div>
+        </div>
+      </div>
+
+      <!-- ACTIVITY LOG -->
+      <div class="page" id="page-actlog">
+        <div class="card">
+          <div class="card-head">
+            <h3 id="act-lbl">Activity Log</h3>
+            <button class="btn" onclick="renderActLog()" style="gap:5px"><i class="ti ti-refresh"></i> Refresh</button>
+          </div>
+          <div class="tbl-wrap">
+            <table><thead><tr><th>Date & Time</th><th>Admin Name</th><th>Email</th><th>Action</th><th>Details</th></tr></thead>
+            <tbody id="act-tbody"></tbody></table>
+          </div>
         </div>
       </div>
 
@@ -394,6 +408,25 @@ tr:hover td{background:#fafafa}
     <div class="md-foot">
       <button class="btn" onclick="closeModal('mo-society')">Cancel</button>
       <button class="btn btn-p" onclick="saveSociety()"><i class="ti ti-check"></i> Save Society</button>
+    </div>
+  </div>
+</div>
+
+<!-- MASTER RESET PASSWORD MODAL -->
+<div class="mo" id="mo-master-reset">
+  <div class="md" style="max-width:400px">
+    <div class="md-head"><h3>Reset Admin Password</h3><button class="md-close" onclick="closeModal('mo-master-reset')"><i class="ti ti-x"></i></button></div>
+    <div class="md-body">
+      <p style="font-size:13px;color:#64748b;margin-bottom:16px">Resetting password for: <strong id="mr-admin-name"></strong></p>
+      <div class="fg">
+        <div class="fi full"><label>New Password *</label><input type="password" id="mr-pass" placeholder="Min 6 characters"></div>
+        <div class="fi full"><label>Confirm Password *</label><input type="password" id="mr-pass2" placeholder="Repeat password"></div>
+      </div>
+      <div id="mr-msg" style="margin-top:10px;font-size:12px"></div>
+    </div>
+    <div class="md-foot">
+      <button class="btn" onclick="closeModal('mo-master-reset')">Cancel</button>
+      <button class="btn btn-p" onclick="doMasterReset()"><i class="ti ti-key"></i> Reset Password</button>
     </div>
   </div>
 </div>
@@ -646,7 +679,8 @@ const PAGE_META = {
   dues:      ()=> CS ? CS.name+' — Dues' : '',
   services:  ()=> CS ? CS.name+' — Services' : '',
   amenities: ()=> CS ? CS.name+' — Amenities' : '',
-  notices:   ()=> CS ? CS.name+' — Notices' : ''
+  notices:   ()=> CS ? CS.name+' — Notices' : '',
+  actlog:    ()=> 'Password changes & admin actions'
 };
 
 function goPage(id) {
@@ -673,6 +707,7 @@ function goPage(id) {
   if (id==='services')  renderSvc();
   if (id==='amenities') renderAmen();
   if (id==='notices')   renderNotices();
+  if (id==='actlog')    renderActLog();
   // Close sidebar on mobile
   if (window.innerWidth<768) {
     $('sidebar').classList.remove('open');
@@ -740,7 +775,8 @@ async function doLogin() {
       $('master-nav').innerHTML = `
         <div class="sb-sec">Master Admin</div>
         <div class="ni" data-page="societies"><i class="ti ti-building-skyscraper"></i> All Societies</div>
-        <div class="ni" data-page="admins"><i class="ti ti-shield-check"></i> Manage Admins</div>`;
+        <div class="ni" data-page="admins"><i class="ti ti-shield-check"></i> Manage Admins</div>
+        <div class="ni" data-page="actlog"><i class="ti ti-history"></i> Activity Log</div>`;
       // Load all societies into switcher
       await loadAllSocs();
     } else {
@@ -780,6 +816,8 @@ async function doResetPass() {
     const r = await GET('admins',`?email=eq.${encodeURIComponent(email)}`);
     if (!r.length) { msg.style.color='#ef4444'; msg.textContent='No account found with this email'; return; }
     await PATCH('admins',r[0].id,{password_hash:pass});
+    // Log the activity
+    await logActivity(r[0].id, r[0].name, r[0].email, 'Password Changed', `Password was changed via Forgot Password on ${new Date().toLocaleString('en-IN')}`);
     msg.style.color='#16a34a'; msg.textContent='✓ Password reset! You can now log in.';
     setTimeout(()=>closeModal('mo-forgot'),2000);
   } catch(e) { msg.style.color='#ef4444'; msg.textContent='Error: '+e.message; }
@@ -875,7 +913,11 @@ async function renderAdmins() {
       <td style="font-size:11px">${a.email}</td>
       <td><span class="badge ${a.role==='master'?'bp':'bb'}">${a.role==='master'?'Master':'Society Admin'}</span></td>
       <td style="font-size:11px">${a.society_id?sm[a.society_id]||'—':'—'}</td>
-      <td><button class="ab" onclick="deleteAdmin('${a.id}')" style="color:#ef4444" title="Delete"><i class="ti ti-trash"></i></button></td>
+      <td style="font-size:11px">${a.password_hash||'—'}</td>
+      <td>
+        <button class="ab" onclick="masterResetPassword('${a.id}','${a.name}','${a.email}')" style="color:#2563eb" title="Reset Password"><i class="ti ti-key"></i></button>
+        <button class="ab" onclick="deleteAdmin('${a.id}')" style="color:#ef4444" title="Delete"><i class="ti ti-trash"></i></button>
+      </td>
     </tr>`).join('');
   } catch(e){toast('Error loading admins: '+e.message,false);}
 }
@@ -894,6 +936,8 @@ async function saveAdmin() {
   if (pass.length<6){toast('Password min 6 characters',false);return;}
   try {
     await POST('admins',{name,email:email.toLowerCase(),password_hash:pass,role:fv('a-role'),society_id:fv('a-soc')||null});
+    // Log new admin creation
+    await logActivity(null, name, email.toLowerCase(), 'Admin Created', `New admin created by Master Admin (${CU.name}) on ${new Date().toLocaleString('en-IN')}`);
     closeModal('mo-admin'); renderAdmins(); toast('Admin added');
   } catch(e){toast('Error: '+(e.message.includes('unique')?'Email already exists':e.message),false);}
 }
@@ -1151,6 +1195,74 @@ async function saveNotice(){
 async function resolveNotice(id){try{await PATCH('notices',id,{status:'resolved'});const n=notices.find(x=>x.id===id);if(n)n.status='resolved';renderNotices();toast('Marked resolved');}catch(e){toast('Error: '+e.message,false);}}
 async function deleteNotice(id){if(!confirm('Delete?'))return;try{await DELETE('notices',id);notices=notices.filter(n=>n.id!==id);renderNotices();toast('Deleted');}catch(e){toast('Error: '+e.message,false);}}
 
+
+// ═══════════════════════════════════════════════
+// ACTIVITY LOG
+// ═══════════════════════════════════════════════
+async function logActivity(adminId, adminName, adminEmail, action, details) {
+  try {
+    await POST('activity_log', {
+      admin_id: adminId,
+      admin_name: adminName,
+      admin_email: adminEmail,
+      action,
+      details
+    });
+  } catch(e) { console.error('Log error:', e); }
+}
+
+async function renderActLog() {
+  try {
+    const logs = await GET('activity_log', '?order=created_at.desc&limit=100');
+    $('act-lbl').textContent = logs.length + ' Activities';
+    const tb = $('act-tbody');
+    if (!logs.length) { tb.innerHTML='<tr><td colspan="5" class="empty">No activity recorded yet</td></tr>'; return; }
+    tb.innerHTML = logs.map(l => {
+      const dt = new Date(l.created_at).toLocaleString('en-IN');
+      return `<tr>
+        <td style="font-size:11px;white-space:nowrap">${dt}</td>
+        <td style="font-weight:600">${l.admin_name||'—'}</td>
+        <td style="font-size:11px">${l.admin_email||'—'}</td>
+        <td><span class="badge ${l.action==='Password Changed'?'br':l.action==='Password Reset by Master'?'bp':'bb'}">${l.action}</span></td>
+        <td style="font-size:11px;color:#64748b">${l.details||'—'}</td>
+      </tr>`;
+    }).join('');
+  } catch(e) { toast('Error loading log: '+e.message, false); }
+}
+
+// ═══════════════════════════════════════════════
+// MASTER RESET PASSWORD
+// ═══════════════════════════════════════════════
+let mrAdminId=null, mrAdminName='', mrAdminEmail='';
+
+function masterResetPassword(id, name, email) {
+  mrAdminId=id; mrAdminName=name; mrAdminEmail=email;
+  $('mr-admin-name').textContent = name + ' (' + email + ')';
+  $('mr-pass').value=''; $('mr-pass2').value='';
+  $('mr-msg').textContent='';
+  openModal('mo-master-reset');
+}
+
+async function doMasterReset() {
+  const pass  = $('mr-pass').value.trim();
+  const pass2 = $('mr-pass2').value.trim();
+  const msg   = $('mr-msg');
+  if (!pass||!pass2) { msg.style.color='#ef4444'; msg.textContent='Both fields required'; return; }
+  if (pass.length<6) { msg.style.color='#ef4444'; msg.textContent='Password must be at least 6 characters'; return; }
+  if (pass!==pass2)  { msg.style.color='#ef4444'; msg.textContent='Passwords do not match'; return; }
+  try {
+    await PATCH('admins', mrAdminId, {password_hash: pass});
+    // Log the activity
+    await logActivity(
+      mrAdminId, mrAdminName, mrAdminEmail,
+      'Password Reset by Master',
+      `Password was reset by Master Admin (${CU.name}) on ${new Date().toLocaleString('en-IN')}`
+    );
+    msg.style.color='#16a34a';
+    msg.textContent='✓ Password reset successfully!';
+    setTimeout(()=>{ closeModal('mo-master-reset'); renderAdmins(); }, 1500);
+  } catch(e) { msg.style.color='#ef4444'; msg.textContent='Error: '+e.message; }
+}
 
 // ── MOBILE SIDEBAR ────────────────────────────────────────
 function toggleSidebar() {
