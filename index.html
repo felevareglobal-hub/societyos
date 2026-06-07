@@ -1040,21 +1040,37 @@ const PAGE_META = {
 };
 
 function goPage(id) {
-  // Hide all pages
+  // ── Plan lock check (for society admins only) ──
+  const lockedMods = ['services','amenities','tenants','rent','accounts','reports'];
+  const checkId = id==='rent' ? 'tenants' : id;
+  if (lockedMods.includes(id) && CU && CU.role !== 'master' && !hasModule(checkId)) {
+    document.querySelectorAll('.page').forEach(p=>p.classList.remove('show'));
+    document.querySelectorAll('.ni').forEach(n=>n.classList.remove('active'));
+    const lockPg = $('page-'+id);
+    if (lockPg) {
+      lockPg.classList.add('show');
+      let ld = lockPg.querySelector('.lock-notice');
+      if (!ld) { ld=document.createElement('div'); ld.className='lock-notice'; lockPg.insertBefore(ld,lockPg.firstChild); }
+      ld.innerHTML = getLockedHTML(checkId);
+    }
+    const niL = document.querySelector('.ni[data-page="'+id+'"]');
+    if (niL) niL.classList.add('active');
+    $('pg-title').textContent = PAGE_TITLES[id]||id;
+    $('pg-meta').textContent  = '🔒 Locked — Upgrade required';
+    if (window.innerWidth<768) { $('sidebar').classList.remove('open'); if($('sb-overlay'))$('sb-overlay').classList.remove('show'); }
+    return;
+  }
+  // ── Normal navigation ──
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('show'));
-  // Deactivate all nav items
   document.querySelectorAll('.ni').forEach(n=>n.classList.remove('active'));
-  // Show target page
   const pg = $('page-'+id);
   if (!pg) { toast('Page not found: '+id, false); return; }
+  const ln = pg.querySelector('.lock-notice'); if(ln) ln.remove();
   pg.classList.add('show');
-  // Activate matching nav item
   const ni = document.querySelector('.ni[data-page="'+id+'"]');
   if (ni) ni.classList.add('active');
-  // Update topbar
   $('pg-title').textContent = PAGE_TITLES[id]||id;
   $('pg-meta').textContent  = PAGE_META[id] ? PAGE_META[id]() : '';
-  // Load data
   if (id==='dashboard') refreshDashboard();
   if (id==='societies') renderSocieties();
   if (id==='admins')    renderAdmins();
@@ -1064,18 +1080,14 @@ function goPage(id) {
   if (id==='amenities') renderAmen();
   if (id==='notices')   renderNotices();
   if (id==='actlog')    renderActLog();
-  if (id==='tenants')   renderTenants();
-  if (id==='rent')      renderRent();
   if (id==='plans')     renderPlans();
   if (id==='pricing')   renderPricing();
   if (id==='payments')  renderPayments();
+  if (id==='tenants')   renderTenants();
+  if (id==='rent')      renderRent();
   if (id==='accounts')  renderAccounts();
   if (id==='reports')   renderReports();
-  // Close sidebar on mobile
-  if (window.innerWidth<768) {
-    $('sidebar').classList.remove('open');
-    $('sb-overlay').classList.remove('show');
-  }
+  if (window.innerWidth<768) { $('sidebar').classList.remove('open'); if($('sb-overlay'))$('sb-overlay').classList.remove('show'); }
 }
 
 // Attach sidebar nav click via delegation
@@ -2233,7 +2245,7 @@ function getLockedHTML(module) {
     <i class="ti ti-lock"></i>
     <h4>This module is locked</h4>
     <p>Upgrade to <strong>${planName}</strong> plan to access this feature</p>
-    <button class="btn btn-p" onclick="goPage('pricing',document.getElementById('nav-pricing'))">
+    <button class="btn btn-p" onclick="goPage('pricing')">
       <i class="ti ti-crown"></i> View Plans & Upgrade
     </button>
   </div>`;
@@ -2257,40 +2269,7 @@ function applyPlanToUI() {
   }
 }
 
-// Override goPage to check module access
-const _goPageOriginal = goPage;
-function goPage(id, el) {
-  // Check if module is locked
-  const lockedModules = ['services','amenities','tenants','rent','accounts','reports'];
-  if (lockedModules.includes(id) && CU?.role !== 'master' && !hasModule(id==='rent'?'tenants':id)) {
-    // Show page but with locked content
-    document.querySelectorAll('.page').forEach(p=>p.classList.remove('show'));
-    document.querySelectorAll('.ni').forEach(n=>n.classList.remove('active'));
-    const pageEl = $('page-'+id);
-    if (pageEl) {
-      // Inject locked overlay
-      const contentDiv = pageEl.querySelector('.card, .stats') || pageEl;
-      pageEl.classList.add('show');
-      // Show locked message at top
-      let lockDiv = pageEl.querySelector('.lock-notice');
-      if (!lockDiv) {
-        lockDiv = document.createElement('div');
-        lockDiv.className = 'lock-notice';
-        pageEl.insertBefore(lockDiv, pageEl.firstChild);
-      }
-      lockDiv.innerHTML = getLockedHTML(id==='rent'?'tenants':id);
-    }
-    if (el) el.classList.add('active');
-    $('pg-title').textContent = PAGE_TITLES[id]||id;
-    $('pg-meta').textContent = '🔒 Locked — Upgrade required';
-    if (window.innerWidth<768) { $('sidebar').classList.remove('open'); $('sb-overlay').classList.remove('show'); }
-    return;
-  }
-  // Remove lock notice if exists
-  const pageEl = $('page-'+id);
-  if (pageEl) { const ln=pageEl.querySelector('.lock-notice'); if(ln) ln.remove(); }
-  _goPageOriginal(id, el);
-}
+
 
 // ═══════════════════════════════════════════════
 // PLANS PAGE (Master Admin)
@@ -2634,9 +2613,7 @@ function closeSidebar() {
 }
 
 // Close sidebar after nav on mobile
-const _origGoPage = goPage;
-// Override goPage to also close sidebar on mobile
-const goPageOrig = goPage;
+
 </script>
 </body>
 </html>
