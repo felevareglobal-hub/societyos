@@ -218,6 +218,9 @@ tr:hover td{background:#fafafa}
     <button class="login-btn" id="li-btn" onclick="doLogin()"><i class="ti ti-login" style="margin-right:6px"></i> Sign In</button>
     <div class="login-err" id="li-err"></div>
     <div class="forgot-link" onclick="openModal('mo-forgot')">Forgot Password?</div>
+    <div style="text-align:center;margin-top:10px">
+      <span onclick="openModal('mo-signup')" style="font-size:12px;color:#16a34a;cursor:pointer;font-weight:600"><i class="ti ti-user-plus" style="margin-right:4px"></i>Request Access — Register Your Society</span>
+    </div>
   </div>
 </div>
 
@@ -456,6 +459,23 @@ tr:hover td{background:#fafafa}
         </div>
       </div>
 
+      <!-- SIGN UP REQUESTS -->
+      <div class="page" id="page-signup-requests">
+        <div class="stats" style="margin-bottom:16px">
+          <div class="sc"><div class="lb">Total Requests</div><div class="vl" id="req-total">0</div><div class="sb">All time</div></div>
+          <div class="sc"><div class="lb">Pending</div><div class="vl" id="req-pending" style="color:#92400e">0</div><div class="sb">Awaiting review</div></div>
+          <div class="sc"><div class="lb">Approved</div><div class="vl" id="req-approved" style="color:#16a34a">0</div><div class="sb">Accounts created</div></div>
+          <div class="sc"><div class="lb">Rejected</div><div class="vl" id="req-rejected" style="color:#991b1b">0</div><div class="sb">Declined</div></div>
+        </div>
+        <div class="fb">
+          <div class="fc active" data-filter="req-all">All</div>
+          <div class="fc" data-filter="req-pending">Pending</div>
+          <div class="fc" data-filter="req-approved">Approved</div>
+          <div class="fc" data-filter="req-rejected">Rejected</div>
+        </div>
+        <div id="req-list"></div>
+      </div>
+
       <!-- SUBSCRIPTION PAYMENTS -->
       <div class="page" id="page-payments">
         <!-- Summary -->
@@ -562,6 +582,69 @@ tr:hover td{background:#fafafa}
 </div>
 
 <!-- ===== MODALS ===== -->
+
+<!-- SIGN UP / REQUEST ACCESS MODAL -->
+<div class="mo" id="mo-signup">
+  <div class="md">
+    <div class="md-head">
+      <div>
+        <h3>Register Your Society</h3>
+        <p style="font-size:11px;color:#64748b;margin-top:2px">Fill in the details below. Our team will review and activate your account.</p>
+      </div>
+      <button class="md-close" onclick="closeModal('mo-signup')"><i class="ti ti-x"></i></button>
+    </div>
+    <div class="md-body">
+      <!-- Plan Selection at top -->
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:20px" id="signup-plan-select">
+        <div class="plan-card basic" id="sp-basic" onclick="selectSignupPlan('basic')" style="cursor:pointer;padding:14px;border-width:2px">
+          <h3 style="font-size:14px;color:#475569">Basic</h3>
+          <div style="font-size:18px;font-weight:700;color:#475569;margin:6px 0">₹999<span style="font-size:11px;font-weight:400">/mo</span></div>
+          <div style="font-size:11px;color:#64748b">Members, Dues, Notices</div>
+        </div>
+        <div class="plan-card standard" id="sp-standard" onclick="selectSignupPlan('standard')" style="cursor:pointer;padding:14px;border-width:2px">
+          <div style="font-size:9px;font-weight:700;color:#2563eb;margin-bottom:4px">POPULAR</div>
+          <h3 style="font-size:14px;color:#1e40af">Standard</h3>
+          <div style="font-size:18px;font-weight:700;color:#1e40af;margin:6px 0">₹1999<span style="font-size:11px;font-weight:400">/mo</span></div>
+          <div style="font-size:11px;color:#64748b">+ Services, Tenants</div>
+        </div>
+        <div class="plan-card premium" id="sp-premium" onclick="selectSignupPlan('premium')" style="cursor:pointer;padding:14px;border-width:2px">
+          <div style="font-size:9px;font-weight:700;color:#7c3aed;margin-bottom:4px">ALL FEATURES</div>
+          <h3 style="font-size:14px;color:#5b21b6">Premium</h3>
+          <div style="font-size:18px;font-weight:700;color:#5b21b6;margin:6px 0">₹2999<span style="font-size:11px;font-weight:400">/mo</span></div>
+          <div style="font-size:11px;color:#64748b">+ Accounts, Reports</div>
+        </div>
+      </div>
+      <input type="hidden" id="su-plan" value="basic">
+
+      <div class="fg">
+        <div class="fd"><i class="ti ti-building" style="font-size:12px"></i> Society Details</div>
+        <div class="fi full"><label>Society Name *</label><input id="su-soc-name" placeholder="e.g. Sunrise Heights CHS"></div>
+        <div class="fi full"><label>Address</label><textarea id="su-soc-addr" rows="2" placeholder="Society address"></textarea></div>
+        <div class="fi"><label>City *</label><input id="su-city" placeholder="Mumbai"></div>
+        <div class="fi"><label>State</label><input id="su-state" placeholder="Maharashtra"></div>
+        <div class="fi"><label>Pincode</label><input id="su-pin" placeholder="400001"></div>
+        <div class="fi"><label>Registration No.</label><input id="su-reg" placeholder="CHS Reg. No."></div>
+        <div class="fi"><label>Total Units / Flats</label><input id="su-units" type="number" placeholder="e.g. 50"></div>
+        <div class="fi"><label>Wings / Blocks</label><input id="su-wings" placeholder="A, B, C, D"></div>
+
+        <div class="fd"><i class="ti ti-user" style="font-size:12px"></i> Your Details (Admin)</div>
+        <div class="fi"><label>Your Full Name *</label><input id="su-name" placeholder="Secretary / Chairman name"></div>
+        <div class="fi"><label>Designation</label><select id="su-desig"><option>Secretary</option><option>Chairman</option><option>Treasurer</option><option>Committee Member</option><option>Property Manager</option><option>Other</option></select></div>
+        <div class="fi"><label>Email *</label><input id="su-email" type="email" placeholder="your@email.com"></div>
+        <div class="fi"><label>Mobile *</label><input id="su-mobile" type="tel" placeholder="+91 XXXXX XXXXX"></div>
+
+        <div class="fd"><i class="ti ti-calendar" style="font-size:12px"></i> Billing Preference</div>
+        <div class="fi"><label>Billing Cycle</label><select id="su-billing"><option value="monthly">Monthly</option><option value="yearly">Yearly (Save 20%)</option></select></div>
+        <div class="fi full"><label>Message / Notes (optional)</label><textarea id="su-notes" rows="2" placeholder="Any specific requirements or questions…"></textarea></div>
+      </div>
+      <div id="su-msg" style="margin-top:12px;font-size:12px;padding:10px;border-radius:7px;display:none"></div>
+    </div>
+    <div class="md-foot">
+      <button class="btn" onclick="closeModal('mo-signup')">Cancel</button>
+      <button class="btn btn-p" onclick="submitSignupRequest()" id="su-btn"><i class="ti ti-send"></i> Submit Request</button>
+    </div>
+  </div>
+</div>
 
 <!-- FORGOT PASSWORD -->
 <div class="mo" id="mo-forgot">
@@ -944,6 +1027,21 @@ tr:hover td{background:#fafafa}
   </div>
 </div>
 
+<!-- REJECT MODAL -->
+<div class="mo" id="mo-reject">
+  <div class="md" style="max-width:420px">
+    <div class="md-head"><h3>Reject Request</h3><button class="md-close" onclick="closeModal('mo-reject')"><i class="ti ti-x"></i></button></div>
+    <div class="md-body">
+      <p style="font-size:13px;color:#64748b;margin-bottom:14px">Rejecting request from: <strong id="rej-name"></strong></p>
+      <div class="fi full"><label>Reason for Rejection (shown to applicant)</label><textarea id="rej-reason" rows="3" placeholder="e.g. Incomplete information, duplicate request…"></textarea></div>
+    </div>
+    <div class="md-foot">
+      <button class="btn" onclick="closeModal('mo-reject')">Cancel</button>
+      <button class="btn" style="background:#fee2e2;color:#991b1b;border-color:#fecaca" onclick="confirmReject()"><i class="ti ti-x"></i> Reject Request</button>
+    </div>
+  </div>
+</div>
+
 <!-- NOTICE MODAL -->
 <div class="mo" id="mo-notice">
   <div class="md" style="max-width:480px">
@@ -1035,6 +1133,7 @@ const PAGE_META = {
   plans:     ()=> 'Manage subscription plans for societies',
   pricing:   ()=> 'Choose the right plan for your society',
   payments:  ()=> 'Track all subscription payments from societies',
+  'signup-requests': ()=> 'Review and approve society registration requests',
   accounts:  ()=> CS ? CS.name+' — Income & Expenses' : '',
   reports:   ()=> CS ? CS.name+' — Reports' : ''
 };
@@ -1082,7 +1181,8 @@ function goPage(id) {
   if (id==='actlog')    renderActLog();
   if (id==='plans')     renderPlans();
   if (id==='pricing')   renderPricing();
-  if (id==='payments')  renderPayments();
+  if (id==='payments')        renderPayments();
+  if (id==='signup-requests') renderSignupRequests();
   if (id==='tenants')   renderTenants();
   if (id==='rent')      renderRent();
   if (id==='accounts')  renderAccounts();
@@ -1151,9 +1251,12 @@ async function doLogin() {
         <div class="sb-sec">Master Admin</div>
         <div class="ni" data-page="societies"><i class="ti ti-building-skyscraper"></i> All Societies</div>
         <div class="ni" data-page="admins"><i class="ti ti-shield-check"></i> Manage Admins</div>
+        <div class="ni" data-page="signup-requests"><i class="ti ti-user-plus"></i> Sign Up Requests <span id="req-badge" style="background:#ef4444;color:#fff;font-size:9px;padding:1px 6px;border-radius:10px;margin-left:4px;display:none">0</span></div>
         <div class="ni" data-page="actlog"><i class="ti ti-history"></i> Activity Log</div>
         <div class="ni" data-page="plans"><i class="ti ti-packages"></i> Plans & Pricing</div>
         <div class="ni" data-page="payments"><i class="ti ti-cash"></i> Subscription Payments</div>`;
+      // Check pending requests count
+      checkPendingRequests();
       // Load all societies into switcher
       await loadAllSocs();
     } else {
@@ -1771,6 +1874,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const f = fc.dataset.filter;
     if (f.startsWith('acc-'))  { accFilter=f.replace('acc-','');  renderAccounts(); }
     if (f.startsWith('rent-')) { rentFilter=f.replace('rent-',''); renderRent(); }
+    if (f.startsWith('req-'))  { reqFilter=f.replace('req-','');   renderSignupRequests(); }
     if (f.startsWith('rep-')) { repFilter=f.replace('rep-',''); renderReports(); }
   });
 });
@@ -2592,6 +2696,256 @@ function exportPaymentsCSV() {
   link.href=url; link.download=`subscription_payments_${new Date().toISOString().split('T')[0]}.csv`;
   link.click(); URL.revokeObjectURL(url);
   toast('CSV downloaded ✓');
+}
+
+// ═══════════════════════════════════════════════
+// SIGN UP / REQUEST ACCESS
+// ═══════════════════════════════════════════════
+let signupRequests = [], reqFilter = 'all', rejectingId = null;
+
+function selectSignupPlan(plan) {
+  $('su-plan').value = plan;
+  ['basic','standard','premium'].forEach(p => {
+    const el = $('sp-'+p);
+    if (el) el.style.opacity = p===plan ? '1' : '0.5';
+    if (el) el.style.transform = p===plan ? 'scale(1.03)' : 'scale(1)';
+  });
+}
+
+async function submitSignupRequest() {
+  const socName  = fv('su-soc-name').trim();
+  const name     = fv('su-name').trim();
+  const email    = fv('su-email').trim().toLowerCase();
+  const mobile   = fv('su-mobile').trim();
+  const city     = fv('su-city').trim();
+  const plan     = fv('su-plan');
+  const msg      = $('su-msg');
+  const btn      = $('su-btn');
+
+  if (!socName||!name||!email||!mobile||!city) {
+    msg.style.display='block'; msg.style.background='#fee2e2'; msg.style.color='#991b1b';
+    msg.textContent='Please fill in all required fields (Society Name, City, Your Name, Email, Mobile)';
+    return;
+  }
+
+  btn.textContent='Submitting…'; btn.disabled=true;
+  try {
+    // Check if email already registered
+    const existing = await GET('admins', `?email=eq.${encodeURIComponent(email)}`);
+    if (existing.length) {
+      msg.style.display='block'; msg.style.background='#fee2e2'; msg.style.color='#991b1b';
+      msg.textContent='This email is already registered. Please login or use a different email.';
+      btn.innerHTML='<i class="ti ti-send"></i> Submit Request'; btn.disabled=false;
+      return;
+    }
+    // Check duplicate pending request
+    const dupReq = await GET('signup_requests', `?admin_email=eq.${encodeURIComponent(email)}&status=eq.pending`);
+    if (dupReq.length) {
+      msg.style.display='block'; msg.style.background='#fef3c7'; msg.style.color='#92400e';
+      msg.textContent='A request with this email is already pending review. Please wait for approval.';
+      btn.innerHTML='<i class="ti ti-send"></i> Submit Request'; btn.disabled=false;
+      return;
+    }
+
+    await POST('signup_requests', {
+      society_name: socName, society_address: fv('su-soc-addr'),
+      society_city: city, society_state: fv('su-state'),
+      society_pincode: fv('su-pin'), society_reg_no: fv('su-reg'),
+      total_units: parseInt(fv('su-units'))||null, wings: fv('su-wings'),
+      admin_name: name, admin_email: email, admin_mobile: mobile,
+      admin_designation: fv('su-desig'), requested_plan: plan,
+      billing_preference: fv('su-billing'), notes: fv('su-notes'),
+      status: 'pending'
+    });
+
+    msg.style.display='block'; msg.style.background='#dcfce7'; msg.style.color='#166534';
+    msg.textContent='✓ Request submitted successfully! Our team will review and contact you within 24 hours.';
+    btn.innerHTML='<i class="ti ti-check"></i> Submitted!';
+    setTimeout(()=>{ closeModal('mo-signup'); btn.innerHTML='<i class="ti ti-send"></i> Submit Request'; btn.disabled=false; msg.style.display='none'; }, 3000);
+  } catch(e) {
+    msg.style.display='block'; msg.style.background='#fee2e2'; msg.style.color='#991b1b';
+    msg.textContent='Error: '+e.message;
+    btn.innerHTML='<i class="ti ti-send"></i> Submit Request'; btn.disabled=false;
+  }
+}
+
+async function checkPendingRequests() {
+  try {
+    const pending = await GET('signup_requests','?status=eq.pending');
+    const badge = $('req-badge');
+    if (badge) {
+      if (pending.length > 0) {
+        badge.textContent = pending.length;
+        badge.style.display = 'inline';
+      } else {
+        badge.style.display = 'none';
+      }
+    }
+  } catch(e) { console.error('Badge error:', e); }
+}
+
+async function renderSignupRequests() {
+  try {
+    signupRequests = await GET('signup_requests','?order=created_at.desc');
+    const pending  = signupRequests.filter(r=>r.status==='pending');
+    const approved = signupRequests.filter(r=>r.status==='approved');
+    const rejected = signupRequests.filter(r=>r.status==='rejected');
+
+    $('req-total').textContent    = signupRequests.length;
+    $('req-pending').textContent  = pending.length;
+    $('req-approved').textContent = approved.length;
+    $('req-rejected').textContent = rejected.length;
+
+    // Update badge
+    const badge = $('req-badge');
+    if (badge) { badge.textContent=pending.length; badge.style.display=pending.length>0?'inline':'none'; }
+
+    let data = reqFilter==='all' ? signupRequests :
+               reqFilter==='pending'  ? pending  :
+               reqFilter==='approved' ? approved : rejected;
+
+    const list = $('req-list');
+    if (!data.length) { list.innerHTML='<div class="empty">No requests found</div>'; return; }
+
+    list.innerHTML = data.map(r => {
+      const dt = r.created_at ? new Date(r.created_at).toLocaleDateString('en-IN') : '';
+      const sb = r.status==='approved'?'bgr':r.status==='rejected'?'br':'ba';
+      return `<div class="nc" style="margin-bottom:12px">
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap">
+          <div style="flex:1;min-width:200px">
+            <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px">
+              <span class="badge ${sb}">${r.status.toUpperCase()}</span>
+              <span class="plan-tag ${PLAN_BG[r.requested_plan||'basic']}">${(r.requested_plan||'basic').toUpperCase()}</span>
+              <span class="badge bg">${r.billing_preference||'monthly'}</span>
+              <span style="font-size:10px;color:#94a3b8">${dt}</span>
+            </div>
+            <h4 style="font-size:14px;margin-bottom:4px">${r.society_name}</h4>
+            <div style="font-size:12px;color:#64748b;margin-bottom:8px">
+              📍 ${[r.society_city,r.society_state,r.society_pincode].filter(Boolean).join(', ')||'—'}
+              ${r.total_units?` &nbsp;•&nbsp; 🏠 ${r.total_units} units`:''}
+              ${r.society_reg_no?` &nbsp;•&nbsp; Reg: ${r.society_reg_no}`:''}
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:12px">
+              <div><strong>Admin:</strong> ${r.admin_name}</div>
+              <div><strong>Role:</strong> ${r.admin_designation||'—'}</div>
+              <div><strong>Email:</strong> ${r.admin_email}</div>
+              <div><strong>Mobile:</strong> ${r.admin_mobile||'—'}</div>
+              ${r.wings?`<div><strong>Wings:</strong> ${r.wings}</div>`:''}
+              ${r.notes?`<div class="full" style="grid-column:1/-1"><strong>Notes:</strong> ${r.notes}</div>`:''}
+            </div>
+            ${r.rejection_reason?`<div style="margin-top:8px;padding:8px;background:#fee2e2;border-radius:6px;font-size:11px;color:#991b1b"><strong>Rejection reason:</strong> ${r.rejection_reason}</div>`:''}
+          </div>
+          ${r.status==='pending' ? `
+          <div style="display:flex;flex-direction:column;gap:8px;flex-shrink:0">
+            <button class="btn btn-p" style="gap:5px;background:#16a34a;border-color:#16a34a" onclick="approveRequest('${r.id}')">
+              <i class="ti ti-check"></i> Approve
+            </button>
+            <button class="btn" style="gap:5px;background:#fee2e2;color:#991b1b;border-color:#fecaca" onclick="openRejectModal('${r.id}','${r.admin_name}')">
+              <i class="ti ti-x"></i> Reject
+            </button>
+          </div>` : `
+          <div style="flex-shrink:0">
+            <button class="ab" onclick="deleteRequest('${r.id}')" style="color:#ef4444" title="Delete"><i class="ti ti-trash"></i></button>
+          </div>`}
+        </div>
+      </div>`;
+    }).join('');
+  } catch(e) { toast('Error: '+e.message, false); }
+}
+
+async function approveRequest(id) {
+  const req = signupRequests.find(r=>r.id===id);
+  if (!req) return;
+  if (!confirm(`Approve request from ${req.admin_name} for ${req.society_name}?
+
+This will:
+✓ Create the society
+✓ Create admin account
+✓ Send them login credentials
+
+Temporary password will be: Society@1234`)) return;
+
+  try {
+    // 1. Create society
+    const socRes = await POST('societies', {
+      name: req.society_name, address: req.society_address,
+      city: req.society_city, state: req.society_state,
+      pincode: req.society_pincode, registration_no: req.society_reg_no,
+      total_units: req.total_units, wings: req.wings,
+      secretary_name: req.admin_name, plan: req.requested_plan,
+      plan_assigned_by: CU.name, plan_assigned_at: new Date().toISOString()
+    });
+
+    if (!socRes.length) throw new Error('Failed to create society');
+    const society = socRes[0];
+
+    // 2. Create admin account
+    await POST('admins', {
+      name: req.admin_name, email: req.admin_email,
+      password_hash: 'Society@1234', role: 'society_admin',
+      society_id: society.id
+    });
+
+    // 3. Update request status
+    await PATCH('signup_requests', id, {
+      status: 'approved', reviewed_by: CU.name,
+      reviewed_at: new Date().toISOString()
+    });
+
+    // 4. Log activity
+    await logActivity(CU.id, CU.name, CU.email, 'Signup Approved',
+      `Approved signup request for ${req.society_name} (${req.admin_email}) with ${req.requested_plan} plan`);
+
+    toast('✓ Approved! Society & admin account created');
+    renderSignupRequests();
+
+    // Show credentials
+    setTimeout(()=>{
+      alert(`✅ Account Created Successfully!
+
+Society: ${req.society_name}
+Admin: ${req.admin_name}
+Email: ${req.admin_email}
+Temporary Password: Society@1234
+Plan: ${req.requested_plan.toUpperCase()}
+
+Please share these credentials with the society admin.
+They can change their password after logging in.`);
+    }, 500);
+  } catch(e) { toast('Error: '+e.message, false); }
+}
+
+function openRejectModal(id, name) {
+  rejectingId = id;
+  $('rej-name').textContent = name;
+  sv('rej-reason','');
+  openModal('mo-reject');
+}
+
+async function confirmReject() {
+  const reason = fv('rej-reason').trim();
+  if (!reason) { toast('Please enter a rejection reason', false); return; }
+  const req = signupRequests.find(r=>r.id===rejectingId);
+  try {
+    await PATCH('signup_requests', rejectingId, {
+      status: 'rejected', rejection_reason: reason,
+      reviewed_by: CU.name, reviewed_at: new Date().toISOString()
+    });
+    await logActivity(CU.id, CU.name, CU.email, 'Signup Rejected',
+      `Rejected signup request for ${req?.society_name} (${req?.admin_email}). Reason: ${reason}`);
+    closeModal('mo-reject');
+    toast('Request rejected');
+    renderSignupRequests();
+  } catch(e) { toast('Error: '+e.message, false); }
+}
+
+async function deleteRequest(id) {
+  if (!confirm('Delete this request permanently?')) return;
+  try {
+    await DELETE('signup_requests', id);
+    signupRequests = signupRequests.filter(r=>r.id!==id);
+    renderSignupRequests(); toast('Deleted');
+  } catch(e) { toast('Error: '+e.message, false); }
 }
 
 // ── MOBILE SIDEBAR ────────────────────────────────────────
