@@ -456,6 +456,39 @@ tr:hover td{background:#fafafa}
         </div>
       </div>
 
+      <!-- SUBSCRIPTION PAYMENTS -->
+      <div class="page" id="page-payments">
+        <!-- Summary -->
+        <div class="stats" style="margin-bottom:16px">
+          <div class="sc"><div class="lb">Total Collected</div><div class="vl" id="pay-total" style="color:#16a34a;font-size:20px">₹0</div><div class="sb">All time</div></div>
+          <div class="sc"><div class="lb">This Month</div><div class="vl" id="pay-month" style="font-size:20px">₹0</div><div class="sb">Current month</div></div>
+          <div class="sc"><div class="lb">Pending</div><div class="vl" id="pay-pending" style="color:#991b1b;font-size:20px">0</div><div class="sb">Awaiting payment</div></div>
+          <div class="sc"><div class="lb">Active Societies</div><div class="vl" id="pay-active" style="font-size:20px">0</div><div class="sb">Paid & active</div></div>
+        </div>
+        <!-- Payment Records -->
+        <div class="card">
+          <div class="card-head">
+            <h3 id="pay-lbl">Payment Records</h3>
+            <div style="display:flex;gap:8px">
+              <button class="btn" onclick="exportPaymentsCSV()"><i class="ti ti-download"></i> Export CSV</button>
+              <button class="btn btn-p" onclick="openPaymentModal()"><i class="ti ti-plus"></i> Record Payment</button>
+            </div>
+          </div>
+          <div class="tbl-wrap">
+            <table><thead><tr><th>Date</th><th>Society</th><th>Plan</th><th>Period</th><th>Amount (₹)</th><th>Mode</th><th>Reference</th><th>Status</th><th></th></tr></thead>
+            <tbody id="pay-tbody"></tbody></table>
+          </div>
+        </div>
+        <!-- Payment Reminder Section -->
+        <div class="card">
+          <div class="card-head"><h3>Upcoming Renewals</h3></div>
+          <div class="tbl-wrap">
+            <table><thead><tr><th>Society</th><th>Plan</th><th>Expiry Date</th><th>Days Left</th><th>Amount Due (₹)</th><th>Action</th></tr></thead>
+            <tbody id="renewal-tbody"></tbody></table>
+          </div>
+        </div>
+      </div>
+
       <!-- PLANS & PRICING -->
       <div class="page" id="page-plans">
         <!-- Plan Cards -->
@@ -879,6 +912,38 @@ tr:hover td{background:#fafafa}
   </div>
 </div>
 
+<!-- PAYMENT MODAL -->
+<div class="mo" id="mo-payment">
+  <div class="md" style="max-width:560px">
+    <div class="md-head"><h3 id="pay-modal-title">Record Subscription Payment</h3><button class="md-close" onclick="closeModal('mo-payment')"><i class="ti ti-x"></i></button></div>
+    <div class="md-body">
+      <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:12px 14px;margin-bottom:16px;font-size:12px;color:#166534">
+        <i class="ti ti-info-circle" style="margin-right:6px"></i>
+        After recording payment, don't forget to update the society's plan and expiry date in <strong>Plans & Pricing</strong>.
+      </div>
+      <div class="fg">
+        <div class="fi"><label>Society *</label><select id="pm-society"></select></div>
+        <div class="fi"><label>Plan *</label><select id="pm-plan"><option value="basic">Basic</option><option value="standard">Standard</option><option value="premium">Premium</option></select></div>
+        <div class="fi"><label>Billing Period *</label><select id="pm-period"><option value="monthly">Monthly</option><option value="yearly">Yearly</option></select></div>
+        <div class="fi"><label>Amount (₹) *</label><input id="pm-amount" type="number" placeholder="e.g. 1999"></div>
+        <div class="fi"><label>Payment Date *</label><input id="pm-date" type="date"></div>
+        <div class="fi"><label>Payment Mode *</label><select id="pm-mode"><option>UPI</option><option>Bank Transfer / NEFT</option><option>Cash</option><option>Cheque</option><option>IMPS</option><option>RTGS</option></select></div>
+        <div class="fi full"><label>UPI / Transaction Reference *</label><input id="pm-ref" placeholder="UPI ref no. / UTR / Cheque no."></div>
+        <div class="fi"><label>Paid By (Name)</label><input id="pm-paidby" placeholder="Secretary name"></div>
+        <div class="fi"><label>Paid By (Mobile)</label><input id="pm-paidmob" type="tel"></div>
+        <div class="fi"><label>Plan Start Date</label><input id="pm-start" type="date"></div>
+        <div class="fi"><label>Plan End Date</label><input id="pm-end" type="date"></div>
+        <div class="fi"><label>Status</label><select id="pm-stat"><option value="paid">Paid</option><option value="pending">Pending</option><option value="partial">Partial Payment</option></select></div>
+        <div class="fi full"><label>Notes / Remarks</label><textarea id="pm-notes" rows="2" placeholder="Any additional notes…"></textarea></div>
+      </div>
+    </div>
+    <div class="md-foot">
+      <button class="btn" onclick="closeModal('mo-payment')">Cancel</button>
+      <button class="btn btn-p" onclick="savePayment()"><i class="ti ti-check"></i> Record Payment</button>
+    </div>
+  </div>
+</div>
+
 <!-- NOTICE MODAL -->
 <div class="mo" id="mo-notice">
   <div class="md" style="max-width:480px">
@@ -969,6 +1034,7 @@ const PAGE_META = {
   rent:      ()=> CS ? CS.name+' — Rent Tracking' : '',
   plans:     ()=> 'Manage subscription plans for societies',
   pricing:   ()=> 'Choose the right plan for your society',
+  payments:  ()=> 'Track all subscription payments from societies',
   accounts:  ()=> CS ? CS.name+' — Income & Expenses' : '',
   reports:   ()=> CS ? CS.name+' — Reports' : ''
 };
@@ -1002,6 +1068,7 @@ function goPage(id) {
   if (id==='rent')      renderRent();
   if (id==='plans')     renderPlans();
   if (id==='pricing')   renderPricing();
+  if (id==='payments')  renderPayments();
   if (id==='accounts')  renderAccounts();
   if (id==='reports')   renderReports();
   // Close sidebar on mobile
@@ -1073,7 +1140,8 @@ async function doLogin() {
         <div class="ni" data-page="societies"><i class="ti ti-building-skyscraper"></i> All Societies</div>
         <div class="ni" data-page="admins"><i class="ti ti-shield-check"></i> Manage Admins</div>
         <div class="ni" data-page="actlog"><i class="ti ti-history"></i> Activity Log</div>
-        <div class="ni" data-page="plans"><i class="ti ti-packages"></i> Plans & Pricing</div>`;
+        <div class="ni" data-page="plans"><i class="ti ti-packages"></i> Plans & Pricing</div>
+        <div class="ni" data-page="payments"><i class="ti ti-cash"></i> Subscription Payments</div>`;
       // Load all societies into switcher
       await loadAllSocs();
     } else {
@@ -2383,6 +2451,168 @@ async function applyPlanAfterLogin() {
   } else if (CS.plan_expiry && daysUntil(CS.plan_expiry) <= 7) {
     toast(`⚠️ Your plan expires in ${daysUntil(CS.plan_expiry)} days!`, false);
   }
+}
+
+// ═══════════════════════════════════════════════
+// SUBSCRIPTION PAYMENTS
+// ═══════════════════════════════════════════════
+let subPayments = [];
+
+async function renderPayments() {
+  try {
+    // Load payments from activity log where action = 'Payment Recorded'
+    const [logs, socs] = await Promise.all([
+      GET('activity_log','?action=eq.Payment Recorded&order=created_at.desc'),
+      GET('societies','?order=name')
+    ]);
+    subPayments = logs.map(l => {
+      try { return {...l, data: JSON.parse(l.details.replace(/^.*?({.*}).*$/s,'$1'))||{} }; }
+      catch(e) { return {...l, data:{}}; }
+    });
+
+    // Stats
+    const total = subPayments.reduce((s,p)=>s+Number(p.data.amount||0),0);
+    const thisMonth = subPayments.filter(p=>p.created_at?.startsWith(new Date().toISOString().substring(0,7))).reduce((s,p)=>s+Number(p.data.amount||0),0);
+    const pending = subPayments.filter(p=>p.data.status==='pending').length;
+    const active  = socs.filter(s=>s.plan&&s.plan!=='basic').length;
+    $('pay-total').textContent  = '₹'+total.toLocaleString('en-IN');
+    $('pay-month').textContent  = '₹'+thisMonth.toLocaleString('en-IN');
+    $('pay-pending').textContent= pending;
+    $('pay-active').textContent = active;
+    $('pay-lbl').textContent    = subPayments.length+' Payment Record'+(subPayments.length!==1?'s':'');
+
+    // Payment table
+    const tb = $('pay-tbody');
+    if (!subPayments.length) { tb.innerHTML='<tr><td colspan="9" class="empty">No payments recorded yet</td></tr>'; }
+    else {
+      tb.innerHTML = subPayments.map(p=>`<tr>
+        <td style="font-size:11px;white-space:nowrap">${p.created_at?new Date(p.created_at).toLocaleDateString('en-IN'):'—'}</td>
+        <td style="font-weight:600">${p.data.society||'—'}</td>
+        <td><span class="plan-tag ${PLAN_BG[p.data.plan||'basic']}">${(p.data.plan||'basic').toUpperCase()}</span></td>
+        <td style="font-size:11px">${p.data.period||'—'}</td>
+        <td style="font-weight:600;color:#16a34a">₹${Number(p.data.amount||0).toLocaleString('en-IN')}</td>
+        <td style="font-size:11px">${p.data.mode||'—'}</td>
+        <td style="font-size:11px">${p.data.ref||'—'}</td>
+        <td><span class="badge ${p.data.status==='paid'?'bgr':p.data.status==='partial'?'ba':'br'}">${p.data.status||'paid'}</span></td>
+        <td><button class="ab" onclick="deletePaymentLog('${p.id}')" style="color:#ef4444"><i class="ti ti-trash"></i></button></td>
+      </tr>`).join('');
+    }
+
+    // Renewals table
+    const expiring = socs.filter(s=>s.plan_expiry).sort((a,b)=>new Date(a.plan_expiry)-new Date(b.plan_expiry));
+    const rb = $('renewal-tbody');
+    if (!expiring.length) { rb.innerHTML='<tr><td colspan="6" class="empty">No expiry dates set</td></tr>'; }
+    else {
+      rb.innerHTML = expiring.map(s=>{
+        const d = daysUntil(s.plan_expiry);
+        const planObj = allPlans.find(p=>p.id===s.plan)||{price_monthly:0,price_yearly:0};
+        return`<tr>
+          <td style="font-weight:600">${s.name}</td>
+          <td><span class="plan-tag ${PLAN_BG[s.plan||'basic']}">${(s.plan||'basic').toUpperCase()}</span></td>
+          <td style="font-size:11px">${s.plan_expiry}</td>
+          <td style="font-weight:600;color:${d<0?'#991b1b':d<=7?'#991b1b':d<=30?'#92400e':'#16a34a'}">${d<0?'Expired':d+'d left'}</td>
+          <td style="font-size:11px">₹${Number(planObj.price_monthly||0).toLocaleString('en-IN')}/mo or ₹${Number(planObj.price_yearly||0).toLocaleString('en-IN')}/yr</td>
+          <td><button class="btn btn-p" style="padding:4px 10px;font-size:11px" onclick="quickRecordPayment('${s.id}','${s.name}','${s.plan}')"><i class="ti ti-plus"></i> Record Payment</button></td>
+        </tr>`;
+      }).join('');
+    }
+  } catch(e) { toast('Error: '+e.message, false); }
+}
+
+function openPaymentModal(socId=null, socName=null, plan=null) {
+  // Populate society dropdown
+  GET('societies','?order=name').then(socs => {
+    $('pm-society').innerHTML = socs.map(s=>`<option value="${s.id}|${s.name}" ${s.id===socId?'selected':''}>${s.name}</option>`).join('');
+    if (socName) $('pm-society').value = socId+'|'+socName;
+  });
+  if (plan) sv('pm-plan', plan);
+  sv('pm-date', new Date().toISOString().split('T')[0]);
+  sv('pm-start', new Date().toISOString().split('T')[0]);
+  sv('pm-notes','');sv('pm-ref','');sv('pm-paidby','');sv('pm-paidmob','');sv('pm-amount','');
+  // Auto-fill amount when plan/period changes
+  $('pm-plan').onchange = $('pm-period').onchange = function() { autoFillAmount(); };
+  autoFillAmount();
+  openModal('mo-payment');
+}
+
+function autoFillAmount() {
+  const plan = fv('pm-plan');
+  const period = fv('pm-period');
+  const planObj = allPlans.find(p=>p.id===plan);
+  if (planObj) {
+    sv('pm-amount', period==='yearly' ? planObj.price_yearly : planObj.price_monthly);
+    // Auto-set end date
+    const start = fv('pm-start') || new Date().toISOString().split('T')[0];
+    const startDate = new Date(start);
+    if (period==='yearly') startDate.setFullYear(startDate.getFullYear()+1);
+    else startDate.setMonth(startDate.getMonth()+1);
+    sv('pm-end', startDate.toISOString().split('T')[0]);
+  }
+}
+
+function quickRecordPayment(socId, socName, plan) {
+  openPaymentModal(socId, socName, plan);
+}
+
+async function savePayment() {
+  const socVal = fv('pm-society');
+  const amt    = fv('pm-amount');
+  const ref    = fv('pm-ref').trim();
+  if (!socVal||!amt||!ref) { toast('Society, amount and reference required', false); return; }
+  const parts = socVal.split('|');
+  const socId = parts[0], socName = parts[1]||'';
+  const payData = {
+    society: socName, society_id: socId,
+    plan: fv('pm-plan'), period: fv('pm-period'),
+    amount: parseFloat(amt), mode: fv('pm-mode'),
+    ref, paid_by: fv('pm-paidby'), paid_by_mobile: fv('pm-paidmob'),
+    plan_start: fv('pm-start'), plan_end: fv('pm-end'),
+    status: fv('pm-stat'), notes: fv('pm-notes'),
+    recorded_by: CU.name, date: fv('pm-date')
+  };
+  try {
+    // Save as activity log entry
+    await logActivity(CU.id, CU.name, CU.email, 'Payment Recorded',
+      JSON.stringify(payData));
+    // Auto-update society plan and expiry
+    if (payData.status === 'paid') {
+      await PATCH('societies', socId, {
+        plan: payData.plan,
+        plan_expiry: payData.plan_end||null,
+        plan_assigned_by: CU.name,
+        plan_assigned_at: new Date().toISOString()
+      });
+      toast('Payment recorded & plan updated ✓');
+    } else {
+      toast('Payment recorded ✓');
+    }
+    closeModal('mo-payment');
+    renderPayments();
+  } catch(e) { toast('Error: '+e.message, false); }
+}
+
+async function deletePaymentLog(id) {
+  if (!confirm('Delete this payment record?')) return;
+  try { await DELETE('activity_log', id); renderPayments(); toast('Deleted'); }
+  catch(e) { toast('Error: '+e.message, false); }
+}
+
+function exportPaymentsCSV() {
+  const rows=[['Date','Society','Plan','Period','Amount','Mode','Reference','Paid By','Status','Plan Start','Plan End']];
+  subPayments.forEach(p=>rows.push([
+    p.created_at?new Date(p.created_at).toLocaleDateString('en-IN'):'',
+    p.data.society||'', p.data.plan||'', p.data.period||'',
+    p.data.amount||'', p.data.mode||'', p.data.ref||'',
+    p.data.paid_by||'', p.data.status||'',
+    p.data.plan_start||'', p.data.plan_end||''
+  ]));
+  const csv = rows.map(r=>r.map(x=>`"${x||''}"`).join(',')).join('\n');
+  const blob = new Blob([csv],{type:'text/csv'});
+  const url  = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href=url; link.download=`subscription_payments_${new Date().toISOString().split('T')[0]}.csv`;
+  link.click(); URL.revokeObjectURL(url);
+  toast('CSV downloaded ✓');
 }
 
 // ── MOBILE SIDEBAR ────────────────────────────────────────
