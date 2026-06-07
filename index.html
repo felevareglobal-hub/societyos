@@ -174,6 +174,27 @@ tr:hover td{background:#fafafa}
   /* Bottom safe area */
   .sb-bottom{ padding-bottom:max(10px, env(safe-area-inset-bottom)); }
 }
+/* ── PLANS ── */
+.plan-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:20px}
+.plan-card{background:#fff;border:2px solid #e2e8f0;border-radius:12px;padding:20px;text-align:center;transition:all .2s;position:relative}
+.plan-card.basic{border-color:#94a3b8}
+.plan-card.standard{border-color:#2563eb;box-shadow:0 4px 20px rgba(37,99,235,.15)}
+.plan-card.premium{border-color:#7c3aed;box-shadow:0 4px 20px rgba(124,58,237,.15)}
+.plan-card .plan-badge{position:absolute;top:-10px;left:50%;transform:translateX(-50%);padding:3px 12px;border-radius:20px;font-size:10px;font-weight:700;white-space:nowrap}
+.plan-card h3{font-size:18px;font-weight:700;margin-bottom:4px}
+.plan-card .plan-price{font-size:28px;font-weight:700;margin:10px 0 4px}
+.plan-card .plan-price span{font-size:13px;font-weight:400;color:#64748b}
+.plan-card .plan-features{text-align:left;margin:14px 0;font-size:12px}
+.plan-card .plan-features div{padding:5px 0;border-bottom:1px solid #f1f5f9;display:flex;align-items:center;gap:6px}
+.plan-card .plan-features div:last-child{border-bottom:none}
+.locked-overlay{background:#f8fafc;border:2px dashed #e2e8f0;border-radius:10px;padding:40px 20px;text-align:center;margin-bottom:16px}
+.locked-overlay i{font-size:36px;color:#cbd5e1;margin-bottom:10px;display:block}
+.locked-overlay h4{font-size:14px;font-weight:600;color:#475569;margin-bottom:6px}
+.locked-overlay p{font-size:12px;color:#94a3b8;margin-bottom:14px}
+.plan-tag{display:inline-flex;align-items:center;padding:3px 10px;border-radius:20px;font-size:10px;font-weight:700}
+.plan-basic{background:#f1f5f9;color:#475569}
+.plan-standard{background:#dbeafe;color:#1e40af}
+.plan-premium{background:#ede9fe;color:#5b21b6}
 /* ── SMALL PHONES ── */
 @media(max-width:380px){
   .stats{ grid-template-columns:1fr 1fr; }
@@ -228,6 +249,7 @@ tr:hover td{background:#fafafa}
     <div class="ni" data-page="accounts"><i class="ti ti-cash"></i> Accounts</div>
     <div class="sb-sec">Reports</div>
     <div class="ni" data-page="reports"><i class="ti ti-chart-bar"></i> Reports & Analytics</div>
+    <div class="ni" id="nav-pricing" style="display:none" data-page="pricing"><i class="ti ti-crown"></i> Upgrade Plan</div>
     <!-- Master Admin nav — injected by JS after login -->
     <div id="master-nav"></div>
     <div class="sb-bottom">
@@ -432,6 +454,33 @@ tr:hover td{background:#fafafa}
             <tbody id="rent-tbody"></tbody></table>
           </div>
         </div>
+      </div>
+
+      <!-- PLANS & PRICING -->
+      <div class="page" id="page-plans">
+        <!-- Plan Cards -->
+        <div class="plan-grid" id="plan-cards-grid"></div>
+        <!-- Society Plan Assignments -->
+        <div class="card">
+          <div class="card-head">
+            <h3>Society Plan Assignments</h3>
+            <button class="btn" onclick="renderPlans()"><i class="ti ti-refresh"></i> Refresh</button>
+          </div>
+          <div class="tbl-wrap">
+            <table><thead><tr><th>Society</th><th>City</th><th>Current Plan</th><th>Plan Expiry</th><th>Assigned By</th><th>Change Plan</th></tr></thead>
+            <tbody id="plan-assign-tbody"></tbody></table>
+          </div>
+        </div>
+      </div>
+
+      <!-- PRICING PAGE (for society admins) -->
+      <div class="page" id="page-pricing">
+        <div style="text-align:center;margin-bottom:24px">
+          <h2 style="font-size:22px;font-weight:700;color:#1a3c6e">Choose Your Plan</h2>
+          <p style="font-size:13px;color:#64748b;margin-top:6px">Upgrade to unlock more features for your society</p>
+        </div>
+        <div class="plan-grid" id="pricing-cards"></div>
+        <p style="text-align:center;font-size:12px;color:#94a3b8;margin-top:8px">Contact your property manager to upgrade your plan</p>
       </div>
 
       <!-- ACCOUNTS -->
@@ -918,6 +967,8 @@ const PAGE_META = {
   actlog:    ()=> 'Password changes & admin actions',
   tenants:   ()=> CS ? CS.name+' — Tenant Registry' : '',
   rent:      ()=> CS ? CS.name+' — Rent Tracking' : '',
+  plans:     ()=> 'Manage subscription plans for societies',
+  pricing:   ()=> 'Choose the right plan for your society',
   accounts:  ()=> CS ? CS.name+' — Income & Expenses' : '',
   reports:   ()=> CS ? CS.name+' — Reports' : ''
 };
@@ -949,6 +1000,8 @@ function goPage(id) {
   if (id==='actlog')    renderActLog();
   if (id==='tenants')   renderTenants();
   if (id==='rent')      renderRent();
+  if (id==='plans')     renderPlans();
+  if (id==='pricing')   renderPricing();
   if (id==='accounts')  renderAccounts();
   if (id==='reports')   renderReports();
   // Close sidebar on mobile
@@ -1019,7 +1072,8 @@ async function doLogin() {
         <div class="sb-sec">Master Admin</div>
         <div class="ni" data-page="societies"><i class="ti ti-building-skyscraper"></i> All Societies</div>
         <div class="ni" data-page="admins"><i class="ti ti-shield-check"></i> Manage Admins</div>
-        <div class="ni" data-page="actlog"><i class="ti ti-history"></i> Activity Log</div>`;
+        <div class="ni" data-page="actlog"><i class="ti ti-history"></i> Activity Log</div>
+        <div class="ni" data-page="plans"><i class="ti ti-packages"></i> Plans & Pricing</div>`;
       // Load all societies into switcher
       await loadAllSocs();
     } else {
@@ -1081,6 +1135,11 @@ async function switchSociety(id) {
   CS = allSocs.find(s=>s.id===id)||null;
   if (CS) await loadSocData();
   refreshDashboard();
+  // Show plan tag in topbar
+  if (CS) {
+    const plan = CS.plan||'basic';
+    $('pg-meta').textContent = CS.name;
+  }
 }
 
 async function loadSocData() {
@@ -1114,7 +1173,11 @@ function renderSocieties() {
         <span><i class="ti ti-home"></i> ${s.total_units||'—'} units</span>
         <span><i class="ti ti-user"></i> ${s.secretary_name||'—'}</span>
       </div>
-      <div style="margin-top:8px"><span class="badge bb" style="font-size:9px">${s.registration_no||'No Reg No.'}</span></div>
+      <div style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap">
+        <span class="badge bb" style="font-size:9px">${s.registration_no||'No Reg No.'}</span>
+        <span class="plan-tag ${PLAN_BG[s.plan||'basic']}">${(s.plan||'BASIC').toUpperCase()}</span>
+        ${s.plan_expiry&&daysUntil(s.plan_expiry)<=30?`<span class="badge br" style="font-size:9px">Expires ${s.plan_expiry}</span>`:''}
+      </div>
     </div>`).join('');
 }
 
@@ -2068,6 +2131,258 @@ async function deleteRent(id){
   if(!confirm('Delete?'))return;
   try{await DELETE('rent_records',id);rentRecords=rentRecords.filter(r=>r.id!==id);renderRent();toast('Deleted');}
   catch(e){toast('Error: '+e.message,false);}
+}
+
+// ═══════════════════════════════════════════════
+// PLANS & MODULE CONTROL
+// ═══════════════════════════════════════════════
+let allPlans = [];
+const PLAN_MODULES = {
+  basic:    ['members','dues','notices'],
+  standard: ['members','dues','notices','services','amenities','tenants'],
+  premium:  ['members','dues','notices','services','amenities','tenants','accounts','reports','photos']
+};
+const MODULE_PLAN = {
+  services:'standard', amenities:'standard', tenants:'standard',
+  accounts:'premium', reports:'premium', photos:'premium'
+};
+const PLAN_COLORS = { basic:'#475569', standard:'#1e40af', premium:'#5b21b6' };
+const PLAN_BG = { basic:'plan-basic', standard:'plan-standard', premium:'plan-premium' };
+
+function getSocietyPlan() {
+  return CS?.plan || 'basic';
+}
+
+function hasModule(module) {
+  const plan = getSocietyPlan();
+  return PLAN_MODULES[plan]?.includes(module) || false;
+}
+
+function getLockedHTML(module) {
+  const requiredPlan = MODULE_PLAN[module] || 'premium';
+  const planName = requiredPlan.charAt(0).toUpperCase() + requiredPlan.slice(1);
+  return `<div class="locked-overlay">
+    <i class="ti ti-lock"></i>
+    <h4>This module is locked</h4>
+    <p>Upgrade to <strong>${planName}</strong> plan to access this feature</p>
+    <button class="btn btn-p" onclick="goPage('pricing',document.getElementById('nav-pricing'))">
+      <i class="ti ti-crown"></i> View Plans & Upgrade
+    </button>
+  </div>`;
+}
+
+function applyPlanToUI() {
+  const plan = getSocietyPlan();
+  const modules = PLAN_MODULES[plan] || [];
+
+  // Show/hide nav items based on plan
+  const navMap = {
+    'nav-services': 'services', 'nav-amenities': 'amenities',
+    'nav-tenants': 'tenants', 'nav-rent': 'rent',
+    'nav-accounts': 'accounts', 'nav-reports': 'reports'
+  };
+
+  // Show pricing nav for society admins
+  if (CU?.role !== 'master') {
+    const pricingNav = $('nav-pricing');
+    if (pricingNav) pricingNav.style.display = 'flex';
+  }
+}
+
+// Override goPage to check module access
+const _goPageOriginal = goPage;
+function goPage(id, el) {
+  // Check if module is locked
+  const lockedModules = ['services','amenities','tenants','rent','accounts','reports'];
+  if (lockedModules.includes(id) && CU?.role !== 'master' && !hasModule(id==='rent'?'tenants':id)) {
+    // Show page but with locked content
+    document.querySelectorAll('.page').forEach(p=>p.classList.remove('show'));
+    document.querySelectorAll('.ni').forEach(n=>n.classList.remove('active'));
+    const pageEl = $('page-'+id);
+    if (pageEl) {
+      // Inject locked overlay
+      const contentDiv = pageEl.querySelector('.card, .stats') || pageEl;
+      pageEl.classList.add('show');
+      // Show locked message at top
+      let lockDiv = pageEl.querySelector('.lock-notice');
+      if (!lockDiv) {
+        lockDiv = document.createElement('div');
+        lockDiv.className = 'lock-notice';
+        pageEl.insertBefore(lockDiv, pageEl.firstChild);
+      }
+      lockDiv.innerHTML = getLockedHTML(id==='rent'?'tenants':id);
+    }
+    if (el) el.classList.add('active');
+    $('pg-title').textContent = PAGE_TITLES[id]||id;
+    $('pg-meta').textContent = '🔒 Locked — Upgrade required';
+    if (window.innerWidth<768) { $('sidebar').classList.remove('open'); $('sb-overlay').classList.remove('show'); }
+    return;
+  }
+  // Remove lock notice if exists
+  const pageEl = $('page-'+id);
+  if (pageEl) { const ln=pageEl.querySelector('.lock-notice'); if(ln) ln.remove(); }
+  _goPageOriginal(id, el);
+}
+
+// ═══════════════════════════════════════════════
+// PLANS PAGE (Master Admin)
+// ═══════════════════════════════════════════════
+async function renderPlans() {
+  try {
+    allPlans = await GET('plans','?order=price_monthly');
+    const socs = await GET('societies','?order=name');
+
+    // Plan cards
+    const grid = $('plan-cards-grid');
+    grid.innerHTML = allPlans.map(p => {
+      const f = typeof p.features === 'string' ? JSON.parse(p.features) : p.features;
+      const featureList = [
+        {k:'members',l:'Member Registry'},{k:'dues',l:'Maintenance Dues'},
+        {k:'notices',l:'Notices & Complaints'},{k:'services',l:'Services & AMC'},
+        {k:'amenities',l:'Amenities'},{k:'tenants',l:'Tenant Management'},
+        {k:'accounts',l:'Accounts & Finance'},{k:'reports',l:'Reports & Analytics'},
+        {k:'photos',l:'Photos'}
+      ];
+      return `<div class="plan-card ${p.id}">
+        ${p.id==='standard'?'<div class="plan-badge" style="background:#2563eb;color:#fff">Most Popular</div>':''}
+        ${p.id==='premium'?'<div class="plan-badge" style="background:#7c3aed;color:#fff">All Features</div>':''}
+        <h3 style="color:${PLAN_COLORS[p.id]}">${p.name}</h3>
+        <div class="plan-price" style="color:${PLAN_COLORS[p.id]}">₹${Number(p.price_monthly).toLocaleString('en-IN')}<span>/month</span></div>
+        <div style="font-size:10px;color:#94a3b8">₹${Number(p.price_yearly).toLocaleString('en-IN')}/year</div>
+        <div class="plan-features">
+          ${featureList.map(feat=>`<div>
+            <i class="ti ${f[feat.k]?'ti-check' : 'ti-x'}" style="color:${f[feat.k]?'#16a34a':'#ef4444'};font-size:13px"></i>
+            <span style="color:${f[feat.k]?'#0f172a':'#94a3b8'}">${feat.l}</span>
+          </div>`).join('')}
+        </div>
+        <button class="btn btn-p" style="width:100%;justify-content:center;background:${PLAN_COLORS[p.id]};border-color:${PLAN_COLORS[p.id]}" onclick="editPlanPricing('${p.id}')">
+          <i class="ti ti-edit"></i> Edit Pricing
+        </button>
+      </div>`;
+    }).join('');
+
+    // Society assignments
+    const tb = $('plan-assign-tbody');
+    if (!socs.length) { tb.innerHTML='<tr><td colspan="6" class="empty">No societies yet</td></tr>'; return; }
+    tb.innerHTML = socs.map(s => `<tr>
+      <td style="font-weight:600">${s.name}</td>
+      <td style="font-size:11px">${s.city||'—'}</td>
+      <td><span class="plan-tag ${PLAN_BG[s.plan||'basic']}">${(s.plan||'basic').toUpperCase()}</span></td>
+      <td style="font-size:11px;color:${s.plan_expiry&&daysUntil(s.plan_expiry)<=30?'#991b1b':'#0f172a'}">${s.plan_expiry||'No expiry'}</td>
+      <td style="font-size:11px">${s.plan_assigned_by||'—'}</td>
+      <td>
+        <select onchange="assignPlan('${s.id}',this.value)" style="padding:5px 8px;border:1px solid #e2e8f0;border-radius:6px;font-size:12px;background:#fff;outline:none">
+          <option value="">— Change Plan —</option>
+          <option value="basic" ${s.plan==='basic'?'selected':''}>Basic</option>
+          <option value="standard" ${s.plan==='standard'?'selected':''}>Standard</option>
+          <option value="premium" ${s.plan==='premium'?'selected':''}>Premium</option>
+        </select>
+        <input type="date" id="expiry-${s.id}" value="${s.plan_expiry||''}" onchange="setExpiry('${s.id}',this.value)" style="padding:5px 8px;border:1px solid #e2e8f0;border-radius:6px;font-size:11px;margin-left:4px;outline:none" title="Set plan expiry">
+      </td>
+    </tr>`).join('');
+  } catch(e) { toast('Error: '+e.message, false); }
+}
+
+async function assignPlan(socId, plan) {
+  if (!plan) return;
+  try {
+    await PATCH('societies', socId, {
+      plan, plan_assigned_by: CU.name,
+      plan_assigned_at: new Date().toISOString()
+    });
+    // Log activity
+    await logActivity(CU.id, CU.name, CU.email, 'Plan Assigned',
+      `Plan changed to ${plan.toUpperCase()} for society by ${CU.name} on ${new Date().toLocaleString('en-IN')}`);
+    toast(`Plan changed to ${plan.toUpperCase()} ✓`);
+    renderPlans();
+    // Update current society if it's the active one
+    if (CS && CS.id === socId) { CS.plan = plan; applyPlanToUI(); }
+  } catch(e) { toast('Error: '+e.message, false); }
+}
+
+async function setExpiry(socId, date) {
+  try {
+    await PATCH('societies', socId, { plan_expiry: date||null });
+    toast('Expiry date updated ✓');
+  } catch(e) { toast('Error: '+e.message, false); }
+}
+
+async function editPlanPricing(planId) {
+  const plan = allPlans.find(p=>p.id===planId);
+  if (!plan) return;
+  const monthly = prompt(`Edit monthly price for ${plan.name} plan:`, plan.price_monthly);
+  if (monthly===null) return;
+  const yearly = prompt(`Edit yearly price for ${plan.name} plan:`, plan.price_yearly);
+  if (yearly===null) return;
+  try {
+    await PATCH('plans', planId, { price_monthly: parseFloat(monthly)||0, price_yearly: parseFloat(yearly)||0 });
+    toast('Pricing updated ✓'); renderPlans();
+  } catch(e) { toast('Error: '+e.message, false); }
+}
+
+// ═══════════════════════════════════════════════
+// PRICING PAGE (Society Admin)
+// ═══════════════════════════════════════════════
+async function renderPricing() {
+  try {
+    if (!allPlans.length) allPlans = await GET('plans','?order=price_monthly');
+    const currentPlan = getSocietyPlan();
+    const grid = $('pricing-cards');
+    grid.innerHTML = allPlans.map(p => {
+      const f = typeof p.features === 'string' ? JSON.parse(p.features) : p.features;
+      const isCurrent = p.id === currentPlan;
+      const featureList = [
+        {k:'members',l:'Member Registry'},{k:'dues',l:'Maintenance Dues'},
+        {k:'notices',l:'Notices & Complaints'},{k:'services',l:'Services & AMC'},
+        {k:'amenities',l:'Amenities'},{k:'tenants',l:'Tenant Management'},
+        {k:'accounts',l:'Accounts & Finance'},{k:'reports',l:'Reports & Analytics'},
+        {k:'photos',l:'Photos'}
+      ];
+      return `<div class="plan-card ${p.id}" style="${isCurrent?'border-width:3px':''}">
+        ${isCurrent?'<div class="plan-badge" style="background:#16a34a;color:#fff">Your Current Plan</div>':''}
+        ${p.id==='standard'&&!isCurrent?'<div class="plan-badge" style="background:#2563eb;color:#fff">Most Popular</div>':''}
+        ${p.id==='premium'&&!isCurrent?'<div class="plan-badge" style="background:#7c3aed;color:#fff">All Features</div>':''}
+        <h3 style="color:${PLAN_COLORS[p.id]}">${p.name}</h3>
+        <div class="plan-price" style="color:${PLAN_COLORS[p.id]}">₹${Number(p.price_monthly).toLocaleString('en-IN')}<span>/month</span></div>
+        <div style="font-size:10px;color:#94a3b8;margin-bottom:6px">₹${Number(p.price_yearly).toLocaleString('en-IN')}/year • Save ${Math.round((1-p.price_yearly/(p.price_monthly*12))*100)}%</div>
+        <div class="plan-features">
+          ${featureList.map(feat=>`<div>
+            <i class="ti ${f[feat.k]?'ti-check':'ti-x'}" style="color:${f[feat.k]?'#16a34a':'#ef4444'};font-size:13px"></i>
+            <span style="color:${f[feat.k]?'#0f172a':'#94a3b8'}">${feat.l}</span>
+          </div>`).join('')}
+        </div>
+        ${isCurrent ?
+          '<div style="text-align:center;padding:8px;background:#dcfce7;border-radius:7px;font-size:12px;font-weight:600;color:#166534">✓ Active Plan</div>' :
+          `<button class="btn btn-p" style="width:100%;justify-content:center;background:${PLAN_COLORS[p.id]};border-color:${PLAN_COLORS[p.id]}" onclick="requestUpgrade('${p.id}')">
+            <i class="ti ti-crown"></i> Request Upgrade
+          </button>`
+        }
+      </div>`;
+    }).join('');
+  } catch(e) { toast('Error: '+e.message, false); }
+}
+
+async function requestUpgrade(planId) {
+  const planName = planId.charAt(0).toUpperCase() + planId.slice(1);
+  if (!confirm(`Request upgrade to ${planName} plan? Your property manager will be notified.`)) return;
+  try {
+    // Log the upgrade request
+    await logActivity(CU.id, CU.name, CU.email, 'Upgrade Requested',
+      `Society "${CS?.name}" requested upgrade to ${planName} plan on ${new Date().toLocaleString('en-IN')}`);
+    toast(`Upgrade request sent to your property manager! ✓`);
+  } catch(e) { toast('Error: '+e.message, false); }
+}
+
+// Apply plan restrictions after login
+async function applyPlanAfterLogin() {
+  if (!CS || CU?.role === 'master') return;
+  applyPlanToUI();
+  // Check plan expiry
+  if (CS.plan_expiry && daysUntil(CS.plan_expiry) <= 0) {
+    toast('⚠️ Your plan has expired. Please contact your property manager.', false);
+  } else if (CS.plan_expiry && daysUntil(CS.plan_expiry) <= 7) {
+    toast(`⚠️ Your plan expires in ${daysUntil(CS.plan_expiry)} days!`, false);
+  }
 }
 
 // ── MOBILE SIDEBAR ────────────────────────────────────────
