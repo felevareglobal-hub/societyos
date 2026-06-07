@@ -221,6 +221,9 @@ tr:hover td{background:#fafafa}
     <div class="ni" data-page="amenities"><i class="ti ti-building"></i> Amenities</div>
     <div class="sb-sec">Communication</div>
     <div class="ni" data-page="notices"><i class="ti ti-speakerphone"></i> Notices &amp; Complaints</div>
+    <div class="sb-sec">Tenants</div>
+    <div class="ni" data-page="tenants"><i class="ti ti-home-2"></i> Tenant Registry</div>
+    <div class="ni" data-page="rent"><i class="ti ti-coin"></i> Rent Tracking</div>
     <div class="sb-sec">Finance</div>
     <div class="ni" data-page="accounts"><i class="ti ti-cash"></i> Accounts</div>
     <div class="sb-sec">Reports</div>
@@ -366,6 +369,70 @@ tr:hover td{background:#fafafa}
         <div id="not-list"></div>
       </div>
 
+
+      <!-- TENANTS -->
+      <div class="page" id="page-tenants">
+        <div class="sb-bar">
+          <i class="ti ti-search" style="color:#94a3b8"></i>
+          <input type="text" id="ten-search" placeholder="Search tenant, flat, mobile…" oninput="renderTenants()">
+          <select id="ten-status-filter" onchange="renderTenants()" style="padding:7px 10px;border:1px solid #e2e8f0;border-radius:7px;font-size:12px;background:#fff;outline:none">
+            <option value="">All Status</option>
+            <option value="active">Active</option>
+            <option value="inactive">Inactive</option>
+            <option value="notice_period">Notice Period</option>
+          </select>
+        </div>
+        <!-- Summary -->
+        <div class="stats" style="margin-bottom:14px">
+          <div class="sc"><div class="lb">Total Tenants</div><div class="vl" id="ten-total">0</div><div class="sb">Registered</div></div>
+          <div class="sc"><div class="lb">Active</div><div class="vl" id="ten-active" style="color:#16a34a">0</div><div class="sb">Currently staying</div></div>
+          <div class="sc"><div class="lb">Police Verified</div><div class="vl" id="ten-verified" style="color:#2563eb">0</div><div class="sb">Verification done</div></div>
+          <div class="sc"><div class="lb">Expiring Soon</div><div class="vl" id="ten-expiring" style="color:#92400e">0</div><div class="sb">Agreement in 30d</div></div>
+        </div>
+        <div class="card">
+          <div class="card-head">
+            <h3 id="ten-lbl">Tenants</h3>
+            <div style="display:flex;gap:8px">
+              <button class="btn" onclick="exportReportCSV('tenants')"><i class="ti ti-download"></i> Export</button>
+              <button class="btn btn-p" onclick="openTenantModal(-1)"><i class="ti ti-plus"></i> Add Tenant</button>
+            </div>
+          </div>
+          <div class="tbl-wrap">
+            <table><thead><tr><th>Flat</th><th>Tenant Name</th><th>Mobile</th><th>Owner</th><th>Rent (₹)</th><th>Agreement End</th><th>Police Verif.</th><th>Status</th><th></th></tr></thead>
+            <tbody id="ten-tbody"></tbody></table>
+          </div>
+        </div>
+      </div>
+
+      <!-- RENT TRACKING -->
+      <div class="page" id="page-rent">
+        <div class="fb">
+          <div class="fc active" data-filter="rent-all">All</div>
+          <div class="fc" data-filter="rent-pending">Pending</div>
+          <div class="fc" data-filter="rent-paid">Paid</div>
+          <div class="fc" data-filter="rent-overdue">Overdue</div>
+        </div>
+        <!-- Summary -->
+        <div class="stats" style="margin-bottom:14px">
+          <div class="sc"><div class="lb">Total Billed</div><div class="vl" id="rent-total-amt" style="font-size:18px">₹0</div></div>
+          <div class="sc"><div class="lb">Collected</div><div class="vl" id="rent-collected" style="color:#16a34a;font-size:18px">₹0</div></div>
+          <div class="sc"><div class="lb">Pending</div><div class="vl" id="rent-pending-amt" style="color:#991b1b;font-size:18px">₹0</div></div>
+          <div class="sc"><div class="lb">Collection Rate</div><div class="vl" id="rent-rate">0%</div></div>
+        </div>
+        <div class="card">
+          <div class="card-head">
+            <h3>Rent Records</h3>
+            <div style="display:flex;gap:8px">
+              <button class="btn" onclick="exportReportCSV('rent')"><i class="ti ti-download"></i> Export</button>
+              <button class="btn btn-p" onclick="openRentModal()"><i class="ti ti-plus"></i> Add Record</button>
+            </div>
+          </div>
+          <div class="tbl-wrap">
+            <table><thead><tr><th>Flat</th><th>Tenant</th><th>Month</th><th>Amount (₹)</th><th>Due Date</th><th>Status</th><th>Mode</th><th></th></tr></thead>
+            <tbody id="rent-tbody"></tbody></table>
+          </div>
+        </div>
+      </div>
 
       <!-- ACCOUNTS -->
       <div class="page" id="page-accounts">
@@ -666,6 +733,103 @@ tr:hover td{background:#fafafa}
   </div>
 </div>
 
+<!-- TENANT MODAL -->
+<div class="mo" id="mo-tenant">
+  <div class="md">
+    <div class="md-head"><h3 id="ten-modal-title">Add Tenant</h3><button class="md-close" onclick="closeModal('mo-tenant')"><i class="ti ti-x"></i></button></div>
+    <div class="md-body"><div class="fg">
+      <div class="fd"><i class="ti ti-home" style="font-size:12px"></i> Flat Details</div>
+      <div class="fi"><label>Wing *</label><select id="t-wing"></select></div>
+      <div class="fi"><label>Flat Number *</label><input id="t-flat" placeholder="e.g. 304"></div>
+      <div class="fi"><label>Floor</label><input id="t-floor"></div>
+      <div class="fi"><label>Flat Type</label><select id="t-ftype"><option>1 BHK</option><option>2 BHK</option><option>3 BHK</option><option>4 BHK</option><option>Studio</option></select></div>
+      <div class="fi"><label>Parking Slot</label><input id="t-park"></div>
+
+      <div class="fd"><i class="ti ti-user" style="font-size:12px"></i> Owner Details</div>
+      <div class="fi"><label>Owner Name *</label><input id="t-oname"></div>
+      <div class="fi"><label>Owner Mobile *</label><input id="t-omob" type="tel"></div>
+      <div class="fi"><label>Owner Mobile 2</label><input id="t-omob2" type="tel"></div>
+      <div class="fi"><label>Owner Email</label><input id="t-oemail" type="email"></div>
+      <div class="fi"><label>Owner Aadhaar</label><input id="t-oadh" maxlength="14" placeholder="XXXX XXXX XXXX"></div>
+      <div class="fi full"><label>Owner Address (Permanent)</label><textarea id="t-oaddr" rows="2"></textarea></div>
+
+      <div class="fd"><i class="ti ti-users" style="font-size:12px"></i> Tenant Details</div>
+      <div class="fi"><label>Tenant Full Name *</label><input id="t-name"></div>
+      <div class="fi"><label>Date of Birth</label><input id="t-dob" type="date"></div>
+      <div class="fi"><label>Gender</label><select id="t-gen"><option>Male</option><option>Female</option><option>Other</option></select></div>
+      <div class="fi"><label>Aadhaar Number</label><input id="t-aadh" maxlength="14" placeholder="XXXX XXXX XXXX"></div>
+      <div class="fi"><label>Mobile *</label><input id="t-mob" type="tel"></div>
+      <div class="fi"><label>Alternate Mobile</label><input id="t-mob2" type="tel"></div>
+      <div class="fi full"><label>Email</label><input id="t-email" type="email"></div>
+      <div class="fi"><label>Occupation</label><input id="t-occ"></div>
+      <div class="fi"><label>Company / Employer</label><input id="t-company"></div>
+
+      <div class="fd"><i class="ti ti-heart" style="font-size:12px"></i> Family & Vehicles</div>
+      <div class="fi"><label>Adults</label><input id="t-adults" type="number" value="1" min="1"></div>
+      <div class="fi"><label>Children</label><input id="t-children" type="number" value="0" min="0"></div>
+      <div class="fi full"><label>Family Members (names)</label><input id="t-family"></div>
+      <div class="fi"><label>Pets</label><select id="t-pets"><option>None</option><option>Dog</option><option>Cat</option><option>Other</option></select></div>
+      <div class="fi"><label>Domestic Staff</label><input id="t-staff"></div>
+      <div class="fi"><label>Vehicle 1 No.</label><input id="t-v1" placeholder="MH01AB1234"></div>
+      <div class="fi"><label>Vehicle 1 Type</label><select id="t-v1t"><option>None</option><option>Car</option><option>Two-Wheeler</option><option>SUV</option></select></div>
+      <div class="fi"><label>Vehicle 2 No.</label><input id="t-v2"></div>
+      <div class="fi"><label>Vehicle 2 Type</label><select id="t-v2t"><option>None</option><option>Car</option><option>Two-Wheeler</option><option>SUV</option></select></div>
+
+      <div class="fd"><i class="ti ti-file-invoice" style="font-size:12px"></i> Agreement & Rent</div>
+      <div class="fi"><label>Agreement Start *</label><input id="t-ags" type="date"></div>
+      <div class="fi"><label>Agreement End *</label><input id="t-age" type="date"></div>
+      <div class="fi"><label>Monthly Rent (₹) *</label><input id="t-rent" type="number"></div>
+      <div class="fi"><label>Security Deposit (₹)</label><input id="t-deposit" type="number"></div>
+      <div class="fi"><label>Rent Due Date</label><select id="t-rdue"><option value="1">1st of month</option><option value="5">5th of month</option><option value="10">10th of month</option><option value="15">15th of month</option></select></div>
+      <div class="fi"><label>Rent Payment Mode</label><select id="t-rmode"><option>—</option><option>Cash</option><option>UPI</option><option>Bank Transfer</option><option>Cheque</option></select></div>
+      <div class="fi"><label>Move-In Date</label><input id="t-movein" type="date"></div>
+      <div class="fi"><label>Notice Period (days)</label><input id="t-notice" type="number" value="30"></div>
+
+      <div class="fd"><i class="ti ti-shield-check" style="font-size:12px"></i> Police Verification</div>
+      <div class="fi"><label>Verification Status</label><select id="t-pv"><option value="pending">Pending</option><option value="done">Done</option><option value="not_required">Not Required</option></select></div>
+      <div class="fi"><label>Verification Date</label><input id="t-pvdate" type="date"></div>
+      <div class="fi full"><label>Reference / Receipt No.</label><input id="t-pvref"></div>
+
+      <div class="fd"><i class="ti ti-info-circle" style="font-size:12px"></i> Status & Notes</div>
+      <div class="fi"><label>Status</label><select id="t-stat"><option value="active">Active</option><option value="notice_period">Notice Period</option><option value="inactive">Vacated</option></select></div>
+      <div class="fi"><label>Move-Out Date</label><input id="t-moveout" type="date"></div>
+      <div class="fi full"><label>Reason for Leaving</label><input id="t-reason"></div>
+      <div class="fi full"><label>Emergency Contact</label><input id="t-emerg"></div>
+      <div class="fi full"><label>Notes</label><textarea id="t-notes" rows="2"></textarea></div>
+    </div></div>
+    <div class="md-foot">
+      <button class="btn" onclick="closeModal('mo-tenant')">Cancel</button>
+      <button class="btn btn-p" onclick="saveTenant()"><i class="ti ti-check"></i> Save Tenant</button>
+    </div>
+  </div>
+</div>
+
+<!-- RENT MODAL -->
+<div class="mo" id="mo-rent">
+  <div class="md" style="max-width:540px">
+    <div class="md-head"><h3>Add Rent Record</h3><button class="md-close" onclick="closeModal('mo-rent')"><i class="ti ti-x"></i></button></div>
+    <div class="md-body"><div class="fg">
+      <div class="fi"><label>Tenant *</label><select id="r-tenant"></select></div>
+      <div class="fi"><label>Month *</label><select id="r-month">
+        <option>January 2026</option><option>February 2026</option><option>March 2026</option><option>April 2026</option><option>May 2026</option><option selected>June 2026</option><option>July 2026</option><option>August 2026</option><option>September 2026</option><option>October 2026</option><option>November 2026</option><option>December 2026</option>
+      </select></div>
+      <div class="fi"><label>Amount (₹) *</label><input id="r-amt" type="number"></div>
+      <div class="fi"><label>Due Date *</label><input id="r-due" type="date"></div>
+      <div class="fi"><label>Status</label><select id="r-stat"><option value="pending">Pending</option><option value="paid">Paid</option><option value="overdue">Overdue</option></select></div>
+      <div class="fi"><label>Payment Date</label><input id="r-pdate" type="date"></div>
+      <div class="fi"><label>Payment Mode</label><select id="r-mode"><option>—</option><option>Cash</option><option>UPI</option><option>Bank Transfer</option><option>Cheque</option></select></div>
+      <div class="fi"><label>Transaction Ref.</label><input id="r-txn"></div>
+      <div class="fi"><label>Late Fee (₹)</label><input id="r-late" type="number" value="0"></div>
+      <div class="fi"><label>Discount (₹)</label><input id="r-disc" type="number" value="0"></div>
+      <div class="fi full"><label>Remarks</label><textarea id="r-rem" rows="2"></textarea></div>
+    </div></div>
+    <div class="md-foot">
+      <button class="btn" onclick="closeModal('mo-rent')">Cancel</button>
+      <button class="btn btn-p" onclick="saveRent()"><i class="ti ti-check"></i> Save</button>
+    </div>
+  </div>
+</div>
+
 <!-- NOTICE MODAL -->
 <div class="mo" id="mo-notice">
   <div class="md" style="max-width:480px">
@@ -752,6 +916,8 @@ const PAGE_META = {
   amenities: ()=> CS ? CS.name+' — Amenities' : '',
   notices:   ()=> CS ? CS.name+' — Notices' : '',
   actlog:    ()=> 'Password changes & admin actions',
+  tenants:   ()=> CS ? CS.name+' — Tenant Registry' : '',
+  rent:      ()=> CS ? CS.name+' — Rent Tracking' : '',
   accounts:  ()=> CS ? CS.name+' — Income & Expenses' : '',
   reports:   ()=> CS ? CS.name+' — Reports' : ''
 };
@@ -781,6 +947,8 @@ function goPage(id) {
   if (id==='amenities') renderAmen();
   if (id==='notices')   renderNotices();
   if (id==='actlog')    renderActLog();
+  if (id==='tenants')   renderTenants();
+  if (id==='rent')      renderRent();
   if (id==='accounts')  renderAccounts();
   if (id==='reports')   renderReports();
   // Close sidebar on mobile
@@ -918,13 +1086,15 @@ async function switchSociety(id) {
 async function loadSocData() {
   if (!CS) return;
   const id=CS.id;
-  [members,dues,services,amenities,notices,accounts] = await Promise.all([
+  [members,dues,services,amenities,notices,accounts,tenants,rentRecords] = await Promise.all([
     GET('members',`?society_id=eq.${id}&order=name`),
     GET('dues',`?society_id=eq.${id}&order=created_at.desc`),
     GET('services',`?society_id=eq.${id}&order=name`),
     GET('amenities',`?society_id=eq.${id}&order=name`),
     GET('notices',`?society_id=eq.${id}&order=created_at.desc`),
-    GET('accounts',`?society_id=eq.${id}&order=date.desc`)
+    GET('accounts',`?society_id=eq.${id}&order=date.desc`),
+    GET('tenants',`?society_id=eq.${id}&order=tenant_name`),
+    GET('rent_records',`?society_id=eq.${id}&order=created_at.desc`)
   ]);
 }
 
@@ -1456,7 +1626,8 @@ document.addEventListener('DOMContentLoaded', function() {
     const fc = e.target.closest('.fc[data-filter]');
     if (!fc) return;
     const f = fc.dataset.filter;
-    if (f.startsWith('acc-')) { accFilter=f.replace('acc-',''); renderAccounts(); }
+    if (f.startsWith('acc-'))  { accFilter=f.replace('acc-','');  renderAccounts(); }
+    if (f.startsWith('rent-')) { rentFilter=f.replace('rent-',''); renderRent(); }
     if (f.startsWith('rep-')) { repFilter=f.replace('rep-',''); renderReports(); }
   });
 });
@@ -1677,6 +1848,16 @@ function exportReportCSV(type) {
     accounts.filter(a=>a.type==='expense').forEach(a=>rows.push([a.date,a.category,a.description,a.vendor_or_from||'',a.payment_mode||'',a.amount]));
     filename=`expense_${CS?.name||'society'}`;
   }
+  if (type==='tenants') {
+    rows=[['Flat','Tenant Name','Mobile','Email','Owner','Owner Mobile','Rent','Deposit','Agreement Start','Agreement End','Police Verification','Status','Move-In','Parking']];
+    tenants.forEach(t=>rows.push([t.wing+'-'+t.flat,t.tenant_name,t.tenant_mobile||'',t.tenant_email||'',t.owner_name||'',t.owner_mobile||'',t.monthly_rent||'',t.security_deposit||'',t.agreement_start||'',t.agreement_end||'',t.police_verification||'',t.status||'',t.move_in_date||'',t.parking_slot||'']));
+    filename=`tenants_${CS?.name||'society'}`;
+  }
+  if (type==='rent') {
+    rows=[['Flat','Tenant','Month','Amount','Due Date','Status','Payment Mode','Paid Date']];
+    rentRecords.forEach(r=>rows.push([r.flat,r.tenant_name,r.month,r.amount,r.due_date||'',r.status,r.payment_mode||'',r.paid_date||'']));
+    filename=`rent_${CS?.name||'society'}`;
+  }
   if (!rows.length) { toast('No data to export', false); return; }
   const csv  = rows.map(r=>r.map(x=>`"${x||''}"`).join(',')).join('\n');
   const blob = new Blob([csv],{type:'text/csv'});
@@ -1685,6 +1866,208 @@ function exportReportCSV(type) {
   link.href=url; link.download=filename+'_'+new Date().toISOString().split('T')[0]+'.csv';
   link.click(); URL.revokeObjectURL(url);
   toast('CSV downloaded ✓');
+}
+
+// ═══════════════════════════════════════════════
+// TENANTS
+// ═══════════════════════════════════════════════
+let tenants=[], rentRecords=[], editTenIdx=-1, rentFilter='all';
+
+function populateTenantWings() {
+  const w=wings();
+  $('t-wing').innerHTML=w.map(x=>`<option>${x}</option>`).join('');
+}
+
+function renderTenants() {
+  populateTenantWings();
+  const q=(fv('ten-search')||'').toLowerCase();
+  const sf=fv('ten-status-filter');
+  const fl=tenants.filter(t=>{
+    const txt=(t.tenant_name+t.flat+t.wing+(t.tenant_mobile||'')+(t.owner_name||'')).toLowerCase();
+    return(!q||txt.includes(q))&&(!sf||t.status===sf);
+  });
+
+  // Stats
+  $('ten-total').textContent=tenants.length;
+  $('ten-active').textContent=tenants.filter(t=>t.status==='active').length;
+  $('ten-verified').textContent=tenants.filter(t=>t.police_verification==='done').length;
+  $('ten-expiring').textContent=tenants.filter(t=>daysUntil(t.agreement_end)<=30&&daysUntil(t.agreement_end)>=0).length;
+  $('ten-lbl').textContent=fl.length+' Tenant'+(fl.length!==1?'s':'');
+
+  const tb=$('ten-tbody');
+  if(!fl.length){tb.innerHTML='<tr><td colspan="9" class="empty">No tenants found</td></tr>';return;}
+  tb.innerHTML=fl.map((t,i)=>{
+    const d=daysUntil(t.agreement_end);
+    const ageHtml=t.agreement_end?(d<0?`<span class="ea">${t.agreement_end} (Exp)</span>`:d<=30?`<span class="ew">${t.agreement_end} (${d}d)</span>`:t.agreement_end):'—';
+    const pvBadge=t.police_verification==='done'?'bgr':t.police_verification==='not_required'?'bg':'br';
+    const pvLabel=t.police_verification==='done'?'Verified':t.police_verification==='not_required'?'N/A':'Pending';
+    return`<tr>
+      <td><strong>${t.wing}-${t.flat}</strong></td>
+      <td><div style="font-weight:600">${t.tenant_name}</div><div style="font-size:10px;color:#94a3b8">${t.tenant_occupation||''}</div></td>
+      <td style="font-size:11px">${t.tenant_mobile||'—'}</td>
+      <td style="font-size:11px">${t.owner_name||'—'}</td>
+      <td style="font-weight:600;color:#16a34a">${t.monthly_rent?'₹'+Number(t.monthly_rent).toLocaleString('en-IN'):'—'}</td>
+      <td style="font-size:11px">${ageHtml}</td>
+      <td><span class="badge ${pvBadge}">${pvLabel}</span></td>
+      <td><span class="badge ${t.status==='active'?'bgr':t.status==='notice_period'?'ba':'bg'}">${t.status==='notice_period'?'Notice':t.status||'active'}</span></td>
+      <td>
+        <button class="ab" onclick="openTenantModal(${tenants.indexOf(t)})" title="Edit"><i class="ti ti-edit"></i></button>
+        <button class="ab" onclick="deleteTenant('${t.id}')" style="color:#ef4444" title="Delete"><i class="ti ti-trash"></i></button>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+function openTenantModal(idx=-1) {
+  editTenIdx=idx; populateTenantWings();
+  const t=idx>=0?tenants[idx]:null;
+  sv('t-wing',t?.wing); sv('t-flat',t?.flat); sv('t-floor',t?.floor);
+  sv('t-ftype',t?.flat_type); sv('t-park',t?.parking_slot);
+  sv('t-oname',t?.owner_name); sv('t-omob',t?.owner_mobile); sv('t-omob2',t?.owner_mobile2);
+  sv('t-oemail',t?.owner_email); sv('t-oadh',t?.owner_aadhaar); sv('t-oaddr',t?.owner_address);
+  sv('t-name',t?.tenant_name); sv('t-dob',t?.tenant_dob); sv('t-gen',t?.tenant_gender);
+  sv('t-aadh',t?.tenant_aadhaar); sv('t-mob',t?.tenant_mobile); sv('t-mob2',t?.tenant_mobile2);
+  sv('t-email',t?.tenant_email); sv('t-occ',t?.tenant_occupation); sv('t-company',t?.tenant_company);
+  sv('t-adults',t?.adults||1); sv('t-children',t?.children||0); sv('t-family',t?.family_members);
+  sv('t-pets',t?.pets); sv('t-staff',t?.domestic_staff);
+  sv('t-v1',t?.vehicle1_no); sv('t-v1t',t?.vehicle1_type); sv('t-v2',t?.vehicle2_no); sv('t-v2t',t?.vehicle2_type);
+  sv('t-ags',t?.agreement_start); sv('t-age',t?.agreement_end);
+  sv('t-rent',t?.monthly_rent); sv('t-deposit',t?.security_deposit);
+  sv('t-rdue',t?.rent_due_date||1); sv('t-rmode',t?.rent_payment_mode);
+  sv('t-movein',t?.move_in_date); sv('t-notice',t?.notice_period_days||30);
+  sv('t-pv',t?.police_verification||'pending'); sv('t-pvdate',t?.police_verification_date);
+  sv('t-pvref',t?.police_verification_ref);
+  sv('t-stat',t?.status||'active'); sv('t-moveout',t?.move_out_date);
+  sv('t-reason',t?.reason_for_leaving); sv('t-emerg',t?.emergency_contact); sv('t-notes',t?.notes);
+  $('ten-modal-title').textContent=idx>=0?'Edit Tenant':'Add Tenant';
+  openModal('mo-tenant');
+}
+
+async function saveTenant() {
+  const name=fv('t-name').trim(), flat=fv('t-flat').trim(), mob=fv('t-mob').trim();
+  if (!name||!flat||!mob){toast('Tenant name, flat and mobile required',false);return;}
+  const d={
+    society_id:CS.id, wing:fv('t-wing'), flat, floor:fv('t-floor'),
+    flat_type:fv('t-ftype'), parking_slot:fv('t-park'),
+    owner_name:fv('t-oname'), owner_mobile:fv('t-omob'), owner_mobile2:fv('t-omob2'),
+    owner_email:fv('t-oemail'), owner_aadhaar:fv('t-oadh'), owner_address:fv('t-oaddr'),
+    tenant_name:name, tenant_dob:fv('t-dob')||null, tenant_gender:fv('t-gen'),
+    tenant_aadhaar:fv('t-aadh'), tenant_mobile:mob, tenant_mobile2:fv('t-mob2'),
+    tenant_email:fv('t-email'), tenant_occupation:fv('t-occ'), tenant_company:fv('t-company'),
+    adults:parseInt(fv('t-adults'))||1, children:parseInt(fv('t-children'))||0,
+    family_members:fv('t-family'), pets:fv('t-pets'), domestic_staff:fv('t-staff'),
+    vehicle1_no:fv('t-v1'), vehicle1_type:fv('t-v1t'), vehicle2_no:fv('t-v2'), vehicle2_type:fv('t-v2t'),
+    agreement_start:fv('t-ags')||null, agreement_end:fv('t-age')||null,
+    monthly_rent:parseFloat(fv('t-rent'))||null, security_deposit:parseFloat(fv('t-deposit'))||null,
+    rent_due_date:parseInt(fv('t-rdue'))||1, rent_payment_mode:fv('t-rmode'),
+    move_in_date:fv('t-movein')||null, notice_period_days:parseInt(fv('t-notice'))||30,
+    police_verification:fv('t-pv'), police_verification_date:fv('t-pvdate')||null,
+    police_verification_ref:fv('t-pvref'),
+    status:fv('t-stat'), move_out_date:fv('t-moveout')||null,
+    reason_for_leaving:fv('t-reason'), emergency_contact:fv('t-emerg'), notes:fv('t-notes')
+  };
+  try {
+    if (editTenIdx>=0) await PATCH('tenants',tenants[editTenIdx].id,d);
+    else await POST('tenants',d);
+    tenants=await GET('tenants',`?society_id=eq.${CS.id}&order=tenant_name`);
+    closeModal('mo-tenant'); renderTenants();
+    toast(editTenIdx>=0?'Tenant updated':'Tenant added');
+  } catch(e){toast('Error: '+e.message,false);}
+}
+
+async function deleteTenant(id) {
+  if(!confirm('Delete this tenant and all their rent records?'))return;
+  try{
+    await DELETE('tenants',id);
+    tenants=tenants.filter(t=>t.id!==id);
+    renderTenants(); toast('Tenant deleted');
+  }catch(e){toast('Error: '+e.message,false);}
+}
+
+// ═══════════════════════════════════════════════
+// RENT TRACKING
+// ═══════════════════════════════════════════════
+function populateTenantSelect() {
+  const opts=tenants.filter(t=>t.status==='active').map(t=>`<option value="${t.id}|${t.wing}-${t.flat}|${t.tenant_name}">${t.wing}-${t.flat} — ${t.tenant_name}</option>`).join('');
+  $('r-tenant').innerHTML=opts||'<option value="">No active tenants</option>';
+}
+
+function renderRent() {
+  const data=rentFilter==='all'?rentRecords:rentRecords.filter(r=>r.status===rentFilter);
+
+  // Summary
+  const total=rentRecords.reduce((s,r)=>s+Number(r.amount||0),0);
+  const collected=rentRecords.filter(r=>r.status==='paid').reduce((s,r)=>s+Number(r.amount||0),0);
+  const pending=rentRecords.filter(r=>r.status!=='paid').reduce((s,r)=>s+Number(r.amount||0),0);
+  const rate=rentRecords.length?Math.round(rentRecords.filter(r=>r.status==='paid').length/rentRecords.length*100):0;
+  $('rent-total-amt').textContent='₹'+total.toLocaleString('en-IN');
+  $('rent-collected').textContent='₹'+collected.toLocaleString('en-IN');
+  $('rent-pending-amt').textContent='₹'+pending.toLocaleString('en-IN');
+  $('rent-rate').textContent=rate+'%';
+  $('rent-rate').style.color=rate>=75?'#16a34a':rate>=50?'#92400e':'#991b1b';
+
+  const tb=$('rent-tbody');
+  if(!data.length){tb.innerHTML='<tr><td colspan="8" class="empty">No rent records</td></tr>';return;}
+  tb.innerHTML=data.map(r=>`<tr>
+    <td><strong>${r.flat||'—'}</strong></td>
+    <td style="font-size:11px">${r.tenant_name||'—'}</td>
+    <td style="font-size:11px">${r.month||'—'}</td>
+    <td style="font-weight:600">₹${(Number(r.amount||0)+Number(r.late_fee||0)-Number(r.discount||0)).toLocaleString('en-IN')}</td>
+    <td style="font-size:11px">${r.due_date||'—'}</td>
+    <td><span class="badge ${r.status==='paid'?'bgr':r.status==='overdue'?'br':'ba'}">${r.status}</span></td>
+    <td style="font-size:11px">${r.payment_mode||'—'}</td>
+    <td>
+      ${r.status!=='paid'?`<button class="ab" onclick="markRentPaid('${r.id}')" style="color:#16a34a" title="Mark Paid"><i class="ti ti-check"></i></button>`:''}
+      <button class="ab" onclick="deleteRent('${r.id}')" style="color:#ef4444"><i class="ti ti-trash"></i></button>
+    </td>
+  </tr>`).join('');
+}
+
+function openRentModal() {
+  populateTenantSelect();
+  // Auto-fill rent amount from tenant
+  $('r-tenant').onchange = function() {
+    const parts = this.value.split('|');
+    if(parts.length>=1) {
+      const ten = tenants.find(t=>t.id===parts[0]);
+      if(ten) sv('r-amt', ten.monthly_rent||'');
+    }
+  };
+  openModal('mo-rent');
+}
+
+async function saveRent() {
+  const tenVal=fv('r-tenant'), amt=fv('r-amt');
+  if(!tenVal||!amt){toast('Tenant and amount required',false);return;}
+  const parts=tenVal.split('|');
+  const d={
+    society_id:CS.id, tenant_id:parts[0]||null,
+    flat:parts[1]||'', tenant_name:parts[2]||'',
+    month:fv('r-month'), amount:parseFloat(amt),
+    due_date:fv('r-due')||null, status:fv('r-stat'),
+    paid_date:fv('r-pdate')||null, payment_mode:fv('r-mode'),
+    txn_ref:fv('r-txn'), late_fee:parseFloat(fv('r-late'))||0,
+    discount:parseFloat(fv('r-disc'))||0, remarks:fv('r-rem')
+  };
+  try{
+    await POST('rent_records',d);
+    rentRecords=await GET('rent_records',`?society_id=eq.${CS.id}&order=created_at.desc`);
+    closeModal('mo-rent'); renderRent(); toast('Rent record added');
+  }catch(e){toast('Error: '+e.message,false);}
+}
+
+async function markRentPaid(id){
+  try{
+    await PATCH('rent_records',id,{status:'paid',paid_date:new Date().toISOString().split('T')[0]});
+    const r=rentRecords.find(x=>x.id===id); if(r)r.status='paid';
+    renderRent(); toast('Marked as paid');
+  }catch(e){toast('Error: '+e.message,false);}
+}
+
+async function deleteRent(id){
+  if(!confirm('Delete?'))return;
+  try{await DELETE('rent_records',id);rentRecords=rentRecords.filter(r=>r.id!==id);renderRent();toast('Deleted');}
+  catch(e){toast('Error: '+e.message,false);}
 }
 
 // ── MOBILE SIDEBAR ────────────────────────────────────────
