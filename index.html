@@ -15,7 +15,7 @@
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f1f5f9;color:#0f172a;min-height:100vh}
 /* LOGIN */
-.login-wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#1a3c6e,#2563eb);padding:20px}
+.login-wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#1a3c6e,#2563eb);padding:20px;overflow-y:auto;}
 .login-box{background:#fff;border-radius:16px;padding:36px 32px;width:100%;max-width:400px;box-shadow:0 20px 60px rgba(0,0,0,.25)}
 .login-logo{text-align:center;margin-bottom:24px}
 .login-logo h1{font-size:22px;font-weight:700;color:#1a3c6e}
@@ -187,8 +187,11 @@ tr:hover td{background:#fafafa}
     <button class="login-btn" id="li-btn" onclick="doLogin()"><i class="ti ti-login" style="margin-right:6px"></i> Sign In</button>
     <div class="login-err" id="li-err"></div>
     <div class="forgot-link" onclick="openModal('mo-forgot')">Forgot Password?</div>
-    <div style="text-align:center;margin-top:10px">
-      <span onclick="openModal('mo-signup')" style="font-size:12px;color:#16a34a;cursor:pointer;font-weight:600"><i class="ti ti-user-plus" style="margin-right:4px"></i>Request Access — Register Your Society</span>
+    <div style="margin-top:14px;border-top:1px solid #f1f5f9;padding-top:14px">
+      <p style="font-size:11px;color:#94a3b8;text-align:center;margin-bottom:10px">New to SocietyOS? Register your society</p>
+      <button onclick="openModal('mo-signup')" style="width:100%;padding:10px;background:#f0fdf4;color:#16a34a;border:1.5px solid #bbf7d0;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px">
+        <i class="ti ti-user-plus"></i> Request Access — Register Your Society
+      </button>
     </div>
   </div>
 </div>
