@@ -128,73 +128,42 @@ tr:hover td{background:#fafafa}
 .ew{color:#92400e;font-weight:600}.ea{color:#991b1b;font-weight:600}
 /* ── MOBILE ── */
 @media(max-width:768px){
-  /* Layout */
-  .app{ flex-direction:column; height:100vh; overflow:hidden; }
-  .sidebar{ position:fixed; z-index:50; top:0; left:0; width:80%; max-width:280px; height:100vh; transform:translateX(-100%); transition:transform .3s ease; box-shadow:4px 0 20px rgba(0,0,0,.3); }
-  .sidebar.open{ transform:translateX(0); }
-  .main{ flex:1; overflow-y:auto; width:100%; }
-  /* Topbar */
-  .topbar{ padding:10px 14px; }
+  .app{ display:flex; flex-direction:row; height:100vh; overflow:hidden; position:relative; }
+  .sidebar{ position:fixed; top:0; left:0; z-index:200; width:78vw; max-width:260px; height:100vh; transform:translateX(-110%); transition:transform .28s cubic-bezier(.4,0,.2,1); box-shadow:4px 0 24px rgba(0,0,0,.35); overflow-y:auto; -webkit-overflow-scrolling:touch; }
+  .sidebar.open{ transform:translateX(0) !important; }
+  .sidebar-overlay{ display:none; position:fixed; inset:0; background:rgba(0,0,0,.45); z-index:199; }
+  .sidebar-overlay.show{ display:block; }
+  .main{ flex:1; width:100%; overflow-y:auto; -webkit-overflow-scrolling:touch; }
+  .topbar{ padding:10px 14px; position:sticky; top:0; z-index:10; }
   .topbar h1{ font-size:14px; }
   .topbar p{ display:none; }
-  /* Content */
+  #mob-menu{ display:block !important; }
   .content{ padding:12px; }
-  /* Stats */
   .stats{ grid-template-columns:1fr 1fr; gap:8px; margin-bottom:12px; }
   .sc .vl{ font-size:20px; }
-  /* Two col */
+  .sc{ padding:12px; }
   .tw{ grid-template-columns:1fr; gap:10px; }
-  /* Society grid */
   .sg{ grid-template-columns:1fr; }
-  /* Forms */
+  .plan-grid{ grid-template-columns:1fr; }
   .fg{ grid-template-columns:1fr; gap:10px; }
-  /* Modals - slide up from bottom */
   .mo{ align-items:flex-end; padding:0; }
-  .md{ width:100%; max-width:100%; border-radius:16px 16px 0 0; max-height:90vh; margin:0; }
+  .md{ width:100%; max-width:100%; border-radius:16px 16px 0 0; max-height:88vh; margin:0; }
   .md-head{ padding:12px 16px; }
-  .md-body{ padding:16px; }
-  .md-foot{ padding:10px 16px; padding-bottom:max(10px, env(safe-area-inset-bottom)); }
-  /* Tables - horizontal scroll */
+  .md-body{ padding:14px 16px; }
+  .md-foot{ padding:10px 16px; padding-bottom:max(12px,env(safe-area-inset-bottom)); }
   .tbl-wrap{ overflow-x:auto; -webkit-overflow-scrolling:touch; }
-  table{ min-width:500px; }
-  /* Filter chips */
-  .fb{ flex-wrap:nowrap; overflow-x:auto; -webkit-overflow-scrolling:touch; padding-bottom:4px; }
+  table{ min-width:480px; font-size:11px; }
+  th,td{ padding:7px 9px; }
+  .fb{ flex-wrap:nowrap; overflow-x:auto; -webkit-overflow-scrolling:touch; padding-bottom:4px; scrollbar-width:none; }
   .fb::-webkit-scrollbar{ display:none; }
   .fc{ white-space:nowrap; flex-shrink:0; }
-  /* Login */
-  .login-box{ padding:28px 20px; }
-  /* Overlay for sidebar */
-  .sidebar-overlay{ display:none; position:fixed; inset:0; background:rgba(0,0,0,.4); z-index:49; }
-  .sidebar-overlay.show{ display:block; }
-  /* Notice cards */
+  .sb-bar{ flex-wrap:wrap; gap:6px; }
+  .sb-bar input{ min-width:0; flex:1; }
+  .login-box{ padding:24px 18px; border-radius:12px; }
   .nc{ padding:10px 12px; }
-  /* Search bar */
-  .sb-bar{ flex-wrap:wrap; }
-  .sb-bar input{ min-width:0; }
-  /* Bottom safe area */
-  .sb-bottom{ padding-bottom:max(10px, env(safe-area-inset-bottom)); }
+  .sb-bottom{ padding-bottom:max(16px,env(safe-area-inset-bottom)); }
+  .card-head{ flex-wrap:wrap; gap:8px; }
 }
-/* ── PLANS ── */
-.plan-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:20px}
-.plan-card{background:#fff;border:2px solid #e2e8f0;border-radius:12px;padding:20px;text-align:center;transition:all .2s;position:relative}
-.plan-card.basic{border-color:#94a3b8}
-.plan-card.standard{border-color:#2563eb;box-shadow:0 4px 20px rgba(37,99,235,.15)}
-.plan-card.premium{border-color:#7c3aed;box-shadow:0 4px 20px rgba(124,58,237,.15)}
-.plan-card .plan-badge{position:absolute;top:-10px;left:50%;transform:translateX(-50%);padding:3px 12px;border-radius:20px;font-size:10px;font-weight:700;white-space:nowrap}
-.plan-card h3{font-size:18px;font-weight:700;margin-bottom:4px}
-.plan-card .plan-price{font-size:28px;font-weight:700;margin:10px 0 4px}
-.plan-card .plan-price span{font-size:13px;font-weight:400;color:#64748b}
-.plan-card .plan-features{text-align:left;margin:14px 0;font-size:12px}
-.plan-card .plan-features div{padding:5px 0;border-bottom:1px solid #f1f5f9;display:flex;align-items:center;gap:6px}
-.plan-card .plan-features div:last-child{border-bottom:none}
-.locked-overlay{background:#f8fafc;border:2px dashed #e2e8f0;border-radius:10px;padding:40px 20px;text-align:center;margin-bottom:16px}
-.locked-overlay i{font-size:36px;color:#cbd5e1;margin-bottom:10px;display:block}
-.locked-overlay h4{font-size:14px;font-weight:600;color:#475569;margin-bottom:6px}
-.locked-overlay p{font-size:12px;color:#94a3b8;margin-bottom:14px}
-.plan-tag{display:inline-flex;align-items:center;padding:3px 10px;border-radius:20px;font-size:10px;font-weight:700}
-.plan-basic{background:#f1f5f9;color:#475569}
-.plan-standard{background:#dbeafe;color:#1e40af}
-.plan-premium{background:#ede9fe;color:#5b21b6}
 /* ── SMALL PHONES ── */
 @media(max-width:380px){
   .stats{ grid-template-columns:1fr 1fr; }
@@ -270,7 +239,7 @@ tr:hover td{background:#fafafa}
       </div>
       <div class="topbar-right">
         <div class="user-pill"><i class="ti ti-user-circle"></i><span id="u-name">Admin</span></div>
-        <button id="mob-menu" style="display:none;background:none;border:none;cursor:pointer;padding:6px" onclick="toggleSidebar()"><i class="ti ti-menu-2" style="font-size:20px"></i></button>
+        <button id="mob-menu" style="display:none;background:none;border:none;cursor:pointer;padding:6px;border-radius:6px" onclick="toggleSidebar()"><i class="ti ti-menu-2" style="font-size:22px;color:#475569"></i></button>
       </div>
     </div>
     <div class="content">
@@ -600,18 +569,21 @@ tr:hover td{background:#fafafa}
           <h3 style="font-size:14px;color:#475569">Basic</h3>
           <div style="font-size:18px;font-weight:700;color:#475569;margin:6px 0">₹999<span style="font-size:11px;font-weight:400">/mo</span></div>
           <div style="font-size:11px;color:#64748b">Members, Dues, Notices</div>
+          <div style="font-size:10px;color:#16a34a;margin-top:6px;font-weight:600">🎉 7 days FREE trial</div>
         </div>
         <div class="plan-card standard" id="sp-standard" onclick="selectSignupPlan('standard')" style="cursor:pointer;padding:14px;border-width:2px">
           <div style="font-size:9px;font-weight:700;color:#2563eb;margin-bottom:4px">POPULAR</div>
           <h3 style="font-size:14px;color:#1e40af">Standard</h3>
           <div style="font-size:18px;font-weight:700;color:#1e40af;margin:6px 0">₹1999<span style="font-size:11px;font-weight:400">/mo</span></div>
           <div style="font-size:11px;color:#64748b">+ Services, Tenants</div>
+          <div style="font-size:10px;color:#16a34a;margin-top:6px;font-weight:600">🎉 7 days FREE trial</div>
         </div>
         <div class="plan-card premium" id="sp-premium" onclick="selectSignupPlan('premium')" style="cursor:pointer;padding:14px;border-width:2px">
           <div style="font-size:9px;font-weight:700;color:#7c3aed;margin-bottom:4px">ALL FEATURES</div>
           <h3 style="font-size:14px;color:#5b21b6">Premium</h3>
           <div style="font-size:18px;font-weight:700;color:#5b21b6;margin:6px 0">₹2999<span style="font-size:11px;font-weight:400">/mo</span></div>
           <div style="font-size:11px;color:#64748b">+ Accounts, Reports</div>
+          <div style="font-size:10px;color:#16a34a;margin-top:6px;font-weight:600">🎉 7 days FREE trial</div>
         </div>
       </div>
       <input type="hidden" id="su-plan" value="basic">
@@ -1110,6 +1082,60 @@ function closeModal(id) { $(id).classList.remove('show'); }
 function daysUntil(d)   { if(!d) return 9999; return Math.ceil((new Date(d)-new Date())/86400000); }
 function wings()        { return (CS?.wings||'A,B,C,D').split(',').map(w=>w.trim()); }
 
+// ── Universal CSV Download (works on all browsers including mobile) ──
+function downloadCSV(rows, filename) {
+  try {
+    // Add BOM for Excel compatibility with UTF-8
+    const BOM = '\uFEFF';
+    const csv = BOM + rows.map(r => r.map(x => {
+      const val = String(x === null || x === undefined ? '' : x);
+      // Escape quotes and wrap in quotes
+      return '"' + val.replace(/"/g, '""') + '"';
+    }).join(',')).join('\r\n');
+
+    // Method 1: Blob + anchor (modern browsers)
+    try {
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const url  = URL.createObjectURL(blob);
+      const a    = document.createElement('a');
+      a.href     = url;
+      a.download = filename;
+      a.style.display = 'none';
+      document.body.appendChild(a);
+      a.click();
+      setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(url); }, 200);
+      toast('CSV downloaded ✓');
+      return;
+    } catch(e1) {
+      console.warn('Method 1 failed:', e1);
+    }
+
+    // Method 2: data URI fallback (Safari / older browsers)
+    try {
+      const dataUri = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csv);
+      const a = document.createElement('a');
+      a.href = dataUri;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      toast('CSV downloaded ✓');
+      return;
+    } catch(e2) {
+      console.warn('Method 2 failed:', e2);
+    }
+
+    // Method 3: Open in new tab (last resort for mobile)
+    const dataUri = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csv);
+    window.open(dataUri, '_blank');
+    toast('CSV opened — save it from your browser ✓');
+
+  } catch(e) {
+    toast('Export error: ' + e.message, false);
+    console.error('CSV export error:', e);
+  }
+}
+
 // ═══════════════════════════════════════════════
 // NAVIGATION — single event delegation on sidebar
 // ═══════════════════════════════════════════════
@@ -1156,7 +1182,7 @@ function goPage(id) {
     if (niL) niL.classList.add('active');
     $('pg-title').textContent = PAGE_TITLES[id]||id;
     $('pg-meta').textContent  = '🔒 Locked — Upgrade required';
-    if (window.innerWidth<768) { $('sidebar').classList.remove('open'); if($('sb-overlay'))$('sb-overlay').classList.remove('show'); }
+    if (window.innerWidth<768) { closeSidebar(); }
     return;
   }
   // ── Normal navigation ──
@@ -1187,7 +1213,7 @@ function goPage(id) {
   if (id==='rent')      renderRent();
   if (id==='accounts')  renderAccounts();
   if (id==='reports')   renderReports();
-  if (window.innerWidth<768) { $('sidebar').classList.remove('open'); if($('sb-overlay'))$('sb-overlay').classList.remove('show'); }
+  if (window.innerWidth<768) { closeSidebar(); }
 }
 
 // Attach sidebar nav click via delegation
@@ -1212,8 +1238,7 @@ document.addEventListener('DOMContentLoaded', function() {
     if (f.startsWith('amen-')) { amenF=f.replace('amen-',''); renderAmen(); }
     if (f.startsWith('not-'))  { notF=f.replace('not-','');   renderNotices(); }
   });
-  // Mobile menu
-  if (window.innerWidth<768) $('mob-menu').style.display='block';
+  // Mobile menu shown via CSS media query
   // Enter key on login
   document.addEventListener('keydown', e => {
     if (e.key==='Enter' && $('login-screen').style.display!=='none') doLogin();
@@ -1857,13 +1882,7 @@ async function deleteAccount(id) {
 function exportAccountsCSV() {
   const rows = [['Date','Type','Category','Description','From/Vendor','Mode','Amount']];
   accounts.forEach(a => rows.push([a.date,a.type,a.category,a.description,a.vendor_or_from||'',a.payment_mode||'',a.amount]));
-  const csv = rows.map(r=>r.map(x=>`"${x||''}"`).join(',')).join('\n');
-  const blob = new Blob([csv], {type:'text/csv'});
-  const url  = URL.createObjectURL(blob);
-  const link = document.createElement('a');
-  link.href=url; link.download=`accounts_${CS?.name||'society'}_${new Date().toISOString().split('T')[0]}.csv`;
-  link.click(); URL.revokeObjectURL(url);
-  toast('CSV downloaded');
+  downloadCSV(rows, `accounts_${CS?.name||'society'}_${new Date().toISOString().split('T')[0]}.csv`);
 }
 
 // Hook filter chips for accounts
@@ -2106,13 +2125,7 @@ function exportReportCSV(type) {
     filename=`rent_${CS?.name||'society'}`;
   }
   if (!rows.length) { toast('No data to export', false); return; }
-  const csv  = rows.map(r=>r.map(x=>`"${x||''}"`).join(',')).join('\n');
-  const blob = new Blob([csv],{type:'text/csv'});
-  const url  = URL.createObjectURL(blob);
-  const link = document.createElement('a');
-  link.href=url; link.download=filename+'_'+new Date().toISOString().split('T')[0]+'.csv';
-  link.click(); URL.revokeObjectURL(url);
-  toast('CSV downloaded ✓');
+  downloadCSV(rows, filename+'_'+new Date().toISOString().split('T')[0]+'.csv');
 }
 
 // ═══════════════════════════════════════════════
@@ -2528,12 +2541,78 @@ async function requestUpgrade(planId) {
 async function applyPlanAfterLogin() {
   if (!CS || CU?.role === 'master') return;
   applyPlanToUI();
-  // Check plan expiry
-  if (CS.plan_expiry && daysUntil(CS.plan_expiry) <= 0) {
-    toast('⚠️ Your plan has expired. Please contact your property manager.', false);
-  } else if (CS.plan_expiry && daysUntil(CS.plan_expiry) <= 7) {
-    toast(`⚠️ Your plan expires in ${daysUntil(CS.plan_expiry)} days!`, false);
+  const d = daysUntil(CS.plan_expiry);
+  const isTrial = CS.plan_assigned_by?.includes('Trial');
+
+  if (CS.plan_expiry && d <= 0) {
+    // Expired — show banner
+    showExpiredBanner();
+  } else if (CS.plan_expiry && d <= 3) {
+    showTrialBanner(d, isTrial, true);
+  } else if (CS.plan_expiry && d <= 7) {
+    showTrialBanner(d, isTrial, false);
   }
+}
+
+function showTrialBanner(days, isTrial, urgent) {
+  const existing = $('trial-banner');
+  if (existing) existing.remove();
+  const banner = document.createElement('div');
+  banner.id = 'trial-banner';
+  banner.style.cssText = `
+    background:${urgent?'#fee2e2':'#fef3c7'};
+    color:${urgent?'#991b1b':'#92400e'};
+    padding:10px 16px;
+    font-size:12px;
+    font-weight:500;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:10px;
+    flex-wrap:wrap;
+    border-bottom:1px solid ${urgent?'#fecaca':'#fde68a'};
+    position:sticky;top:0;z-index:10;
+  `;
+  banner.innerHTML = `
+    <span>
+      <i class="ti ti-alert-triangle" style="margin-right:6px"></i>
+      ${isTrial ? `Your <strong>7-day free trial</strong> expires in <strong>${days} day${days!==1?'s':''}</strong>.` : `Your plan expires in <strong>${days} day${days!==1?'s':''}</strong>.`}
+      Please contact your property manager to continue using SocietyOS.
+    </span>
+    <div style="display:flex;gap:8px;flex-shrink:0">
+      <button class="btn btn-p" style="font-size:11px;padding:4px 10px" onclick="goPage('pricing')">
+        <i class="ti ti-crown"></i> View Plans
+      </button>
+      <button onclick="this.parentElement.parentElement.remove()" style="background:none;border:none;cursor:pointer;font-size:16px;color:inherit">×</button>
+    </div>`;
+  // Insert before content
+  const content = document.querySelector('.content');
+  if (content) content.insertBefore(banner, content.firstChild);
+}
+
+function showExpiredBanner() {
+  const existing = $('trial-banner');
+  if (existing) existing.remove();
+  const banner = document.createElement('div');
+  banner.id = 'trial-banner';
+  banner.style.cssText = `
+    background:#fee2e2;color:#991b1b;
+    padding:12px 16px;font-size:12px;font-weight:600;
+    display:flex;align-items:center;justify-content:space-between;
+    gap:10px;flex-wrap:wrap;
+    border-bottom:2px solid #fecaca;
+    position:sticky;top:0;z-index:10;
+  `;
+  banner.innerHTML = `
+    <span>
+      <i class="ti ti-lock" style="margin-right:6px"></i>
+      Your plan has <strong>expired</strong>. Please contact your property manager to renew and continue using all features.
+    </span>
+    <button class="btn btn-p" style="font-size:11px;padding:4px 10px;background:#991b1b;border-color:#991b1b" onclick="goPage('pricing')">
+      <i class="ti ti-crown"></i> Renew Now
+    </button>`;
+  const content = document.querySelector('.content');
+  if (content) content.insertBefore(banner, content.firstChild);
 }
 
 // ═══════════════════════════════════════════════
@@ -2589,11 +2668,12 @@ async function renderPayments() {
       rb.innerHTML = expiring.map(s=>{
         const d = daysUntil(s.plan_expiry);
         const planObj = allPlans.find(p=>p.id===s.plan)||{price_monthly:0,price_yearly:0};
+        const isTrial = s.plan_assigned_by?.includes('Trial');
         return`<tr>
-          <td style="font-weight:600">${s.name}</td>
+          <td style="font-weight:600">${s.name} ${isTrial?'<span class="badge ba" style="font-size:9px">TRIAL</span>':''}</td>
           <td><span class="plan-tag ${PLAN_BG[s.plan||'basic']}">${(s.plan||'basic').toUpperCase()}</span></td>
           <td style="font-size:11px">${s.plan_expiry}</td>
-          <td style="font-weight:600;color:${d<0?'#991b1b':d<=7?'#991b1b':d<=30?'#92400e':'#16a34a'}">${d<0?'Expired':d+'d left'}</td>
+          <td style="font-weight:600;color:${d<0?'#991b1b':d<=7?'#991b1b':d<=30?'#92400e':'#16a34a'}">${d<0?'Expired':d<=7?d+'d ⚠️':d+'d left'}</td>
           <td style="font-size:11px">₹${Number(planObj.price_monthly||0).toLocaleString('en-IN')}/mo or ₹${Number(planObj.price_yearly||0).toLocaleString('en-IN')}/yr</td>
           <td><button class="btn btn-p" style="padding:4px 10px;font-size:11px" onclick="quickRecordPayment('${s.id}','${s.name}','${s.plan}')"><i class="ti ti-plus"></i> Record Payment</button></td>
         </tr>`;
@@ -2689,13 +2769,7 @@ function exportPaymentsCSV() {
     p.data.paid_by||'', p.data.status||'',
     p.data.plan_start||'', p.data.plan_end||''
   ]));
-  const csv = rows.map(r=>r.map(x=>`"${x||''}"`).join(',')).join('\n');
-  const blob = new Blob([csv],{type:'text/csv'});
-  const url  = URL.createObjectURL(blob);
-  const link = document.createElement('a');
-  link.href=url; link.download=`subscription_payments_${new Date().toISOString().split('T')[0]}.csv`;
-  link.click(); URL.revokeObjectURL(url);
-  toast('CSV downloaded ✓');
+  downloadCSV(rows, `subscription_payments_${new Date().toISOString().split('T')[0]}.csv`);
 }
 
 // ═══════════════════════════════════════════════
@@ -2759,7 +2833,7 @@ async function submitSignupRequest() {
     });
 
     msg.style.display='block'; msg.style.background='#dcfce7'; msg.style.color='#166534';
-    msg.textContent='✓ Request submitted successfully! Our team will review and contact you within 24 hours.';
+    msg.innerHTML='✓ Request submitted successfully!<br><br>📋 Our team will review your request within 24 hours.<br>🎉 Once approved you will get <strong>7 days FREE trial</strong>.<br>📞 We will contact you at <strong>'+mobile+'</strong> with your login details.';
     btn.innerHTML='<i class="ti ti-check"></i> Submitted!';
     setTimeout(()=>{ closeModal('mo-signup'); btn.innerHTML='<i class="ti ti-send"></i> Submit Request'; btn.disabled=false; msg.style.display='none'; }, 3000);
   } catch(e) {
@@ -2866,14 +2940,19 @@ This will:
 Temporary password will be: Society@1234`)) return;
 
   try {
-    // 1. Create society
+    // 1. Create society with 7 day trial
+    const trialEnd = new Date();
+    trialEnd.setDate(trialEnd.getDate() + 7);
+    const trialEndStr = trialEnd.toISOString().split('T')[0];
     const socRes = await POST('societies', {
       name: req.society_name, address: req.society_address,
       city: req.society_city, state: req.society_state,
       pincode: req.society_pincode, registration_no: req.society_reg_no,
       total_units: req.total_units, wings: req.wings,
       secretary_name: req.admin_name, plan: req.requested_plan,
-      plan_assigned_by: CU.name, plan_assigned_at: new Date().toISOString()
+      plan_expiry: trialEndStr,
+      plan_assigned_by: CU.name+' (Trial)',
+      plan_assigned_at: new Date().toISOString()
     });
 
     if (!socRes.length) throw new Error('Failed to create society');
@@ -2952,18 +3031,24 @@ async function deleteRequest(id) {
 function toggleSidebar() {
   const sb = $('sidebar');
   const ov = $('sb-overlay');
+  if (!sb) return;
   const isOpen = sb.classList.contains('open');
   if (isOpen) {
     sb.classList.remove('open');
-    ov.classList.remove('show');
+    if(ov) ov.classList.remove('show');
+    document.body.style.overflow = '';
   } else {
     sb.classList.add('open');
-    ov.classList.add('show');
+    if(ov) ov.classList.add('show');
+    document.body.style.overflow = 'hidden'; // prevent background scroll
   }
 }
 function closeSidebar() {
-  $('sidebar').classList.remove('open');
-  $('sb-overlay').classList.remove('show');
+  const sb = $('sidebar');
+  const ov = $('sb-overlay');
+  if(sb) sb.classList.remove('open');
+  if(ov) ov.classList.remove('show');
+  document.body.style.overflow = '';
 }
 
 // Close sidebar after nav on mobile
