@@ -285,7 +285,13 @@ tr:hover td{background:#fafafa}
           <select id="mem-wing" onchange="renderMembers()"><option value="">All Wings</option></select>
         </div>
         <div class="card">
-          <div class="card-head"><h3 id="mem-lbl">Members</h3><button class="btn btn-p" onclick="openMemberModal(-1)"><i class="ti ti-plus"></i> Add Member</button></div>
+          <div class="card-head">
+  <h3 id="mem-lbl">Members</h3>
+  <div style="display:flex;gap:8px">
+    <button class="btn" onclick="exportReportCSV('members')"><i class="ti ti-download"></i> Export CSV</button>
+    <button class="btn btn-p" onclick="openMemberModal(-1)"><i class="ti ti-plus"></i> Add Member</button>
+  </div>
+</div>
           <div class="tbl-wrap"><table><thead><tr><th>Flat</th><th>Name</th><th>Mobile</th><th>Type</th><th>Status</th><th>Vehicle</th><th></th></tr></thead><tbody id="mem-tbody"></tbody></table></div>
         </div>
       </div>
@@ -299,7 +305,13 @@ tr:hover td{background:#fafafa}
           <div class="fc" data-filter="dues-overdue">Overdue</div>
         </div>
         <div class="card">
-          <div class="card-head"><h3>Maintenance Dues</h3><button class="btn btn-p" onclick="openDuesModal()"><i class="ti ti-plus"></i> Add Record</button></div>
+          <div class="card-head">
+  <h3>Maintenance Dues</h3>
+  <div style="display:flex;gap:8px">
+    <button class="btn" onclick="exportReportCSV('dues')"><i class="ti ti-download"></i> Export CSV</button>
+    <button class="btn btn-p" onclick="openDuesModal()"><i class="ti ti-plus"></i> Add Record</button>
+  </div>
+</div>
           <div class="tbl-wrap"><table><thead><tr><th>Flat</th><th>Month</th><th>Amount (₹)</th><th>Due Date</th><th>Status</th><th>Mode</th><th></th></tr></thead><tbody id="dues-tbody"></tbody></table></div>
         </div>
       </div>
@@ -567,23 +579,26 @@ tr:hover td{background:#fafafa}
       <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:20px" id="signup-plan-select">
         <div class="plan-card basic" id="sp-basic" onclick="selectSignupPlan('basic')" style="cursor:pointer;padding:14px;border-width:2px">
           <h3 style="font-size:14px;color:#475569">Basic</h3>
-          <div style="font-size:18px;font-weight:700;color:#475569;margin:6px 0">₹999<span style="font-size:11px;font-weight:400">/mo</span></div>
-          <div style="font-size:11px;color:#64748b">Members, Dues, Notices</div>
-          <div style="font-size:10px;color:#16a34a;margin-top:6px;font-weight:600">🎉 7 days FREE trial</div>
+          <div style="font-size:18px;font-weight:700;color:#475569;margin:4px 0">₹999<span style="font-size:11px;font-weight:400">/mo</span></div>
+          <div style="font-size:10px;color:#64748b">+ GST 18% = ₹1,179/mo</div>
+          <div style="font-size:10px;color:#64748b;margin-top:3px">Members, Dues, Notices</div>
+          <div style="font-size:10px;color:#16a34a;margin-top:5px;font-weight:600">🎉 7 days FREE trial</div>
         </div>
         <div class="plan-card standard" id="sp-standard" onclick="selectSignupPlan('standard')" style="cursor:pointer;padding:14px;border-width:2px">
-          <div style="font-size:9px;font-weight:700;color:#2563eb;margin-bottom:4px">POPULAR</div>
+          <div style="font-size:9px;font-weight:700;color:#2563eb;margin-bottom:3px">POPULAR</div>
           <h3 style="font-size:14px;color:#1e40af">Standard</h3>
-          <div style="font-size:18px;font-weight:700;color:#1e40af;margin:6px 0">₹1999<span style="font-size:11px;font-weight:400">/mo</span></div>
-          <div style="font-size:11px;color:#64748b">+ Services, Tenants</div>
-          <div style="font-size:10px;color:#16a34a;margin-top:6px;font-weight:600">🎉 7 days FREE trial</div>
+          <div style="font-size:18px;font-weight:700;color:#1e40af;margin:4px 0">₹1,999<span style="font-size:11px;font-weight:400">/mo</span></div>
+          <div style="font-size:10px;color:#64748b">+ GST 18% = ₹2,359/mo</div>
+          <div style="font-size:10px;color:#64748b;margin-top:3px">+ Services, Tenants</div>
+          <div style="font-size:10px;color:#16a34a;margin-top:5px;font-weight:600">🎉 7 days FREE trial</div>
         </div>
         <div class="plan-card premium" id="sp-premium" onclick="selectSignupPlan('premium')" style="cursor:pointer;padding:14px;border-width:2px">
-          <div style="font-size:9px;font-weight:700;color:#7c3aed;margin-bottom:4px">ALL FEATURES</div>
+          <div style="font-size:9px;font-weight:700;color:#7c3aed;margin-bottom:3px">ALL FEATURES</div>
           <h3 style="font-size:14px;color:#5b21b6">Premium</h3>
-          <div style="font-size:18px;font-weight:700;color:#5b21b6;margin:6px 0">₹2999<span style="font-size:11px;font-weight:400">/mo</span></div>
-          <div style="font-size:11px;color:#64748b">+ Accounts, Reports</div>
-          <div style="font-size:10px;color:#16a34a;margin-top:6px;font-weight:600">🎉 7 days FREE trial</div>
+          <div style="font-size:18px;font-weight:700;color:#5b21b6;margin:4px 0">₹2,999<span style="font-size:11px;font-weight:400">/mo</span></div>
+          <div style="font-size:10px;color:#64748b">+ GST 18% = ₹3,539/mo</div>
+          <div style="font-size:10px;color:#64748b;margin-top:3px">+ Accounts, Reports</div>
+          <div style="font-size:10px;color:#16a34a;margin-top:5px;font-weight:600">🎉 7 days FREE trial</div>
         </div>
       </div>
       <input type="hidden" id="su-plan" value="basic">
@@ -2400,6 +2415,9 @@ async function renderPlans() {
     const grid = $('plan-cards-grid');
     grid.innerHTML = allPlans.map(p => {
       const f = typeof p.features === 'string' ? JSON.parse(p.features) : p.features;
+      const GST_RATE = 0.18;
+      const monthlyGST = Math.round(Number(p.price_monthly) * GST_RATE);
+      const yearlyGST  = Math.round(Number(p.price_yearly)  * GST_RATE);
       const featureList = [
         {k:'members',l:'Member Registry'},{k:'dues',l:'Maintenance Dues'},
         {k:'notices',l:'Notices & Complaints'},{k:'services',l:'Services & AMC'},
@@ -2407,19 +2425,25 @@ async function renderPlans() {
         {k:'accounts',l:'Accounts & Finance'},{k:'reports',l:'Reports & Analytics'},
         {k:'photos',l:'Photos'}
       ];
-      return `<div class="plan-card ${p.id}">
+      return `<div class="plan-card ${p.id}" style="display:flex;flex-direction:column">
         ${p.id==='standard'?'<div class="plan-badge" style="background:#2563eb;color:#fff">Most Popular</div>':''}
         ${p.id==='premium'?'<div class="plan-badge" style="background:#7c3aed;color:#fff">All Features</div>':''}
-        <h3 style="color:${PLAN_COLORS[p.id]}">${p.name}</h3>
-        <div class="plan-price" style="color:${PLAN_COLORS[p.id]}">₹${Number(p.price_monthly).toLocaleString('en-IN')}<span>/month</span></div>
-        <div style="font-size:10px;color:#94a3b8">₹${Number(p.price_yearly).toLocaleString('en-IN')}/year</div>
-        <div class="plan-features">
+        <h3 style="color:${PLAN_COLORS[p.id]};font-size:20px;margin-bottom:4px">${p.name}</h3>
+        <p style="font-size:11px;color:#94a3b8;margin-bottom:10px">${p.description||''}</p>
+        <div class="plan-price" style="color:${PLAN_COLORS[p.id]}">
+          ₹${Number(p.price_monthly).toLocaleString('en-IN')}<span>/month</span>
+        </div>
+        <div style="font-size:11px;color:#94a3b8;margin-bottom:2px">+ GST (18%) = ₹${(Number(p.price_monthly)+monthlyGST).toLocaleString('en-IN')}/mo</div>
+        <div style="font-size:11px;color:#16a34a;margin-bottom:12px;font-weight:500">
+          ₹${Number(p.price_yearly).toLocaleString('en-IN')}/year + GST = ₹${(Number(p.price_yearly)+yearlyGST).toLocaleString('en-IN')} &nbsp;•&nbsp; Save ${Math.round((1-p.price_yearly/(p.price_monthly*12))*100)}%
+        </div>
+        <div class="plan-features" style="flex:1">
           ${featureList.map(feat=>`<div>
-            <i class="ti ${f[feat.k]?'ti-check' : 'ti-x'}" style="color:${f[feat.k]?'#16a34a':'#ef4444'};font-size:13px"></i>
+            <i class="ti ${f[feat.k]?'ti-check':'ti-x'}" style="color:${f[feat.k]?'#16a34a':'#ef4444'};font-size:13px"></i>
             <span style="color:${f[feat.k]?'#0f172a':'#94a3b8'}">${feat.l}</span>
           </div>`).join('')}
         </div>
-        <button class="btn btn-p" style="width:100%;justify-content:center;background:${PLAN_COLORS[p.id]};border-color:${PLAN_COLORS[p.id]}" onclick="editPlanPricing('${p.id}')">
+        <button class="btn btn-p" style="width:100%;justify-content:center;margin-top:14px;background:${PLAN_COLORS[p.id]};border-color:${PLAN_COLORS[p.id]}" onclick="editPlanPricing('${p.id}')">
           <i class="ti ti-edit"></i> Edit Pricing
         </button>
       </div>`;
@@ -2495,6 +2519,9 @@ async function renderPricing() {
     grid.innerHTML = allPlans.map(p => {
       const f = typeof p.features === 'string' ? JSON.parse(p.features) : p.features;
       const isCurrent = p.id === currentPlan;
+      const GST_RATE = 0.18;
+      const monthlyGST = Math.round(Number(p.price_monthly) * GST_RATE);
+      const yearlyGST  = Math.round(Number(p.price_yearly)  * GST_RATE);
       const featureList = [
         {k:'members',l:'Member Registry'},{k:'dues',l:'Maintenance Dues'},
         {k:'notices',l:'Notices & Complaints'},{k:'services',l:'Services & AMC'},
@@ -2502,25 +2529,33 @@ async function renderPricing() {
         {k:'accounts',l:'Accounts & Finance'},{k:'reports',l:'Reports & Analytics'},
         {k:'photos',l:'Photos'}
       ];
-      return `<div class="plan-card ${p.id}" style="${isCurrent?'border-width:3px':''}">
-        ${isCurrent?'<div class="plan-badge" style="background:#16a34a;color:#fff">Your Current Plan</div>':''}
+      return `<div class="plan-card ${p.id}" style="${isCurrent?'border-width:3px':''}display:flex;flex-direction:column">
+        ${isCurrent?'<div class="plan-badge" style="background:#16a34a;color:#fff">✓ Your Current Plan</div>':''}
         ${p.id==='standard'&&!isCurrent?'<div class="plan-badge" style="background:#2563eb;color:#fff">Most Popular</div>':''}
         ${p.id==='premium'&&!isCurrent?'<div class="plan-badge" style="background:#7c3aed;color:#fff">All Features</div>':''}
-        <h3 style="color:${PLAN_COLORS[p.id]}">${p.name}</h3>
-        <div class="plan-price" style="color:${PLAN_COLORS[p.id]}">₹${Number(p.price_monthly).toLocaleString('en-IN')}<span>/month</span></div>
-        <div style="font-size:10px;color:#94a3b8;margin-bottom:6px">₹${Number(p.price_yearly).toLocaleString('en-IN')}/year • Save ${Math.round((1-p.price_yearly/(p.price_monthly*12))*100)}%</div>
-        <div class="plan-features">
+        <h3 style="color:${PLAN_COLORS[p.id]};font-size:20px;margin-bottom:4px">${p.name}</h3>
+        <p style="font-size:11px;color:#94a3b8;margin-bottom:10px">${p.description||''}</p>
+        <div class="plan-price" style="color:${PLAN_COLORS[p.id]}">
+          ₹${Number(p.price_monthly).toLocaleString('en-IN')}<span>/month</span>
+        </div>
+        <div style="font-size:11px;color:#64748b;margin-bottom:2px">+ GST 18% = <strong>₹${(Number(p.price_monthly)+monthlyGST).toLocaleString('en-IN')}/mo</strong></div>
+        <div style="font-size:11px;color:#16a34a;font-weight:500;margin-bottom:12px">
+          Yearly: ₹${Number(p.price_yearly).toLocaleString('en-IN')} + GST = ₹${(Number(p.price_yearly)+yearlyGST).toLocaleString('en-IN')} &nbsp;•&nbsp; Save ${Math.round((1-p.price_yearly/(p.price_monthly*12))*100)}%
+        </div>
+        <div class="plan-features" style="flex:1">
           ${featureList.map(feat=>`<div>
             <i class="ti ${f[feat.k]?'ti-check':'ti-x'}" style="color:${f[feat.k]?'#16a34a':'#ef4444'};font-size:13px"></i>
             <span style="color:${f[feat.k]?'#0f172a':'#94a3b8'}">${feat.l}</span>
           </div>`).join('')}
         </div>
+        <div style="margin-top:14px">
         ${isCurrent ?
-          '<div style="text-align:center;padding:8px;background:#dcfce7;border-radius:7px;font-size:12px;font-weight:600;color:#166534">✓ Active Plan</div>' :
+          '<div style="text-align:center;padding:10px;background:#dcfce7;border-radius:7px;font-size:12px;font-weight:600;color:#166534">✓ Active Plan</div>' :
           `<button class="btn btn-p" style="width:100%;justify-content:center;background:${PLAN_COLORS[p.id]};border-color:${PLAN_COLORS[p.id]}" onclick="requestUpgrade('${p.id}')">
             <i class="ti ti-crown"></i> Request Upgrade
           </button>`
         }
+        </div>
       </div>`;
     }).join('');
   } catch(e) { toast('Error: '+e.message, false); }
@@ -2674,7 +2709,11 @@ async function renderPayments() {
           <td><span class="plan-tag ${PLAN_BG[s.plan||'basic']}">${(s.plan||'basic').toUpperCase()}</span></td>
           <td style="font-size:11px">${s.plan_expiry}</td>
           <td style="font-weight:600;color:${d<0?'#991b1b':d<=7?'#991b1b':d<=30?'#92400e':'#16a34a'}">${d<0?'Expired':d<=7?d+'d ⚠️':d+'d left'}</td>
-          <td style="font-size:11px">₹${Number(planObj.price_monthly||0).toLocaleString('en-IN')}/mo or ₹${Number(planObj.price_yearly||0).toLocaleString('en-IN')}/yr</td>
+          <td style="font-size:11px">
+            ₹${Number(planObj.price_monthly||0).toLocaleString('en-IN')} + GST/mo
+            &nbsp;|&nbsp;
+            ₹${Number(planObj.price_yearly||0).toLocaleString('en-IN')} + GST/yr
+          </td>
           <td><button class="btn btn-p" style="padding:4px 10px;font-size:11px" onclick="quickRecordPayment('${s.id}','${s.name}','${s.plan}')"><i class="ti ti-plus"></i> Record Payment</button></td>
         </tr>`;
       }).join('');
