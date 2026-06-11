@@ -722,6 +722,22 @@ tr:hover td{background:#fafafa}
   <div class="md">
     <div class="md-head"><h3 id="mem-modal-title">Add Member</h3><button class="md-close" onclick="closeModal('mo-member')"><i class="ti ti-x"></i></button></div>
     <div class="md-body"><div class="fg">
+      <div class="fd"><i class="ti ti-camera" style="font-size:12px"></i> Profile Photo</div>
+      <div class="fi full">
+        <div class="photo-upload-area" id="m-photo-area" onclick="document.getElementById('m-photo-input').click()">
+          <div id="m-photo-preview-wrap">
+            <i class="ti ti-user-circle" style="font-size:40px;color:#cbd5e1;display:block;margin-bottom:8px"></i>
+            <div style="font-size:12px;font-weight:500;color:#64748b">Click to upload photo</div>
+            <div style="font-size:11px;color:#94a3b8;margin-top:3px">JPG, PNG • Max 2MB • Camera supported on mobile</div>
+          </div>
+        </div>
+        <input type="file" id="m-photo-input" accept="image/*" capture="environment" style="display:none" onchange="previewPhoto('m','m-photo-area','m-photo-preview-wrap')">
+        <input type="hidden" id="m-photo-url">
+        <div id="m-photo-actions" style="display:none;text-align:center;margin-top:6px">
+          <button type="button" class="photo-upload-btn" onclick="document.getElementById('m-photo-input').click()"><i class="ti ti-refresh"></i> Change Photo</button>
+          <button type="button" class="photo-upload-btn" style="color:#ef4444" onclick="removePhoto('m','m-photo-area','m-photo-preview-wrap')"><i class="ti ti-trash"></i> Remove</button>
+        </div>
+      </div>
       <div class="fd">Flat Details</div>
       <div class="fi"><label>Wing *</label><select id="m-wing"></select></div>
       <div class="fi"><label>Flat Number *</label><input id="m-flat"></div>
@@ -893,20 +909,20 @@ tr:hover td{background:#fafafa}
   <div class="md">
     <div class="md-head"><h3 id="ten-modal-title">Add Tenant</h3><button class="md-close" onclick="closeModal('mo-tenant')"><i class="ti ti-x"></i></button></div>
     <div class="md-body"><div class="fg">
-      <div class="fd"><i class="ti ti-camera" style="font-size:12px"></i> Profile Photo</div>
+      <div class="fd"><i class="ti ti-camera" style="font-size:12px"></i> Tenant Photo</div>
       <div class="fi full">
-        <div class="photo-upload-area" id="m-photo-area" onclick="document.getElementById('m-photo-input').click()">
-          <div id="m-photo-preview-wrap">
+        <div class="photo-upload-area" id="t-photo-area" onclick="document.getElementById('t-photo-input').click()">
+          <div id="t-photo-preview-wrap">
             <i class="ti ti-user-circle" style="font-size:40px;color:#cbd5e1;display:block;margin-bottom:8px"></i>
-            <div style="font-size:12px;font-weight:500;color:#64748b">Click to upload photo</div>
+            <div style="font-size:12px;font-weight:500;color:#64748b">Click to upload tenant photo</div>
             <div style="font-size:11px;color:#94a3b8;margin-top:3px">JPG, PNG • Max 2MB • Camera supported on mobile</div>
           </div>
         </div>
-        <input type="file" id="m-photo-input" accept="image/*" capture="environment" style="display:none" onchange="previewPhoto('m','m-photo-area','m-photo-preview-wrap')">
-        <input type="hidden" id="m-photo-url">
-        <div id="m-photo-actions" style="display:none;text-align:center;margin-top:6px">
-          <button type="button" class="photo-upload-btn" onclick="document.getElementById('m-photo-input').click()"><i class="ti ti-refresh"></i> Change Photo</button>
-          <button type="button" class="photo-upload-btn" style="color:#ef4444" onclick="removePhoto('m','m-photo-area','m-photo-preview-wrap')"><i class="ti ti-trash"></i> Remove</button>
+        <input type="file" id="t-photo-input" accept="image/*" capture="environment" style="display:none" onchange="previewPhoto('t','t-photo-area','t-photo-preview-wrap')">
+        <input type="hidden" id="t-photo-url">
+        <div id="t-photo-actions" style="display:none;text-align:center;margin-top:6px">
+          <button type="button" class="photo-upload-btn" onclick="document.getElementById('t-photo-input').click()"><i class="ti ti-refresh"></i> Change Photo</button>
+          <button type="button" class="photo-upload-btn" style="color:#ef4444" onclick="removePhoto('t','t-photo-area','t-photo-preview-wrap')"><i class="ti ti-trash"></i> Remove</button>
         </div>
       </div>
       <div class="fd"><i class="ti ti-home" style="font-size:12px"></i> Flat Details</div>
