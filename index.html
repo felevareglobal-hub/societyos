@@ -3136,7 +3136,7 @@ function triggerPhotoInput(inputId) {
   input.value = ''; // Reset so same file can be re-selected
   input.click();
 }
-const STORAGE_URL = `${URL}/storage/v1/object`;
+const STORAGE_URL = `${URL}/storage/v1/object`; // Supabase Storage
 
 async function uploadPhoto(file, path) {
   try {
@@ -3144,27 +3144,29 @@ async function uploadPhoto(file, path) {
     const compressed = await compressImage(file, 600, 0.75);
     console.log('Compressed size:', compressed.size, 'bytes');
 
-    // Clean path — no special chars
+    // Clean path — no special chars, add .jpg extension
     const cleanPath = path.replace(/[^a-zA-Z0-9/_.-]/g, '_') + '.jpg';
     console.log('Uploading to path:', cleanPath);
-    console.log('Upload URL:', `${STORAGE_URL}/society-photos/${cleanPath}`);
 
+    // Method 1: Try standard POST upload
     toast('Uploading photo…');
-    const res = await fetch(`${STORAGE_URL}/society-photos/${cleanPath}`, {
+    const res = await fetch(`${URL}/storage/v1/object/society-photos/${cleanPath}`, {
       method: 'POST',
       headers: {
         'apikey': KEY,
         'Authorization': 'Bearer ' + KEY,
         'Content-Type': 'image/jpeg',
         'x-upsert': 'true',
-        'cache-control': '3600'
+        'cache-control': '3600',
+        'Origin': 'https://felevareglobal-hub.github.io'
       },
-      body: compressed
+      body: compressed,
+      mode: 'cors',
+      credentials: 'omit'
     });
 
     const resText = await res.text();
-    console.log('Upload response status:', res.status);
-    console.log('Upload response body:', resText);
+    console.log('Upload status:', res.status, 'Body:', resText);
 
     if (!res.ok) throw new Error(`Upload failed (${res.status}): ${resText}`);
 
@@ -3174,7 +3176,41 @@ async function uploadPhoto(file, path) {
     return publicUrl;
   } catch(e) {
     console.error('❌ Upload error:', e);
-    toast('Photo upload failed: ' + e.message, false);
+    // Fallback: Store as Base64 in database directly
+    console.log('Trying Base64 fallback…');
+    return await uploadPhotoBase64(file);
+  }
+}
+
+async function uploadPhotoBase64(file) {
+  try {
+    toast('Using alternative upload method…');
+    return new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onload = async (e) => {
+        const base64 = e.target.result; // data:image/jpeg;base64,...
+        // Compress to smaller size for DB storage
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          const maxSize = 200; // small avatar size
+          let w = img.width, h = img.height;
+          if (w > h) { h = Math.round(h * maxSize / w); w = maxSize; }
+          else { w = Math.round(w * maxSize / h); h = maxSize; }
+          canvas.width = w; canvas.height = h;
+          canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+          const smallBase64 = canvas.toDataURL('image/jpeg', 0.7);
+          console.log('Base64 size:', smallBase64.length, 'chars');
+          toast('Photo saved ✓');
+          resolve(smallBase64);
+        };
+        img.src = base64;
+      };
+      reader.readAsDataURL(file);
+    });
+  } catch(e) {
+    console.error('Base64 fallback error:', e);
+    toast('Photo save failed: ' + e.message, false);
     return null;
   }
 }
