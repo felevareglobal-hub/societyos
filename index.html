@@ -893,6 +893,22 @@ tr:hover td{background:#fafafa}
   <div class="md">
     <div class="md-head"><h3 id="ten-modal-title">Add Tenant</h3><button class="md-close" onclick="closeModal('mo-tenant')"><i class="ti ti-x"></i></button></div>
     <div class="md-body"><div class="fg">
+      <div class="fd"><i class="ti ti-camera" style="font-size:12px"></i> Profile Photo</div>
+      <div class="fi full">
+        <div class="photo-upload-area" id="m-photo-area" onclick="document.getElementById('m-photo-input').click()">
+          <div id="m-photo-preview-wrap">
+            <i class="ti ti-user-circle" style="font-size:40px;color:#cbd5e1;display:block;margin-bottom:8px"></i>
+            <div style="font-size:12px;font-weight:500;color:#64748b">Click to upload photo</div>
+            <div style="font-size:11px;color:#94a3b8;margin-top:3px">JPG, PNG • Max 2MB • Camera supported on mobile</div>
+          </div>
+        </div>
+        <input type="file" id="m-photo-input" accept="image/*" capture="environment" style="display:none" onchange="previewPhoto('m','m-photo-area','m-photo-preview-wrap')">
+        <input type="hidden" id="m-photo-url">
+        <div id="m-photo-actions" style="display:none;text-align:center;margin-top:6px">
+          <button type="button" class="photo-upload-btn" onclick="document.getElementById('m-photo-input').click()"><i class="ti ti-refresh"></i> Change Photo</button>
+          <button type="button" class="photo-upload-btn" style="color:#ef4444" onclick="removePhoto('m','m-photo-area','m-photo-preview-wrap')"><i class="ti ti-trash"></i> Remove</button>
+        </div>
+      </div>
       <div class="fd"><i class="ti ti-home" style="font-size:12px"></i> Flat Details</div>
       <div class="fi"><label>Wing *</label><select id="t-wing"></select></div>
       <div class="fi"><label>Flat Number *</label><input id="t-flat" placeholder="e.g. 304"></div>
@@ -1516,7 +1532,12 @@ function renderMembers() {
   if(!fl.length){tb.innerHTML='<tr><td colspan="7" class="empty">No members found</td></tr>';return;}
   tb.innerHTML=fl.map((m,i)=>`<tr>
     <td><strong>${m.wing}-${m.flat}</strong></td>
-    <td><div style="font-weight:600">${m.name}</div><div style="font-size:10px;color:#94a3b8">${m.flat_type||''}</div></td>
+    <td>
+      <div style="display:flex;align-items:center;gap:8px">
+        <div class="photo-avatar">${m.photo_url?`<img src="${m.photo_url}" alt="${m.name}" onerror="this.parentElement.innerHTML='<i class=\'ti ti-user\' style=\'font-size:20px\'></i>'">`:'<i class="ti ti-user" style="font-size:20px"></i>'}</div>
+        <div><div style="font-weight:600">${m.name}</div><div style="font-size:10px;color:#94a3b8">${m.flat_type||''}</div></div>
+      </div>
+    </td>
     <td style="font-size:11px">${m.mobile||'—'}</td>
     <td><span class="badge ${m.ownership==='Tenant'?'bb':'bg'}">${m.ownership||'Owner'}</span></td>
     <td><span class="badge ${m.status==='active'?'bgr':m.status==='notice_period'?'ba':'bg'}">${m.status||'active'}</span></td>
@@ -1539,6 +1560,9 @@ function openMemberModal(idx=-1) {
   sv('m-v1t',m?.vehicle1_type); sv('m-v2',m?.vehicle2_no); sv('m-v2t',m?.vehicle2_type);
   sv('m-ags',m?.agree_start); sv('m-age',m?.agree_end); sv('m-park',m?.parking_slot);
   sv('m-stat',m?.status||'active'); sv('m-emerg',m?.emergency_contact); sv('m-notes',m?.notes);
+  // Load existing photo
+  const existingPhotoM = idx>=0 ? members[idx].photo_url : null;
+  loadExistingPhoto('m', existingPhotoM, 'm-photo-area', 'm-photo-preview-wrap');
   $('mem-modal-title').textContent=idx>=0?'Edit Member':'Add Member';
   openModal('mo-member');
 }
@@ -2217,6 +2241,9 @@ function openTenantModal(idx=-1) {
   sv('t-pvref',t?.police_verification_ref);
   sv('t-stat',t?.status||'active'); sv('t-moveout',t?.move_out_date);
   sv('t-reason',t?.reason_for_leaving); sv('t-emerg',t?.emergency_contact); sv('t-notes',t?.notes);
+  // Load existing photo
+  const existingPhotoT = idx>=0 ? tenants[idx].photo_url : null;
+  loadExistingPhoto('t', existingPhotoT, 't-photo-area', 't-photo-preview-wrap');
   $('ten-modal-title').textContent=idx>=0?'Edit Tenant':'Add Tenant';
   openModal('mo-tenant');
 }
@@ -2224,7 +2251,14 @@ function openTenantModal(idx=-1) {
 async function saveTenant() {
   const name=fv('t-name').trim(), flat=fv('t-flat').trim(), mob=fv('t-mob').trim();
   if (!name||!flat||!mob){toast('Tenant name, flat and mobile required',false);return;}
-  const d={
+  // Upload photo if new one selected
+  const photoFileT = $('t-photo-input').files[0];
+  let photoUrlT = fv('t-photo-url') || (editTenIdx>=0 ? tenants[editTenIdx].photo_url : null);
+  if (photoFileT) {
+    toast('Uploading photo…');
+    photoUrlT = await uploadPhoto(photoFileT, `tenants/${CS.id}_${Date.now()}`);
+  }
+  const d={photo_url:photoUrlT||null,
     society_id:CS.id, wing:fv('t-wing'), flat, floor:fv('t-floor'),
     flat_type:fv('t-ftype'), parking_slot:fv('t-park'),
     owner_name:fv('t-oname'), owner_mobile:fv('t-omob'), owner_mobile2:fv('t-omob2'),
@@ -2244,6 +2278,8 @@ async function saveTenant() {
     status:fv('t-stat'), move_out_date:fv('t-moveout')||null,
     reason_for_leaving:fv('t-reason'), emergency_contact:fv('t-emerg'), notes:fv('t-notes')
   };
+  // Handle photo removal
+  if (d.photo_url === '__remove__') d.photo_url = null;
   try {
     if (editTenIdx>=0) await PATCH('tenants',tenants[editTenIdx].id,d);
     else await POST('tenants',d);
@@ -3067,6 +3103,104 @@ async function deleteRequest(id) {
     signupRequests = signupRequests.filter(r=>r.id!==id);
     renderSignupRequests(); toast('Deleted');
   } catch(e) { toast('Error: '+e.message, false); }
+}
+
+// ═══════════════════════════════════════════════
+// PHOTO UPLOAD
+// ═══════════════════════════════════════════════
+const STORAGE_URL = `${URL}/storage/v1/object`;
+
+async function uploadPhoto(file, path) {
+  try {
+    // Compress image before upload if too large
+    const compressed = await compressImage(file, 800, 0.8);
+    const res = await fetch(`${STORAGE_URL}/society-photos/${path}`, {
+      method: 'POST',
+      headers: {
+        'apikey': KEY,
+        'Authorization': 'Bearer ' + KEY,
+        'Content-Type': file.type,
+        'x-upsert': 'true'
+      },
+      body: compressed
+    });
+    if (!res.ok) throw new Error('Upload failed: ' + await res.text());
+    return `${URL}/storage/v1/object/public/society-photos/${path}`;
+  } catch(e) {
+    toast('Photo upload error: ' + e.message, false);
+    return null;
+  }
+}
+
+function compressImage(file, maxWidth, quality) {
+  return new Promise((resolve) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        let w = img.width, h = img.height;
+        if (w > maxWidth) { h = Math.round(h * maxWidth / w); w = maxWidth; }
+        canvas.width = w; canvas.height = h;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, w, h);
+        canvas.toBlob((blob) => resolve(blob), 'image/jpeg', quality);
+      };
+      img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+function previewPhoto(prefix, areaId, previewWrapperId) {
+  const input = $(prefix + '-photo-input');
+  const file  = input.files[0];
+  if (!file) return;
+  if (file.size > 5 * 1024 * 1024) { toast('File too large. Max 5MB', false); input.value=''; return; }
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    const area = $(areaId);
+    const wrap = $(previewWrapperId);
+    wrap.innerHTML = `<img src="${e.target.result}" class="photo-preview" alt="Preview">
+      <div style="font-size:11px;color:#2563eb;font-weight:500">Photo selected ✓</div>`;
+    area.classList.add('has-photo');
+    $(prefix + '-photo-actions').style.display = 'block';
+    $(prefix + '-photo-url').value = ''; // clear old URL — new file will be uploaded on save
+  };
+  reader.readAsDataURL(file);
+}
+
+function removePhoto(prefix, areaId, previewWrapperId) {
+  $(prefix + '-photo-input').value = '';
+  $(prefix + '-photo-url').value = '__remove__';
+  $(areaId).classList.remove('has-photo');
+  $(previewWrapperId).innerHTML = `
+    <i class="ti ti-user-circle" style="font-size:40px;color:#cbd5e1;display:block;margin-bottom:8px"></i>
+    <div style="font-size:12px;font-weight:500;color:#64748b">Click to upload photo</div>
+    <div style="font-size:11px;color:#94a3b8;margin-top:3px">JPG, PNG • Max 2MB</div>`;
+  $(prefix + '-photo-actions').style.display = 'none';
+}
+
+function loadExistingPhoto(prefix, photoUrl, areaId, previewWrapperId) {
+  const area = $(areaId);
+  const wrap = $(previewWrapperId);
+  const actions = $(prefix + '-photo-actions');
+  $(prefix + '-photo-input').value = '';
+  if (photoUrl) {
+    $(prefix + '-photo-url').value = photoUrl;
+    wrap.innerHTML = `<img src="${photoUrl}" class="photo-preview" alt="Photo" onerror="this.src=''" >
+      <div style="font-size:11px;color:#2563eb;font-weight:500">Current photo</div>`;
+    area.classList.add('has-photo');
+    if(actions) actions.style.display = 'block';
+  } else {
+    $(prefix + '-photo-url').value = '';
+    wrap.innerHTML = `
+      <i class="ti ti-user-circle" style="font-size:40px;color:#cbd5e1;display:block;margin-bottom:8px"></i>
+      <div style="font-size:12px;font-weight:500;color:#64748b">Click to upload photo</div>
+      <div style="font-size:11px;color:#94a3b8;margin-top:3px">JPG, PNG • Max 2MB • Camera supported on mobile</div>`;
+    area.classList.remove('has-photo');
+    if(actions) actions.style.display = 'none';
+  }
 }
 
 // ── MOBILE SIDEBAR ────────────────────────────────────────
