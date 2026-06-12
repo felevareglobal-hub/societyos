@@ -2256,7 +2256,21 @@ function renderTenants() {
     const pvLabel=t.police_verification==='done'?'Verified':t.police_verification==='not_required'?'N/A':'Pending';
     return`<tr>
       <td><strong>${t.wing}-${t.flat}</strong></td>
-      <td><div style="font-weight:600">${t.tenant_name}</div><div style="font-size:10px;color:#94a3b8">${t.tenant_occupation||''}</div></td>
+      <td>
+        <div style="display:flex;align-items:center;gap:8px">
+          <div class="photo-avatar" style="overflow:hidden;flex-shrink:0">
+            ${t.photo_url
+              ? `<img src="${t.photo_url}" alt="${t.tenant_name}" style="width:48px;height:48px;object-fit:cover;border-radius:50%;display:block"
+                  onerror="this.style.display='none';this.parentElement.innerHTML='<i class=ti ti-user style=font-size:20px></i>'">`
+              : '<i class="ti ti-user" style="font-size:20px"></i>'
+            }
+          </div>
+          <div>
+            <div style="font-weight:600">${t.tenant_name}</div>
+            <div style="font-size:10px;color:#94a3b8">${t.tenant_occupation||''}</div>
+          </div>
+        </div>
+      </td>
       <td style="font-size:11px">${t.tenant_mobile||'—'}</td>
       <td style="font-size:11px">${t.owner_name||'—'}</td>
       <td style="font-weight:600;color:#16a34a">${t.monthly_rent?'₹'+Number(t.monthly_rent).toLocaleString('en-IN'):'—'}</td>
