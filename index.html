@@ -2515,46 +2515,63 @@ async function renderPlans() {
   try {
     allPlans = await GET('plans','?order=price_monthly');
     const socs = await GET('societies','?order=name');
+    const GST = 0.18;
 
-    // Plan cards
+    // ── Plan Comparison Table ──
     const grid = $('plan-cards-grid');
-    grid.innerHTML = allPlans.map(p => {
-      const f = typeof p.features === 'string' ? JSON.parse(p.features) : p.features;
-      const GST_RATE = 0.18;
-      const monthlyGST = Math.round(Number(p.price_monthly) * GST_RATE);
-      const yearlyGST  = Math.round(Number(p.price_yearly)  * GST_RATE);
-      const featureList = [
-        {k:'members',l:'Member Registry'},{k:'dues',l:'Maintenance Dues'},
-        {k:'notices',l:'Notices & Complaints'},{k:'services',l:'Services & AMC'},
-        {k:'amenities',l:'Amenities'},{k:'tenants',l:'Tenant Management'},
-        {k:'accounts',l:'Accounts & Finance'},{k:'reports',l:'Reports & Analytics'},
-        {k:'photos',l:'Photos'}
-      ];
-      return `<div class="plan-card ${p.id}" style="display:flex;flex-direction:column">
-        ${p.id==='standard'?'<div class="plan-badge" style="background:#2563eb;color:#fff">Most Popular</div>':''}
-        ${p.id==='premium'?'<div class="plan-badge" style="background:#7c3aed;color:#fff">All Features</div>':''}
-        <h3 style="color:${PLAN_COLORS[p.id]};font-size:20px;margin-bottom:4px">${p.name}</h3>
-        <p style="font-size:11px;color:#94a3b8;margin-bottom:10px">${p.description||''}</p>
-        <div class="plan-price" style="color:${PLAN_COLORS[p.id]}">
-          ₹${Number(p.price_monthly).toLocaleString('en-IN')}<span>/month</span>
-        </div>
-        <div style="font-size:11px;color:#94a3b8;margin-bottom:2px">+ GST (18%) = ₹${(Number(p.price_monthly)+monthlyGST).toLocaleString('en-IN')}/mo</div>
-        <div style="font-size:11px;color:#16a34a;margin-bottom:12px;font-weight:500">
-          ₹${Number(p.price_yearly).toLocaleString('en-IN')}/year + GST = ₹${(Number(p.price_yearly)+yearlyGST).toLocaleString('en-IN')} &nbsp;•&nbsp; Save ${Math.round((1-p.price_yearly/(p.price_monthly*12))*100)}%
-        </div>
-        <div class="plan-features" style="flex:1">
-          ${featureList.map(feat=>`<div>
-            <i class="ti ${f[feat.k]?'ti-check':'ti-x'}" style="color:${f[feat.k]?'#16a34a':'#ef4444'};font-size:13px"></i>
-            <span style="color:${f[feat.k]?'#0f172a':'#94a3b8'}">${feat.l}</span>
-          </div>`).join('')}
-        </div>
-        <button class="btn btn-p" style="width:100%;justify-content:center;margin-top:14px;background:${PLAN_COLORS[p.id]};border-color:${PLAN_COLORS[p.id]}" onclick="editPlanPricing('${p.id}')">
-          <i class="ti ti-edit"></i> Edit Pricing
-        </button>
-      </div>`;
-    }).join('');
+    const featureList = [
+      {k:'members',    l:'Member Registry'},
+      {k:'dues',       l:'Maintenance Dues'},
+      {k:'notices',    l:'Notices & Complaints'},
+      {k:'services',   l:'Services & AMC'},
+      {k:'amenities',  l:'Amenities'},
+      {k:'tenants',    l:'Tenant Management'},
+      {k:'accounts',   l:'Accounts & Finance'},
+      {k:'reports',    l:'Reports & Analytics'},
+      {k:'photos',     l:'Member & Tenant Photos'}
+    ];
 
-    // Society assignments
+    grid.innerHTML = `
+    <div class="card" style="margin-bottom:16px">
+      <div class="card-head"><h3>Plan Comparison</h3></div>
+      <div class="tbl-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th style="min-width:160px">Feature</th>
+              ${allPlans.map(p=>`
+                <th style="text-align:center;min-width:140px">
+                  <div style="font-size:14px;font-weight:700;color:${PLAN_COLORS[p.id]}">${p.name}</div>
+                  <div style="font-size:16px;font-weight:700;color:${PLAN_COLORS[p.id]};margin:4px 0">
+                    ₹${Number(p.price_monthly).toLocaleString('en-IN')}<span style="font-size:10px;font-weight:400">/mo</span>
+                  </div>
+                  <div style="font-size:10px;color:#64748b">+GST = ₹${Math.round(Number(p.price_monthly)*(1+GST)).toLocaleString('en-IN')}/mo</div>
+                  <div style="font-size:10px;color:#16a34a;margin-top:2px">₹${Number(p.price_yearly).toLocaleString('en-IN')}/yr +GST</div>
+                  <button onclick="editPlanPricing('${p.id}')" class="btn" style="margin-top:6px;padding:3px 8px;font-size:10px"><i class="ti ti-edit"></i> Edit</button>
+                </th>`).join('')}
+            </tr>
+          </thead>
+          <tbody>
+            ${featureList.map(feat=>`
+              <tr>
+                <td style="font-weight:500;font-size:12px">${feat.l}</td>
+                ${allPlans.map(p=>{
+                  const f = typeof p.features==='string' ? JSON.parse(p.features) : p.features;
+                  return `<td style="text-align:center">
+                    <i class="ti ${f[feat.k]?'ti-check':'ti-x'}" style="color:${f[feat.k]?'#16a34a':'#ef4444'};font-size:16px"></i>
+                  </td>`;
+                }).join('')}
+              </tr>`).join('')}
+            <tr style="background:#f8fafc">
+              <td style="font-weight:600;font-size:12px">7 Day Free Trial</td>
+              ${allPlans.map(()=>`<td style="text-align:center"><i class="ti ti-check" style="color:#16a34a;font-size:16px"></i></td>`).join('')}
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>`;
+
+    // ── Society Plan Assignments ──
     const tb = $('plan-assign-tbody');
     if (!socs.length) { tb.innerHTML='<tr><td colspan="6" class="empty">No societies yet</td></tr>'; return; }
     tb.innerHTML = socs.map(s => `<tr>
@@ -2566,11 +2583,14 @@ async function renderPlans() {
       <td>
         <select onchange="assignPlan('${s.id}',this.value)" style="padding:5px 8px;border:1px solid #e2e8f0;border-radius:6px;font-size:12px;background:#fff;outline:none">
           <option value="">— Change Plan —</option>
-          <option value="basic" ${s.plan==='basic'?'selected':''}>Basic</option>
+          <option value="basic"    ${s.plan==='basic'?'selected':''}>Basic</option>
           <option value="standard" ${s.plan==='standard'?'selected':''}>Standard</option>
-          <option value="premium" ${s.plan==='premium'?'selected':''}>Premium</option>
+          <option value="premium"  ${s.plan==='premium'?'selected':''}>Premium</option>
         </select>
-        <input type="date" id="expiry-${s.id}" value="${s.plan_expiry||''}" onchange="setExpiry('${s.id}',this.value)" style="padding:5px 8px;border:1px solid #e2e8f0;border-radius:6px;font-size:11px;margin-left:4px;outline:none" title="Set plan expiry">
+        <input type="date" id="expiry-${s.id}" value="${s.plan_expiry||''}"
+          onchange="setExpiry('${s.id}',this.value)"
+          style="padding:5px 8px;border:1px solid #e2e8f0;border-radius:6px;font-size:11px;margin-left:4px;outline:none"
+          title="Set plan expiry">
       </td>
     </tr>`).join('');
   } catch(e) { toast('Error: '+e.message, false); }
@@ -2620,49 +2640,67 @@ async function renderPricing() {
   try {
     if (!allPlans.length) allPlans = await GET('plans','?order=price_monthly');
     const currentPlan = getSocietyPlan();
+    const GST = 0.18;
+    const featureList = [
+      {k:'members',    l:'Member Registry'},
+      {k:'dues',       l:'Maintenance Dues'},
+      {k:'notices',    l:'Notices & Complaints'},
+      {k:'services',   l:'Services & AMC'},
+      {k:'amenities',  l:'Amenities'},
+      {k:'tenants',    l:'Tenant Management'},
+      {k:'accounts',   l:'Accounts & Finance'},
+      {k:'reports',    l:'Reports & Analytics'},
+      {k:'photos',     l:'Member & Tenant Photos'}
+    ];
+
     const grid = $('pricing-cards');
-    grid.innerHTML = allPlans.map(p => {
-      const f = typeof p.features === 'string' ? JSON.parse(p.features) : p.features;
-      const isCurrent = p.id === currentPlan;
-      const GST_RATE = 0.18;
-      const monthlyGST = Math.round(Number(p.price_monthly) * GST_RATE);
-      const yearlyGST  = Math.round(Number(p.price_yearly)  * GST_RATE);
-      const featureList = [
-        {k:'members',l:'Member Registry'},{k:'dues',l:'Maintenance Dues'},
-        {k:'notices',l:'Notices & Complaints'},{k:'services',l:'Services & AMC'},
-        {k:'amenities',l:'Amenities'},{k:'tenants',l:'Tenant Management'},
-        {k:'accounts',l:'Accounts & Finance'},{k:'reports',l:'Reports & Analytics'},
-        {k:'photos',l:'Photos'}
-      ];
-      return `<div class="plan-card ${p.id}" style="${isCurrent?'border-width:3px':''}display:flex;flex-direction:column">
-        ${isCurrent?'<div class="plan-badge" style="background:#16a34a;color:#fff">✓ Your Current Plan</div>':''}
-        ${p.id==='standard'&&!isCurrent?'<div class="plan-badge" style="background:#2563eb;color:#fff">Most Popular</div>':''}
-        ${p.id==='premium'&&!isCurrent?'<div class="plan-badge" style="background:#7c3aed;color:#fff">All Features</div>':''}
-        <h3 style="color:${PLAN_COLORS[p.id]};font-size:20px;margin-bottom:4px">${p.name}</h3>
-        <p style="font-size:11px;color:#94a3b8;margin-bottom:10px">${p.description||''}</p>
-        <div class="plan-price" style="color:${PLAN_COLORS[p.id]}">
-          ₹${Number(p.price_monthly).toLocaleString('en-IN')}<span>/month</span>
-        </div>
-        <div style="font-size:11px;color:#64748b;margin-bottom:2px">+ GST 18% = <strong>₹${(Number(p.price_monthly)+monthlyGST).toLocaleString('en-IN')}/mo</strong></div>
-        <div style="font-size:11px;color:#16a34a;font-weight:500;margin-bottom:12px">
-          Yearly: ₹${Number(p.price_yearly).toLocaleString('en-IN')} + GST = ₹${(Number(p.price_yearly)+yearlyGST).toLocaleString('en-IN')} &nbsp;•&nbsp; Save ${Math.round((1-p.price_yearly/(p.price_monthly*12))*100)}%
-        </div>
-        <div class="plan-features" style="flex:1">
-          ${featureList.map(feat=>`<div>
-            <i class="ti ${f[feat.k]?'ti-check':'ti-x'}" style="color:${f[feat.k]?'#16a34a':'#ef4444'};font-size:13px"></i>
-            <span style="color:${f[feat.k]?'#0f172a':'#94a3b8'}">${feat.l}</span>
-          </div>`).join('')}
-        </div>
-        <div style="margin-top:14px">
-        ${isCurrent ?
-          '<div style="text-align:center;padding:10px;background:#dcfce7;border-radius:7px;font-size:12px;font-weight:600;color:#166534">✓ Active Plan</div>' :
-          `<button class="btn btn-p" style="width:100%;justify-content:center;background:${PLAN_COLORS[p.id]};border-color:${PLAN_COLORS[p.id]}" onclick="requestUpgrade('${p.id}')">
-            <i class="ti ti-crown"></i> Request Upgrade
-          </button>`
-        }
-        </div>
-      </div>`;
-    }).join('');
+    grid.innerHTML = `
+    <div class="card">
+      <div class="tbl-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th style="min-width:160px">Feature</th>
+              ${allPlans.map(p=>{
+                const isCurrent = p.id===currentPlan;
+                return `<th style="text-align:center;min-width:140px;background:${isCurrent?'#f0fdf4':''}">
+                  <div style="font-size:14px;font-weight:700;color:${PLAN_COLORS[p.id]}">${p.name}</div>
+                  ${isCurrent?'<div style="font-size:10px;background:#16a34a;color:#fff;padding:2px 8px;border-radius:10px;display:inline-block;margin:3px 0">✓ Current Plan</div>':''}
+                  <div style="font-size:16px;font-weight:700;color:${PLAN_COLORS[p.id]};margin:4px 0">
+                    ₹${Number(p.price_monthly).toLocaleString('en-IN')}<span style="font-size:10px;font-weight:400">/mo</span>
+                  </div>
+                  <div style="font-size:10px;color:#64748b">+GST 18% = ₹${Math.round(Number(p.price_monthly)*(1+GST)).toLocaleString('en-IN')}/mo</div>
+                  <div style="font-size:10px;color:#16a34a;margin-top:2px">
+                    ₹${Number(p.price_yearly).toLocaleString('en-IN')}/yr &nbsp;•&nbsp; Save ${Math.round((1-p.price_yearly/(p.price_monthly*12))*100)}%
+                  </div>
+                  ${!isCurrent?`<button onclick="requestUpgrade('${p.id}')" class="btn btn-p"
+                    style="margin-top:8px;padding:4px 12px;font-size:11px;width:100%;justify-content:center;background:${PLAN_COLORS[p.id]};border-color:${PLAN_COLORS[p.id]}">
+                    <i class="ti ti-crown"></i> Request Upgrade
+                  </button>`:'<div style="margin-top:8px;padding:4px 12px;background:#dcfce7;border-radius:6px;font-size:11px;color:#166534;font-weight:600">✓ Active</div>'}
+                </th>`;
+              }).join('')}
+            </tr>
+          </thead>
+          <tbody>
+            ${featureList.map(feat=>`
+              <tr>
+                <td style="font-weight:500;font-size:12px">${feat.l}</td>
+                ${allPlans.map(p=>{
+                  const f = typeof p.features==='string' ? JSON.parse(p.features) : p.features;
+                  const isCurrent = p.id===currentPlan;
+                  return `<td style="text-align:center;background:${isCurrent?'#f0fdf4':''}">
+                    <i class="ti ${f[feat.k]?'ti-check':'ti-x'}" style="color:${f[feat.k]?'#16a34a':'#ef4444'};font-size:16px"></i>
+                  </td>`;
+                }).join('')}
+              </tr>`).join('')}
+            <tr style="background:#f8fafc">
+              <td style="font-weight:600;font-size:12px">7 Day Free Trial</td>
+              ${allPlans.map(()=>`<td style="text-align:center"><i class="ti ti-check" style="color:#16a34a;font-size:16px"></i></td>`).join('')}
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>`;
   } catch(e) { toast('Error: '+e.message, false); }
 }
 
