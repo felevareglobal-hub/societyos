@@ -1589,12 +1589,42 @@ function openMemberModal(idx=-1) {
 }
 async function saveMember() {
   const name=fv('m-name').trim(), flat=fv('m-flat').trim();
-  if (!name||!flat){toast('Name and flat required',false);return;}
-  const d={society_id:CS.id,wing:fv('m-wing'),flat,floor:fv('m-floor'),flat_type:fv('m-ftype'),area:parseFloat(fv('m-area'))||null,ownership:fv('m-own'),name,dob:fv('m-dob')||null,gender:fv('m-gen'),aadhaar:fv('m-aadh'),mobile:fv('m-mob'),mobile2:fv('m-mob2'),email:fv('m-email'),occupation:fv('m-occ'),move_in:fv('m-movein')||null,adults:parseInt(fv('m-adults'))||1,children:parseInt(fv('m-children'))||0,family_members:fv('m-family'),pets:fv('m-pets'),domestic_staff:fv('m-staff'),vehicle1_no:fv('m-v1'),vehicle1_type:fv('m-v1t'),vehicle2_no:fv('m-v2'),vehicle2_type:fv('m-v2t'),agree_start:fv('m-ags')||null,agree_end:fv('m-age')||null,parking_slot:fv('m-park'),status:fv('m-stat'),emergency_contact:fv('m-emerg'),notes:fv('m-notes')};
+  if(!name||!flat){toast('Name and flat required',false);return;}
+
+  // ── Handle photo ──
+  let photoUrl = fv('m-photo-url') || (editMem>=0 ? members[editMem].photo_url : null);
+  const photoFile = $('m-photo-input') && $('m-photo-input').files[0];
+  if (photoFile) {
+    toast('Processing photo…');
+    photoUrl = await photoToBase64(photoFile, 150);
+  }
+  if (photoUrl === '__remove__') photoUrl = null;
+
+  const d={
+    photo_url: photoUrl||null,
+    society_id:CS.id, wing:fv('m-wing'), flat,
+    floor:fv('m-floor'), flat_type:fv('m-ftype'),
+    area:parseFloat(fv('m-area'))||null, ownership:fv('m-own'),
+    name, dob:fv('m-dob')||null, gender:fv('m-gen'),
+    aadhaar:fv('m-aadh'), mobile:fv('m-mob'), mobile2:fv('m-mob2'),
+    email:fv('m-email'), occupation:fv('m-occ'),
+    move_in:fv('m-movein')||null,
+    adults:parseInt(fv('m-adults'))||1,
+    children:parseInt(fv('m-children'))||0,
+    family_members:fv('m-family'), pets:fv('m-pets'),
+    domestic_staff:fv('m-staff'),
+    vehicle1_no:fv('m-v1'), vehicle1_type:fv('m-v1t'),
+    vehicle2_no:fv('m-v2'), vehicle2_type:fv('m-v2t'),
+    agree_start:fv('m-ags')||null, agree_end:fv('m-age')||null,
+    parking_slot:fv('m-park'), status:fv('m-stat'),
+    emergency_contact:fv('m-emerg'), notes:fv('m-notes')
+  };
   try {
-    if (editMem>=0) await PATCH('members',members[editMem].id,d); else await POST('members',d);
+    if(editMem>=0) await PATCH('members',members[editMem].id,d);
+    else await POST('members',d);
     members=await GET('members',`?society_id=eq.${CS.id}&order=name`);
-    closeModal('mo-member'); renderMembers(); toast(editMem>=0?'Member updated':'Member added');
+    closeModal('mo-member'); renderMembers();
+    toast(editMem>=0?'Member updated':'Member added');
   } catch(e){toast('Error: '+e.message,false);}
 }
 async function deleteMember(id){if(!confirm('Delete member?'))return;try{await DELETE('members',id);members=members.filter(m=>m.id!==id);renderMembers();toast('Deleted');}catch(e){toast('Error: '+e.message,false);}}
