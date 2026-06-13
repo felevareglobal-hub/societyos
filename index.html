@@ -189,7 +189,7 @@ tr:hover td{background:#fafafa}
     <div class="forgot-link" onclick="openModal('mo-forgot')">Forgot Password?</div>
     <div style="margin-top:14px;border-top:1px solid #f1f5f9;padding-top:14px">
       <p style="font-size:11px;color:#94a3b8;text-align:center;margin-bottom:10px">New to SocietyOS? Register your society</p>
-      <button onclick="openModal('mo-signup')" style="width:100%;padding:10px;background:#f0fdf4;color:#16a34a;border:1.5px solid #bbf7d0;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px">
+      <button onclick="openSignupModal()" style="width:100%;padding:10px;background:#f0fdf4;color:#16a34a;border:1.5px solid #bbf7d0;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px">
         <i class="ti ti-user-plus"></i> Request Access — Register Your Society
       </button>
     </div>
@@ -580,28 +580,11 @@ tr:hover td{background:#fafafa}
     <div class="md-body">
       <!-- Plan Selection at top -->
       <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:20px" id="signup-plan-select">
-        <div class="plan-card basic" id="sp-basic" onclick="selectSignupPlan('basic')" style="cursor:pointer;padding:14px;border-width:2px">
-          <h3 style="font-size:14px;color:#475569">Basic</h3>
-          <div style="font-size:18px;font-weight:700;color:#475569;margin:4px 0">₹999<span style="font-size:11px;font-weight:400">/mo</span></div>
-          <div style="font-size:10px;color:#64748b">+ GST 18% = ₹1,179/mo</div>
-          <div style="font-size:10px;color:#64748b;margin-top:3px">Members, Dues, Notices</div>
-          <div style="font-size:10px;color:#16a34a;margin-top:5px;font-weight:600">🎉 7 days FREE trial</div>
-        </div>
-        <div class="plan-card standard" id="sp-standard" onclick="selectSignupPlan('standard')" style="cursor:pointer;padding:14px;border-width:2px">
-          <div style="font-size:9px;font-weight:700;color:#2563eb;margin-bottom:3px">POPULAR</div>
-          <h3 style="font-size:14px;color:#1e40af">Standard</h3>
-          <div style="font-size:18px;font-weight:700;color:#1e40af;margin:4px 0">₹1,999<span style="font-size:11px;font-weight:400">/mo</span></div>
-          <div style="font-size:10px;color:#64748b">+ GST 18% = ₹2,359/mo</div>
-          <div style="font-size:10px;color:#64748b;margin-top:3px">+ Services, Tenants</div>
-          <div style="font-size:10px;color:#16a34a;margin-top:5px;font-weight:600">🎉 7 days FREE trial</div>
-        </div>
-        <div class="plan-card premium" id="sp-premium" onclick="selectSignupPlan('premium')" style="cursor:pointer;padding:14px;border-width:2px">
-          <div style="font-size:9px;font-weight:700;color:#7c3aed;margin-bottom:3px">ALL FEATURES</div>
-          <h3 style="font-size:14px;color:#5b21b6">Premium</h3>
-          <div style="font-size:18px;font-weight:700;color:#5b21b6;margin:4px 0">₹2,999<span style="font-size:11px;font-weight:400">/mo</span></div>
-          <div style="font-size:10px;color:#64748b">+ GST 18% = ₹3,539/mo</div>
-          <div style="font-size:10px;color:#64748b;margin-top:3px">+ Accounts, Reports</div>
-          <div style="font-size:10px;color:#16a34a;margin-top:5px;font-weight:600">🎉 7 days FREE trial</div>
+        <!-- Plan cards loaded dynamically from database -->
+        <div id="signup-plan-cards" style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;width:100%">
+          <div style="text-align:center;padding:20px;color:#94a3b8;font-size:12px;grid-column:1/-1">
+            <i class="ti ti-loader" style="font-size:20px"></i> Loading plans…
+          </div>
         </div>
       </div>
       <input type="hidden" id="su-plan" value="basic">
@@ -2987,12 +2970,77 @@ function exportPaymentsCSV() {
 // ═══════════════════════════════════════════════
 let signupRequests = [], reqFilter = 'all', rejectingId = null;
 
+async function openSignupModal() {
+  openModal('mo-signup');
+  // Load plans dynamically from database
+  try {
+    const plans = await GET('plans','?order=price_monthly');
+    const GST = 0.18;
+    const BDR = {basic:'#94a3b8', standard:'#2563eb', premium:'#7c3aed'};
+    const BG  = {basic:'#f8fafc', standard:'#eff6ff', premium:'#f5f3ff'};
+    const DESC = {
+      basic:'Members, Dues, Notices',
+      standard:'+ Services, Amenities, Tenants',
+      premium:'+ Accounts, Reports, Photos'
+    };
+    const POPULAR = {basic:'', standard:'POPULAR', premium:'ALL FEATURES'};
+
+    const container = $('signup-plan-cards');
+    if (!container) return;
+    container.innerHTML = plans.map(p => `
+      <div id="sp-${p.id}" onclick="selectSignupPlan('${p.id}')"
+        style="cursor:pointer;padding:14px;border:2px solid ${BDR[p.id]};border-radius:10px;background:${BG[p.id]};text-align:center;transition:all .2s">
+        ${POPULAR[p.id]?`<div style="font-size:9px;font-weight:700;color:${BDR[p.id]};margin-bottom:3px">${POPULAR[p.id]}</div>`:''}
+        <h3 style="font-size:14px;color:${PLAN_COLORS[p.id]};font-weight:700">${p.name}</h3>
+        <div style="font-size:18px;font-weight:800;color:${PLAN_COLORS[p.id]};margin:4px 0">
+          ₹${Number(p.price_monthly).toLocaleString('en-IN')}<span style="font-size:11px;font-weight:400;color:#64748b">/mo</span>
+        </div>
+        <div style="font-size:10px;color:#64748b">+GST 18% = ₹${Math.round(Number(p.price_monthly)*(1+GST)).toLocaleString('en-IN')}/mo</div>
+        <div style="font-size:10px;color:#64748b;margin-top:3px">${DESC[p.id]||''}</div>
+        <div style="font-size:10px;color:#16a34a;margin-top:5px;font-weight:600">🎉 7 days FREE trial</div>
+      </div>`).join('');
+
+    // Select basic by default
+    selectSignupPlan('basic');
+  } catch(e) {
+    // Fallback to static if DB not available
+    const container = $('signup-plan-cards');
+    if (container) container.innerHTML = `
+      <div id="sp-basic" onclick="selectSignupPlan('basic')" style="cursor:pointer;padding:14px;border:2px solid #94a3b8;border-radius:10px;background:#f8fafc;text-align:center">
+        <h3 style="font-size:14px;color:#475569">Basic</h3>
+        <div style="font-size:18px;font-weight:700;color:#475569;margin:4px 0">₹999<span style="font-size:11px">/mo</span></div>
+        <div style="font-size:10px;color:#64748b">+GST 18% = ₹1,179/mo</div>
+        <div style="font-size:10px;color:#16a34a;margin-top:4px;font-weight:600">🎉 7 days FREE trial</div>
+      </div>
+      <div id="sp-standard" onclick="selectSignupPlan('standard')" style="cursor:pointer;padding:14px;border:2px solid #2563eb;border-radius:10px;background:#eff6ff;text-align:center">
+        <div style="font-size:9px;font-weight:700;color:#2563eb">POPULAR</div>
+        <h3 style="font-size:14px;color:#1e40af">Standard</h3>
+        <div style="font-size:18px;font-weight:700;color:#1e40af;margin:4px 0">₹1,999<span style="font-size:11px">/mo</span></div>
+        <div style="font-size:10px;color:#64748b">+GST 18% = ₹2,359/mo</div>
+        <div style="font-size:10px;color:#16a34a;margin-top:4px;font-weight:600">🎉 7 days FREE trial</div>
+      </div>
+      <div id="sp-premium" onclick="selectSignupPlan('premium')" style="cursor:pointer;padding:14px;border:2px solid #7c3aed;border-radius:10px;background:#f5f3ff;text-align:center">
+        <div style="font-size:9px;font-weight:700;color:#7c3aed">ALL FEATURES</div>
+        <h3 style="font-size:14px;color:#5b21b6">Premium</h3>
+        <div style="font-size:18px;font-weight:700;color:#5b21b6;margin:4px 0">₹2,999<span style="font-size:11px">/mo</span></div>
+        <div style="font-size:10px;color:#64748b">+GST 18% = ₹3,539/mo</div>
+        <div style="font-size:10px;color:#16a34a;margin-top:4px;font-weight:600">🎉 7 days FREE trial</div>
+      </div>`;
+    selectSignupPlan('basic');
+  }
+}
+
 function selectSignupPlan(plan) {
   $('su-plan').value = plan;
+  const BDR = {basic:'#94a3b8', standard:'#2563eb', premium:'#7c3aed'};
+  const BG  = {basic:'#f8fafc', standard:'#eff6ff', premium:'#f5f3ff'};
   ['basic','standard','premium'].forEach(p => {
     const el = $('sp-'+p);
-    if (el) el.style.opacity = p===plan ? '1' : '0.5';
-    if (el) el.style.transform = p===plan ? 'scale(1.03)' : 'scale(1)';
+    if (!el) return;
+    el.style.opacity   = p===plan ? '1' : '0.6';
+    el.style.transform = p===plan ? 'scale(1.04)' : 'scale(1)';
+    el.style.borderWidth = p===plan ? '3px' : '2px';
+    el.style.boxShadow = p===plan ? `0 4px 14px ${BDR[p]}40` : 'none';
   });
 }
 
