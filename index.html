@@ -69,8 +69,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 /* TABLE */
 .tbl-wrap{overflow-x:auto}
 table{width:100%;border-collapse:collapse;font-size:12px}
-th{text-align:left;padding:12px 14px;font-size:10px;font-weight:600;color:#64748b;border-bottom:1px solid #f1f5f9;background:#fafafa;text-transform:uppercase;letter-spacing:.4px;white-space:nowrap}
-td{padding:10px 14px;border-bottom:1px solid #f8fafc;vertical-align:middle}
+th{text-align:left;padding:16px 18px;font-size:11px;font-weight:600;color:#64748b;border-bottom:1px solid #f1f5f9;background:#fafafa;text-transform:uppercase;letter-spacing:.4px;white-space:nowrap}
+td{padding:12px 16px;border-bottom:1px solid #f8fafc;vertical-align:middle}
 tr:last-child td{border-bottom:none}
 tr:hover td{background:#fafafa}
 /* BADGE */
@@ -2521,18 +2521,18 @@ async function renderPlans() {
         <table>
           <thead>
             <tr>
-              <th style="min-width:180px">Feature</th>
+              <th style="min-width:200px;font-size:13px">Feature</th>
               ${allPlans.map(p=>{
                 const BG  = {basic:'#f8fafc',standard:'#eff6ff',premium:'#f5f3ff'};
                 const BDR = {basic:'#94a3b8',standard:'#2563eb',premium:'#7c3aed'};
-                return `<th style="text-align:center;min-width:200px;background:${BG[p.id]};border-top:4px solid ${BDR[p.id]};border-left:1px solid ${BDR[p.id]}20">
-                  <div style="font-size:16px;font-weight:700;color:${PLAN_COLORS[p.id]};margin-bottom:4px">${p.name}</div>
-                  <div style="font-size:22px;font-weight:800;color:${PLAN_COLORS[p.id]};margin:6px 0">
+                return `<th style="text-align:center;min-width:280px;background:${BG[p.id]};border-top:5px solid ${BDR[p.id]};border-left:1px solid ${BDR[p.id]}20">
+                  <div style="font-size:20px;font-weight:700;color:${PLAN_COLORS[p.id]};margin-bottom:6px">${p.name}</div>
+                  <div style="font-size:28px;font-weight:800;color:${PLAN_COLORS[p.id]};margin:8px 0">
                     ₹${Number(p.price_monthly).toLocaleString('en-IN')}<span style="font-size:10px;font-weight:400;color:#64748b">/mo</span>
                   </div>
-                  <div style="font-size:10px;color:#64748b">+GST 18% = ₹${Math.round(Number(p.price_monthly)*(1+GST)).toLocaleString('en-IN')}/mo</div>
-                  <div style="font-size:10px;color:#16a34a;margin-top:2px;font-weight:500">₹${Number(p.price_yearly).toLocaleString('en-IN')}/yr +GST</div>
-                  <button onclick="editPlanPricing('${p.id}')" class="btn" style="margin-top:8px;padding:3px 10px;font-size:10px;border-color:${BDR[p.id]};color:${BDR[p.id]}"><i class="ti ti-edit"></i> Edit</button>
+                  <div style="font-size:12px;color:#64748b;margin-top:2px">+GST 18% = ₹${Math.round(Number(p.price_monthly)*(1+GST)).toLocaleString('en-IN')}/mo</div>
+                  <div style="font-size:12px;color:#16a34a;margin-top:4px;font-weight:600">₹${Number(p.price_yearly).toLocaleString('en-IN')}/yr +GST</div>
+                  <button onclick="editPlanPricing('${p.id}')" class="btn" style="margin-top:10px;padding:6px 14px;font-size:12px;border-color:${BDR[p.id]};color:${BDR[p.id]};font-weight:600"><i class="ti ti-edit"></i> Edit Pricing</button>
                 </th>`;
               }).join('')}
             </tr>
@@ -2540,13 +2540,13 @@ async function renderPlans() {
           <tbody>
             ${featureList.map(feat=>`
               <tr>
-                <td style="font-weight:500;font-size:12px">${feat.l}</td>
+                <td style="font-weight:500;font-size:13px;padding:12px 14px">${feat.l}</td>
                 ${allPlans.map(p=>{
                   const f = typeof p.features==='string' ? JSON.parse(p.features) : p.features;
                   const BG  = {basic:'#f8fafc',standard:'#eff6ff',premium:'#f5f3ff'};
                   const BDR = {basic:'#94a3b8',standard:'#2563eb',premium:'#7c3aed'};
                   return `<td style="text-align:center;background:${BG[p.id]};border-left:1px solid ${BDR[p.id]}20">
-                    <i class="ti ${f[feat.k]?'ti-check':'ti-x'}" style="color:${f[feat.k]?'#16a34a':'#ef4444'};font-size:18px"></i>
+                    <i class="ti ${f[feat.k]?'ti-check':'ti-x'}" style="color:${f[feat.k]?'#16a34a':'#ef4444'};font-size:22px"></i>
                   </td>`;
                 }).join('')}
               </tr>`).join('')}
@@ -2654,20 +2654,20 @@ async function renderPricing() {
         <table>
           <thead>
             <tr>
-              <th style="min-width:180px">Feature</th>
+              <th style="min-width:200px;font-size:13px">Feature</th>
               ${allPlans.map(p=>{
                 const isCurrent = p.id===currentPlan;
                 const BG  = {basic:'#f8fafc',  standard:'#eff6ff', premium:'#f5f3ff'};
                 const BDR = {basic:'#94a3b8',  standard:'#2563eb', premium:'#7c3aed'};
                 const activeBG = isCurrent ? '#f0fdf4' : BG[p.id];
                 const topBdr   = isCurrent ? '#16a34a' : BDR[p.id];
-                return `<th style="text-align:center;min-width:200px;background:${activeBG};border-top:4px solid ${topBdr};border-left:1px solid ${BDR[p.id]}20">
-                  <div style="font-size:16px;font-weight:700;color:${PLAN_COLORS[p.id]};margin-bottom:4px">${p.name}</div>
+                return `<th style="text-align:center;min-width:280px;background:${activeBG};border-top:4px solid ${topBdr};border-left:1px solid ${BDR[p.id]}20">
+                  <div style="font-size:20px;font-weight:700;color:${PLAN_COLORS[p.id]};margin-bottom:6px">${p.name}</div>
                   ${isCurrent?'<div style="font-size:10px;background:#16a34a;color:#fff;padding:2px 8px;border-radius:10px;display:inline-block;margin:3px 0">✓ Current Plan</div>':''}
-                  <div style="font-size:22px;font-weight:800;color:${PLAN_COLORS[p.id]};margin:6px 0">
+                  <div style="font-size:28px;font-weight:800;color:${PLAN_COLORS[p.id]};margin:8px 0">
                     ₹${Number(p.price_monthly).toLocaleString('en-IN')}<span style="font-size:10px;font-weight:400;color:#64748b">/mo</span>
                   </div>
-                  <div style="font-size:10px;color:#64748b">+GST 18% = ₹${Math.round(Number(p.price_monthly)*(1+GST)).toLocaleString('en-IN')}/mo</div>
+                  <div style="font-size:12px;color:#64748b;margin-top:2px">+GST 18% = ₹${Math.round(Number(p.price_monthly)*(1+GST)).toLocaleString('en-IN')}/mo</div>
                   <div style="font-size:10px;color:#16a34a;margin-top:2px;font-weight:500">
                     ₹${Number(p.price_yearly).toLocaleString('en-IN')}/yr &nbsp;•&nbsp; Save ${Math.round((1-p.price_yearly/(p.price_monthly*12))*100)}%
                   </div>
@@ -2685,7 +2685,7 @@ async function renderPricing() {
           <tbody>
             ${featureList.map(feat=>`
               <tr>
-                <td style="font-weight:500;font-size:12px">${feat.l}</td>
+                <td style="font-weight:500;font-size:13px;padding:12px 14px">${feat.l}</td>
                 ${allPlans.map(p=>{
                   const f = typeof p.features==='string' ? JSON.parse(p.features) : p.features;
                   const isCurrent = p.id===currentPlan;
@@ -2693,7 +2693,7 @@ async function renderPricing() {
                   const BDR = {basic:'#94a3b8',standard:'#2563eb',premium:'#7c3aed'};
                   const cellBG = isCurrent ? '#f0fdf4' : BG[p.id];
                   return `<td style="text-align:center;background:${cellBG};border-left:1px solid ${BDR[p.id]}20">
-                    <i class="ti ${f[feat.k]?'ti-check':'ti-x'}" style="color:${f[feat.k]?'#16a34a':'#ef4444'};font-size:18px"></i>
+                    <i class="ti ${f[feat.k]?'ti-check':'ti-x'}" style="color:${f[feat.k]?'#16a34a':'#ef4444'};font-size:22px"></i>
                   </td>`;
                 }).join('')}
               </tr>`).join('')}
@@ -2992,10 +2992,10 @@ async function openSignupModal() {
         style="cursor:pointer;padding:14px;border:2px solid ${BDR[p.id]};border-radius:10px;background:${BG[p.id]};text-align:center;transition:all .2s">
         ${POPULAR[p.id]?`<div style="font-size:9px;font-weight:700;color:${BDR[p.id]};margin-bottom:3px">${POPULAR[p.id]}</div>`:''}
         <h3 style="font-size:14px;color:${PLAN_COLORS[p.id]};font-weight:700">${p.name}</h3>
-        <div style="font-size:22px;font-weight:800;color:${PLAN_COLORS[p.id]};margin:6px 0">
+        <div style="font-size:28px;font-weight:800;color:${PLAN_COLORS[p.id]};margin:8px 0">
           ₹${Number(p.price_monthly).toLocaleString('en-IN')}<span style="font-size:11px;font-weight:400;color:#64748b">/mo</span>
         </div>
-        <div style="font-size:10px;color:#64748b">+GST 18% = ₹${Math.round(Number(p.price_monthly)*(1+GST)).toLocaleString('en-IN')}/mo</div>
+        <div style="font-size:12px;color:#64748b;margin-top:2px">+GST 18% = ₹${Math.round(Number(p.price_monthly)*(1+GST)).toLocaleString('en-IN')}/mo</div>
         <div style="font-size:10px;color:#64748b;margin-top:3px">${DESC[p.id]||''}</div>
         <div style="font-size:10px;color:#16a34a;margin-top:5px;font-weight:600">🎉 7 days FREE trial</div>
       </div>`).join('');
