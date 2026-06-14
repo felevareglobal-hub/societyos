@@ -667,7 +667,17 @@ tr:hover td{background:#fafafa}
       <button class="md-close" onclick="closeModal('mo-signup')"><i class="ti ti-x"></i></button>
     </div>
     <div class="md-body">
-      <!-- Plan Selection at top -->
+      <!-- Billing toggle FIRST so plan cards render with correct prices -->
+      <div style="display:flex;align-items:center;justify-content:center;gap:12px;margin-bottom:14px">
+        <span style="font-size:13px;color:#64748b;font-weight:500">Billing Cycle:</span>
+        <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:13px;font-weight:600;color:${''}" onclick="">
+          <input type="radio" name="su-billing-radio" value="monthly" checked onchange="document.getElementById('su-billing').value='monthly';toggleSignupBilling('monthly')"> Monthly
+        </label>
+        <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:13px;font-weight:600;color:#16a34a">
+          <input type="radio" name="su-billing-radio" value="yearly" onchange="document.getElementById('su-billing').value='yearly';toggleSignupBilling('yearly')"> Yearly <span style="font-size:10px;background:#dcfce7;color:#16a34a;padding:2px 6px;border-radius:10px;font-weight:700">SAVE 20%</span>
+        </label>
+      </div>
+      <!-- Plan Selection -->
       <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:20px" id="signup-plan-select">
         <!-- Plan cards loaded dynamically from database -->
         <div id="signup-plan-cards" style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;width:100%">
@@ -695,9 +705,7 @@ tr:hover td{background:#fafafa}
         <div class="fi"><label>Email *</label><input id="su-email" type="email" placeholder="your@email.com"></div>
         <div class="fi"><label>Mobile *</label><input id="su-mobile" type="tel" placeholder="+91 XXXXX XXXXX"></div>
 
-        <div class="fd"><i class="ti ti-calendar" style="font-size:12px"></i> Billing Preference</div>
-        <div class="fi"><label>Billing Cycle</label><select id="su-billing" onchange="toggleSignupBilling(this.value)"><option value="monthly">Monthly</option><option value="yearly">Yearly (Save 20%)</option></select></div>
-        <div class="fi full"><label>Message / Notes (optional)</label><textarea id="su-notes" rows="2" placeholder="Any specific requirements or questions…"></textarea></div>
+        <input type="hidden" id="su-billing" value="monthly">
         <div class="fd"><i class="ti ti-tag" style="font-size:12px"></i> Referral (optional)</div>
         <div class="fi"><label>Referral Code</label><input id="su-ref-code" placeholder="e.g. SP001" style="text-transform:uppercase"></div>
         <div class="fi"><label>Referred By (Name)</label><input id="su-ref-name" placeholder="Salesperson name"></div>
@@ -3336,6 +3344,8 @@ async function openSignupModal() {
 
     // Select basic by default
     selectSignupPlan('basic');
+    // Apply current billing selection (user may have changed it before cards loaded)
+    toggleSignupBilling($('su-billing')?.value || 'monthly');
   } catch(e) {
     // Fallback to static if DB not available
     const container = $('signup-plan-cards');
@@ -3370,6 +3380,7 @@ async function openSignupModal() {
         <div style="font-size:10px;color:#16a34a;margin-top:4px;font-weight:600">🎉 7 days FREE trial</div>
       </div>`;
     selectSignupPlan('basic');
+    toggleSignupBilling($('su-billing')?.value || 'monthly');
   }
 }
 
