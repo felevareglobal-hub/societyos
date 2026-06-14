@@ -97,6 +97,8 @@ tr:hover td{background:#fafafa}
 /* BUTTONS */
 .btn{padding:7px 14px;border-radius:7px;font-size:12.5px;cursor:pointer;border:1px solid #e2e8f0;background:#fff;color:#0f172a;display:inline-flex;align-items:center;gap:5px;font-family:inherit;font-weight:500}
 .btn:hover{background:#f8fafc}
+.wa-btn{background:none;border:none;cursor:pointer;color:#25D366;padding:4px 6px;border-radius:5px;font-size:15px;display:inline-flex;align-items:center;transition:background .15s}
+.wa-btn:hover{background:#dcfce7}
 .btn-p{background:#2563eb;color:#fff;border-color:#2563eb;font-weight:600}
 .btn-p:hover{background:#1d4ed8}
 .ab{background:none;border:none;cursor:pointer;padding:4px 6px;border-radius:5px;color:#94a3b8;font-size:13px}
@@ -372,7 +374,8 @@ tr:hover td{background:#fafafa}
           <div class="fc" data-filter="not-open">Open</div>
           <div class="fc" data-filter="not-resolved">Resolved</div>
         </div>
-        <div style="display:flex;justify-content:flex-end;margin-bottom:12px">
+        <div style="display:flex;justify-content:flex-end;gap:8px;margin-bottom:12px">
+          <button class="btn" onclick="sendNoticeToAll()" style="color:#25D366;border-color:#25D366"><svg xmlns='http://www.w3.org/2000/svg' width='15' height='15' viewBox='0 0 24 24' fill='#25D366' style='margin-right:4px'><path d='M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z'/></svg> Send to All</button>
           <button class="btn btn-p" onclick="openNoticeModal()"><i class="ti ti-plus"></i> Post Notice / Complaint</button>
         </div>
         <div id="not-list"></div>
@@ -1115,6 +1118,24 @@ function closeModal(id) { $(id).classList.remove('show'); }
 function daysUntil(d)   { if(!d) return 9999; return Math.ceil((new Date(d)-new Date())/86400000); }
 function wings()        { return (CS?.wings||'A,B,C,D').split(',').map(w=>w.trim()); }
 
+// ═══════════════════════════════════════════════
+// WHATSAPP HELPERS
+// ═══════════════════════════════════════════════
+function waLink(phone, msg) {
+  const num = '91' + String(phone).replace(/\D/g,'').slice(-10);
+  return `https://wa.me/${num}?text=${encodeURIComponent(msg)}`;
+}
+function waSend(phone, msg) {
+  if (!phone) { toast('No phone number saved for this person', false); return; }
+  window.open(waLink(phone, msg), '_blank');
+}
+function waSendAll(phoneList, msg) {
+  const valid = phoneList.filter(Boolean);
+  if (!valid.length) { toast('No phone numbers found', false); return; }
+  valid.forEach((ph, i) => setTimeout(() => window.open(waLink(ph, msg), '_blank'), i * 400));
+  toast(`Opening WhatsApp for ${valid.length} member(s)…`);
+}
+
 // ── Universal CSV Download (works on all browsers including mobile) ──
 function downloadCSV(rows, filename) {
   try {
@@ -1547,6 +1568,7 @@ function renderMembers() {
     <td><span class="badge ${m.status==='active'?'bgr':m.status==='notice_period'?'ba':'bg'}">${m.status||'active'}</span></td>
     <td style="font-size:11px">${[m.vehicle1_no,m.vehicle2_no].filter(Boolean).join(', ')||'—'}</td>
     <td>
+      ${m.mobile?`<button class="wa-btn" onclick="waSend('${m.mobile}','Dear ${m.name}, ')" title="WhatsApp"><svg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='#25D366'><path d='M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z'/></svg></button>`:''}
       <button class="ab" onclick="openMemberModal(${members.indexOf(m)})" title="Edit"><i class="ti ti-edit"></i></button>
       <button class="ab" onclick="deleteMember('${m.id}')" style="color:#ef4444" title="Delete"><i class="ti ti-trash"></i></button>
     </td>
@@ -1633,6 +1655,7 @@ function renderDues() {
     <td style="font-size:11px">${d.payment_mode||'—'}</td>
     <td>
       ${d.status!=='paid'?`<button class="ab" onclick="markPaid('${d.id}')" style="color:#16a34a" title="Mark Paid"><i class="ti ti-check"></i></button>`:''}
+      ${(()=>{const mem=members.find(m=>`${m.wing}-${m.flat}`===d.flat);if(!mem?.mobile)return'';const amt=(Number(d.amount)+Number(d.late_fee||0)-Number(d.discount||0)).toLocaleString('en-IN');const msg=d.status==='paid'?`Dear ${mem.name}, we have received your maintenance payment of ₹${amt} for ${d.month}. Thank you! 🙏\n— ${CS?.name||'Society Management'}`:`Dear ${mem.name}, this is a reminder that your maintenance dues of ₹${amt} for ${d.month} are ${d.status==='overdue'?'overdue':'pending'}. Kindly make the payment at the earliest.\n— ${CS?.name||'Society Management'}`;return`<button class="wa-btn" onclick="waSend('${mem.mobile}',\`${msg.replace(/`/g,"'")}\`)" title="${d.status==='paid'?'Send Confirmation':'Send Reminder'}"><svg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='#25D366'><path d='M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z'/></svg></button>`})()}
       <button class="ab" onclick="deleteDues('${d.id}')" style="color:#ef4444"><i class="ti ti-trash"></i></button>
     </td>
   </tr>`).join('');
@@ -1771,12 +1794,30 @@ function renderNotices(){
           </div>
         </div>
         <div style="display:flex;gap:4px;flex-shrink:0">
+          ${n.type==='notice'?`<button class="wa-btn" onclick="sendNoticeWA('${n.id}')" title="Send via WhatsApp"><svg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='#25D366'><path d='M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z'/></svg></button>`:''}
           ${n.status!=='resolved'?`<button class="ab" onclick="resolveNotice('${n.id}')" style="color:#16a34a" title="Resolve"><i class="ti ti-check"></i></button>`:''}
           <button class="ab" onclick="deleteNotice('${n.id}')" style="color:#ef4444"><i class="ti ti-trash"></i></button>
         </div>
       </div>
     </div>`;
   }).join('');
+}
+function sendNoticeWA(id){
+  const n=notices.find(x=>x.id===id);
+  if(!n)return;
+  const msg=`📢 *${n.title}*\n\n${n.body}\n\n— ${CS?.name||'Society Management'}`;
+  const phones=members.map(m=>m.mobile).filter(Boolean);
+  if(!phones.length){toast('No member phone numbers found',false);return;}
+  waSendAll(phones, msg);
+}
+function sendNoticeToAll(){
+  const latest=notices.filter(n=>n.type==='notice');
+  if(!latest.length){toast('No notices posted yet',false);return;}
+  const n=latest[0];
+  const msg=`📢 *${n.title}*\n\n${n.body}\n\n— ${CS?.name||'Society Management'}`;
+  const phones=members.map(m=>m.mobile).filter(Boolean);
+  if(!phones.length){toast('No member phone numbers found',false);return;}
+  waSendAll(phones, msg);
 }
 function openNoticeModal(){populateFlatSelects();openModal('mo-notice');}
 async function saveNotice(){
@@ -2261,6 +2302,7 @@ function renderTenants() {
       <td><span class="badge ${pvBadge}">${pvLabel}</span></td>
       <td><span class="badge ${t.status==='active'?'bgr':t.status==='notice_period'?'ba':'bg'}">${t.status==='notice_period'?'Notice':t.status||'active'}</span></td>
       <td>
+        ${t.tenant_mobile?`<button class="wa-btn" onclick="waSend('${t.tenant_mobile}',\`Dear ${t.tenant_name}, this is a reminder that your rent of ₹${Number(t.monthly_rent||0).toLocaleString('en-IN')} for flat ${t.wing}-${t.flat} is due. Kindly make the payment at the earliest.\n— ${CS?.name||'Society Management'}\`)" title="Send Rent Reminder"><svg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='#25D366'><path d='M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z'/></svg></button>`:''}
         <button class="ab" onclick="openTenantModal(${tenants.indexOf(t)})" title="Edit"><i class="ti ti-edit"></i></button>
         <button class="ab" onclick="deleteTenant('${t.id}')" style="color:#ef4444" title="Delete"><i class="ti ti-trash"></i></button>
       </td>
