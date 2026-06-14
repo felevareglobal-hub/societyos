@@ -759,6 +759,13 @@ tr:hover td{background:#fafafa}
       <div class="fi"><label>Status</label><select id="m-stat"><option value="active">Active</option><option value="inactive">Inactive</option><option value="notice_period">Notice Period</option></select></div>
       <div class="fi full"><label>Emergency Contact</label><input id="m-emerg"></div>
       <div class="fi full"><label>Notes</label><textarea id="m-notes"></textarea></div>
+
+      <div class="fd"><i class="ti ti-shield-check" style="font-size:12px"></i> Nominees (up to 4)</div>
+      <div class="fi full" style="padding:0">
+        <div id="nominees-container" style="display:flex;flex-direction:column;gap:10px;padding:2px 0"></div>
+        <button type="button" class="btn" id="add-nominee-btn" onclick="addNomineeRow()" style="margin-top:8px;font-size:12px"><i class="ti ti-plus"></i> Add Nominee</button>
+      </div>
+
     </div></div>
     <div class="md-foot">
       <button class="btn" onclick="closeModal('mo-member')">Cancel</button>
@@ -1574,6 +1581,58 @@ function renderMembers() {
     </td>
   </tr>`).join('');
 }
+// ═══════════════════════════════════════════════
+// NOMINEES
+// ═══════════════════════════════════════════════
+const RELATIONSHIPS = ['Spouse','Son','Daughter','Father','Mother','Brother','Sister','Grandson','Granddaughter','Other'];
+
+function renderNomineeRows(list=[]) {
+  const c = $('nominees-container');
+  c.innerHTML = '';
+  (list.length ? list : [{}]).forEach((_,i) => addNomineeRow(list[i]));
+}
+
+function addNomineeRow(data={}) {
+  const c = $('nominees-container');
+  if (c.children.length >= 4) { toast('Maximum 4 nominees allowed', false); return; }
+  const idx = c.children.length + 1;
+  const rel = RELATIONSHIPS.map(r => `<option${data.relationship===r?' selected':''}>${r}</option>`).join('');
+  const row = document.createElement('div');
+  row.className = 'nominee-row';
+  row.style.cssText = 'border:1px solid #e2e8f0;border-radius:8px;padding:10px 12px;background:#f8fafc;position:relative';
+  row.innerHTML = `
+    <div style="font-size:11px;font-weight:600;color:#64748b;margin-bottom:8px;text-transform:uppercase;letter-spacing:.5px">Nominee ${idx}</div>
+    <button type="button" onclick="this.closest('.nominee-row').remove();renumberNominees()" style="position:absolute;top:8px;right:8px;background:none;border:none;cursor:pointer;color:#ef4444;font-size:14px"><i class="ti ti-x"></i></button>
+    <div class="fg" style="gap:8px">
+      <div class="fi"><label style="font-size:11px">Full Name *</label><input class="nom-name" value="${data.name||''}" placeholder="Nominee name"></div>
+      <div class="fi"><label style="font-size:11px">Relationship *</label><select class="nom-rel">${rel}</select></div>
+      <div class="fi"><label style="font-size:11px">Mobile</label><input class="nom-mob" type="tel" value="${data.mobile||''}" placeholder="10-digit number"></div>
+      <div class="fi"><label style="font-size:11px">Aadhaar</label><input class="nom-aadh" value="${data.aadhaar||''}" maxlength="14" placeholder="XXXX XXXX XXXX"></div>
+      <div class="fi" style="grid-column:1/-1"><label style="font-size:11px">Share % (optional)</label><input class="nom-share" type="number" min="0" max="100" value="${data.share_percent||''}" placeholder="e.g. 50"></div>
+    </div>
+    <input type="hidden" class="nom-id" value="${data.id||''}">
+  `;
+  c.appendChild(row);
+  $('add-nominee-btn').style.display = c.children.length >= 4 ? 'none' : '';
+}
+
+function renumberNominees() {
+  const rows = $('nominees-container').querySelectorAll('.nominee-row');
+  rows.forEach((r, i) => { r.querySelector('div').textContent = `Nominee ${i+1}`; });
+  $('add-nominee-btn').style.display = rows.length >= 4 ? 'none' : '';
+}
+
+function getNomineeData() {
+  return [...$('nominees-container').querySelectorAll('.nominee-row')].map(r => ({
+    id: r.querySelector('.nom-id').value || null,
+    name: r.querySelector('.nom-name').value.trim(),
+    relationship: r.querySelector('.nom-rel').value,
+    mobile: r.querySelector('.nom-mob').value.trim(),
+    aadhaar: r.querySelector('.nom-aadh').value.trim(),
+    share_percent: parseFloat(r.querySelector('.nom-share').value) || null
+  })).filter(n => n.name);
+}
+
 function openMemberModal(idx=-1) {
   editMem=idx; populateWingSelect();
   const m=idx>=0?members[idx]:null;
@@ -1590,6 +1649,16 @@ function openMemberModal(idx=-1) {
   const existingPhotoM = idx>=0 ? members[idx].photo_url : null;
   loadExistingPhoto('m', existingPhotoM, 'm-photo-area', 'm-photo-preview-wrap');
   $('mem-modal-title').textContent=idx>=0?'Edit Member':'Add Member';
+  // Load nominees
+  $('nominees-container').innerHTML='';
+  $('add-nominee-btn').style.display='';
+  if(idx>=0 && members[idx]?.id) {
+    GET('nominees',`?member_id=eq.${members[idx].id}&order=created_at`).then(list=>{
+      renderNomineeRows(list||[]);
+    }).catch(()=>renderNomineeRows([]));
+  } else {
+    renderNomineeRows([]);
+  }
   openModal('mo-member');
 }
 async function saveMember() {
@@ -1625,8 +1694,27 @@ async function saveMember() {
     emergency_contact:fv('m-emerg'), notes:fv('m-notes')
   };
   try {
-    if(editMem>=0) await PATCH('members',members[editMem].id,d);
-    else await POST('members',d);
+    let memberId;
+    if(editMem>=0) { await PATCH('members',members[editMem].id,d); memberId=members[editMem].id; }
+    else { const r=await POST('members',d); memberId=r?.[0]?.id||null; }
+
+    // Save nominees
+    const nominees = getNomineeData();
+    if(memberId) {
+      // Delete removed nominees (get existing IDs and delete ones not in current list)
+      const existingIds = [...$('nominees-container').querySelectorAll('.nom-id')].map(i=>i.value).filter(Boolean);
+      const keepIds = nominees.map(n=>n.id).filter(Boolean);
+      for(const eid of existingIds) {
+        if(!keepIds.includes(eid)) await DELETE('nominees',eid).catch(()=>{});
+      }
+      // Upsert nominees
+      for(const n of nominees) {
+        const nd={member_id:memberId,society_id:CS.id,name:n.name,relationship:n.relationship,mobile:n.mobile||null,aadhaar:n.aadhaar||null,share_percent:n.share_percent};
+        if(n.id) await PATCH('nominees',n.id,nd).catch(()=>{});
+        else await POST('nominees',nd).catch(()=>{});
+      }
+    }
+
     members=await GET('members',`?society_id=eq.${CS.id}&order=name`);
     closeModal('mo-member'); renderMembers();
     toast(editMem>=0?'Member updated':'Member added');
