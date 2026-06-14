@@ -463,6 +463,21 @@ tr:hover td{background:#fafafa}
         <div id="req-list"></div>
       </div>
 
+      <!-- REFERRAL CODES -->
+      <div class="page" id="page-referrals">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+          <div>
+            <div class="stats" style="margin-bottom:0" id="ref-stats">
+              <div class="sc"><div class="lb">Total Codes</div><div class="vl" id="ref-total">0</div></div>
+              <div class="sc"><div class="lb">Societies Referred</div><div class="vl" id="ref-soc-count" style="color:#6d28d9">0</div></div>
+              <div class="sc"><div class="lb">Active Salespeople</div><div class="vl" id="ref-people">0</div></div>
+            </div>
+          </div>
+          <button class="btn btn-p" onclick="openRefModal()"><i class="ti ti-plus"></i> Add Referral Code</button>
+        </div>
+        <div id="ref-list"></div>
+      </div>
+
       <!-- SUBSCRIPTION PAYMENTS -->
       <div class="page" id="page-payments">
         <!-- Summary -->
@@ -570,6 +585,26 @@ tr:hover td{background:#fafafa}
 </div>
 
 <!-- ===== MODALS ===== -->
+
+<!-- REFERRAL CODE MODAL -->
+<div class="mo" id="mo-referral">
+  <div class="md" style="max-width:460px">
+    <div class="md-head"><h3 id="ref-modal-title">Add Referral Code</h3><button class="md-close" onclick="closeModal('mo-referral')"><i class="ti ti-x"></i></button></div>
+    <div class="md-body"><div class="fg">
+      <div class="fi"><label>Referral Code *</label><input id="ref-code" placeholder="e.g. SP001" style="text-transform:uppercase" oninput="this.value=this.value.toUpperCase()"></div>
+      <div class="fi"><label>Salesperson Name *</label><input id="ref-name" placeholder="Full name"></div>
+      <div class="fi"><label>Mobile</label><input id="ref-mobile" type="tel" placeholder="10-digit number"></div>
+      <div class="fi"><label>Email</label><input id="ref-email" type="email" placeholder="salesperson@email.com"></div>
+      <div class="fi"><label>Commission %</label><input id="ref-commission" type="number" min="0" max="100" step="0.5" placeholder="e.g. 10"></div>
+      <div class="fi"><label>Status</label><select id="ref-status"><option value="active">Active</option><option value="inactive">Inactive</option></select></div>
+      <div class="fi full"><label>Notes</label><textarea id="ref-notes" rows="2" placeholder="Any notes about this salesperson…"></textarea></div>
+    </div></div>
+    <div class="md-foot">
+      <button class="btn" onclick="closeModal('mo-referral')">Cancel</button>
+      <button class="btn btn-p" onclick="saveReferral()"><i class="ti ti-check"></i> Save</button>
+    </div>
+  </div>
+</div>
 
 <!-- SIGN UP / REQUEST ACCESS MODAL -->
 <div class="mo" id="mo-signup">
@@ -1229,6 +1264,7 @@ const PAGE_META = {
   pricing:   ()=> 'Choose the right plan for your society',
   payments:  ()=> 'Track all subscription payments from societies',
   'signup-requests': ()=> 'Review and approve society registration requests',
+  'referrals':       ()=> 'Manage referral codes and track salesperson performance',
   accounts:  ()=> CS ? CS.name+' — Income & Expenses' : '',
   reports:   ()=> CS ? CS.name+' — Reports' : ''
 };
@@ -1278,6 +1314,7 @@ function goPage(id) {
   if (id==='pricing')   renderPricing();
   if (id==='payments')        renderPayments();
   if (id==='signup-requests') renderSignupRequests();
+  if (id==='referrals')       renderReferrals();
   if (id==='tenants')   renderTenants();
   if (id==='rent')      renderRent();
   if (id==='accounts')  renderAccounts();
@@ -1346,6 +1383,7 @@ async function doLogin() {
         <div class="ni" data-page="societies"><i class="ti ti-building-skyscraper"></i> All Societies</div>
         <div class="ni" data-page="admins"><i class="ti ti-shield-check"></i> Manage Admins</div>
         <div class="ni" data-page="signup-requests"><i class="ti ti-user-plus"></i> Sign Up Requests <span id="req-badge" style="background:#ef4444;color:#fff;font-size:9px;padding:1px 6px;border-radius:10px;margin-left:4px;display:none">0</span></div>
+        <div class="ni" data-page="referrals"><i class="ti ti-tag"></i> Referral Codes</div>
         <div class="ni" data-page="actlog"><i class="ti ti-history"></i> Activity Log</div>
         <div class="ni" data-page="plans"><i class="ti ti-packages"></i> Plans & Pricing</div>
         <div class="ni" data-page="payments"><i class="ti ti-cash"></i> Subscription Payments</div>`;
@@ -3645,6 +3683,125 @@ function closeSidebar() {
 }
 
 // Close sidebar after nav on mobile
+
+// ═══════════════════════════════════════════════
+// REFERRAL CODES
+// ═══════════════════════════════════════════════
+let referralCodes = [];
+let editRefId = null;
+
+async function renderReferrals() {
+  const list = $('ref-list');
+  list.innerHTML = '<p class="empty">Loading…</p>';
+  try {
+    referralCodes = await GET('referral_codes', '?order=created_at.desc');
+    const socs = allSocs || [];
+
+    // Stats
+    const withRef = socs.filter(s => s.referral_code);
+    const people = new Set(referralCodes.map(r => r.code)).size;
+    $('ref-total').textContent = referralCodes.length;
+    $('ref-soc-count').textContent = withRef.length;
+    $('ref-people').textContent = people;
+
+    if (!referralCodes.length) {
+      list.innerHTML = '<p class="empty">No referral codes yet. Click "Add Referral Code" to create one.</p>';
+      return;
+    }
+
+    list.innerHTML = `
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr>
+            <th>Code</th><th>Salesperson</th><th>Mobile</th><th>Commission %</th>
+            <th>Societies</th><th>Status</th><th>Actions</th>
+          </tr></thead>
+          <tbody>
+            ${referralCodes.map(r => {
+              const count = socs.filter(s => s.referral_code === r.code).length;
+              const socNames = socs.filter(s => s.referral_code === r.code).map(s => s.name).join(', ');
+              return `<tr>
+                <td><span class="badge" style="background:#ede9fe;color:#6d28d9;font-size:12px;font-weight:700;letter-spacing:.5px">${r.code}</span></td>
+                <td style="font-weight:500">${r.name}</td>
+                <td>${r.mobile ? `<button class="wa-btn" onclick="waSend('${r.mobile}','Hi ${r.name}, ')" title="WhatsApp"><svg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='#25D366'><path d='M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z'/></svg></button> ${r.mobile}` : '—'}</td>
+                <td style="text-align:center">${r.commission_percent ? r.commission_percent + '%' : '—'}</td>
+                <td style="text-align:center">
+                  <span style="font-weight:700;color:${count>0?'#6d28d9':'#94a3b8'};font-size:16px">${count}</span>
+                  ${socNames ? `<div style="font-size:10px;color:#64748b;margin-top:2px;max-width:160px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="${socNames}">${socNames}</div>` : ''}
+                </td>
+                <td><span class="badge ${r.status==='active'?'bg':'br'}" style="font-size:10px">${r.status==='active'?'Active':'Inactive'}</span></td>
+                <td>
+                  <button class="ab" onclick="copyRefCode('${r.code}')" title="Copy Code"><i class="ti ti-copy"></i></button>
+                  <button class="ab" onclick="openRefModal('${r.id}')" title="Edit"><i class="ti ti-edit"></i></button>
+                  <button class="ab" onclick="deleteRefCode('${r.id}')" style="color:#ef4444" title="Delete"><i class="ti ti-trash"></i></button>
+                </td>
+              </tr>`;
+            }).join('')}
+          </tbody>
+        </table>
+      </div>`;
+  } catch(e) {
+    list.innerHTML = `<p class="empty">Error: ${e.message}</p>`;
+  }
+}
+
+function copyRefCode(code) {
+  navigator.clipboard.writeText(code).then(() => toast(`Copied: ${code}`)).catch(() => toast('Copy failed', false));
+}
+
+function openRefModal(id=null) {
+  editRefId = id;
+  const r = id ? referralCodes.find(x => x.id === id) : null;
+  sv('ref-code', r?.code || '');
+  sv('ref-name', r?.name || '');
+  sv('ref-mobile', r?.mobile || '');
+  sv('ref-email', r?.email || '');
+  sv('ref-commission', r?.commission_percent || '');
+  sv('ref-notes', r?.notes || '');
+  if ($('ref-status')) $('ref-status').value = r?.status || 'active';
+  $('ref-modal-title').textContent = id ? 'Edit Referral Code' : 'Add Referral Code';
+  if (!id) $('ref-code').removeAttribute('readonly');
+  else $('ref-code').setAttribute('readonly', true);
+  openModal('mo-referral');
+}
+
+async function saveReferral() {
+  const code = fv('ref-code').toUpperCase().trim();
+  const name = fv('ref-name').trim();
+  if (!code || !name) { toast('Code and Salesperson Name are required', false); return; }
+
+  // Check duplicate code on new
+  if (!editRefId) {
+    const existing = referralCodes.find(r => r.code === code);
+    if (existing) { toast(`Code "${code}" already exists`, false); return; }
+  }
+
+  const d = {
+    code, name,
+    mobile: fv('ref-mobile').trim() || null,
+    email: fv('ref-email').trim() || null,
+    commission_percent: parseFloat(fv('ref-commission')) || null,
+    status: $('ref-status').value,
+    notes: fv('ref-notes').trim() || null
+  };
+
+  try {
+    if (editRefId) await PATCH('referral_codes', editRefId, d);
+    else await POST('referral_codes', { ...d });
+    closeModal('mo-referral');
+    await renderReferrals();
+    toast(editRefId ? 'Referral code updated' : `Code "${code}" created!`);
+  } catch(e) { toast('Error: ' + e.message, false); }
+}
+
+async function deleteRefCode(id) {
+  if (!confirm('Delete this referral code?')) return;
+  try {
+    await DELETE('referral_codes', id);
+    await renderReferrals();
+    toast('Deleted');
+  } catch(e) { toast('Error: ' + e.message, false); }
+}
 
 </script>
 </body>
