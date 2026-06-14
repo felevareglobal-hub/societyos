@@ -560,6 +560,7 @@ tr:hover td{background:#fafafa}
           <div class="fc" data-filter="rep-dues">Dues Collection</div>
           <div class="fc" data-filter="rep-expiry">Service Expiry</div>
           <div class="fc" data-filter="rep-members">Member Directory</div>
+          <div class="fc rep-master-only" data-filter="rep-sales" style="display:none">Sales Report</div>
         </div>
         <div id="report-content"></div>
       </div>
@@ -612,6 +613,9 @@ tr:hover td{background:#fafafa}
         <div class="fd"><i class="ti ti-calendar" style="font-size:12px"></i> Billing Preference</div>
         <div class="fi"><label>Billing Cycle</label><select id="su-billing"><option value="monthly">Monthly</option><option value="yearly">Yearly (Save 20%)</option></select></div>
         <div class="fi full"><label>Message / Notes (optional)</label><textarea id="su-notes" rows="2" placeholder="Any specific requirements or questions…"></textarea></div>
+        <div class="fd"><i class="ti ti-tag" style="font-size:12px"></i> Referral (optional)</div>
+        <div class="fi"><label>Referral Code</label><input id="su-ref-code" placeholder="e.g. SP001" style="text-transform:uppercase"></div>
+        <div class="fi"><label>Referred By (Name)</label><input id="su-ref-name" placeholder="Salesperson name"></div>
       </div>
       <div id="su-msg" style="margin-top:12px;font-size:12px;padding:10px;border-radius:7px;display:none"></div>
     </div>
@@ -658,6 +662,10 @@ tr:hover td{background:#fafafa}
       <div class="fi"><label>Secretary Name</label><input id="s-sec"></div>
       <div class="fi"><label>Secretary Phone</label><input id="s-secph" type="tel"></div>
       <div class="fi"><label>Default Maintenance (₹)</label><input id="s-maint" type="number"></div>
+      <div class="fd" style="grid-column:1/-1"><i class="ti ti-tag" style="font-size:12px"></i> Referral</div>
+      <div class="fi"><label>Referral Code</label><input id="s-ref-code" placeholder="e.g. SP001" style="text-transform:uppercase"></div>
+      <div class="fi"><label>Referred By (Name)</label><input id="s-ref-name" placeholder="Salesperson name"></div>
+      <div class="fi"><label>Commission %</label><input id="s-ref-commission" type="number" min="0" max="100" step="0.5" placeholder="e.g. 10"></div>
     </div></div>
     <div class="md-foot">
       <button class="btn" onclick="closeModal('mo-society')">Cancel</button>
@@ -1446,6 +1454,7 @@ function renderSocieties() {
         <span class="badge bb" style="font-size:9px">${s.registration_no||'No Reg No.'}</span>
         <span class="plan-tag ${PLAN_BG[s.plan||'basic']}">${(s.plan||'BASIC').toUpperCase()}</span>
         ${s.plan_expiry&&daysUntil(s.plan_expiry)<=30?`<span class="badge br" style="font-size:9px">Expires ${s.plan_expiry}</span>`:''}
+        ${s.referral_code?`<span class="badge" style="font-size:9px;background:#ede9fe;color:#6d28d9"><i class="ti ti-tag" style="font-size:9px"></i> ${s.referral_code}${s.referred_by?' · '+s.referred_by:''}</span>`:''}
       </div>
     </div>`).join('');
 }
@@ -1457,6 +1466,8 @@ function openSocietyModal(id=null) {
   sv('s-city',s?.city); sv('s-state',s?.state); sv('s-pin',s?.pincode);
   sv('s-units',s?.total_units); sv('s-wings',s?.wings); sv('s-sec',s?.secretary_name);
   sv('s-secph',s?.secretary_phone); sv('s-maint',s?.default_maintenance);
+  sv('s-ref-code',s?.referral_code); sv('s-ref-name',s?.referred_by);
+  sv('s-ref-commission',s?.commission_percent);
   $('soc-modal-title').textContent=id?'Edit Society':'Add Society';
   openModal('mo-society');
 }
@@ -1465,7 +1476,11 @@ function editSociety(id) { openSocietyModal(id); }
 async function saveSociety() {
   const name=fv('s-name').trim();
   if (!name) { toast('Society name required',false); return; }
-  const d={name,address:fv('s-addr'),registration_no:fv('s-reg'),city:fv('s-city'),state:fv('s-state'),pincode:fv('s-pin'),total_units:parseInt(fv('s-units'))||null,wings:fv('s-wings'),secretary_name:fv('s-sec'),secretary_phone:fv('s-secph'),default_maintenance:parseFloat(fv('s-maint'))||0};
+  const d={name,address:fv('s-addr'),registration_no:fv('s-reg'),city:fv('s-city'),state:fv('s-state'),pincode:fv('s-pin'),total_units:parseInt(fv('s-units'))||null,wings:fv('s-wings'),secretary_name:fv('s-sec'),secretary_phone:fv('s-secph'),default_maintenance:parseFloat(fv('s-maint'))||0,
+    referral_code:fv('s-ref-code').toUpperCase().trim()||null,
+    referred_by:fv('s-ref-name').trim()||null,
+    commission_percent:parseFloat(fv('s-ref-commission'))||null
+  };
   try {
     if (editSocId) await PATCH('societies',editSocId,d); else await POST('societies',d);
     await loadAllSocs(); closeModal('mo-society'); renderSocieties(); toast(editSocId?'Society updated':'Society added');
@@ -2111,11 +2126,72 @@ let repFilter = 'pl';
 async function renderReports() {
   const rc = $('report-content');
   rc.innerHTML = '<p class="empty">Loading report…</p>';
-  if (!CS) { rc.innerHTML='<p class="empty">Please select a society first</p>'; return; }
+  // Show Sales Report tab only for master admin
+  document.querySelectorAll('.rep-master-only').forEach(el => {
+    el.style.display = (ROLE==='master') ? '' : 'none';
+  });
+  if (!CS && repFilter!=='sales') { rc.innerHTML='<p class="empty">Please select a society first</p>'; return; }
   if (repFilter==='pl')       await reportPL(rc);
   if (repFilter==='dues')     await reportDues(rc);
   if (repFilter==='expiry')   await reportExpiry(rc);
   if (repFilter==='members')  await reportMembers(rc);
+  if (repFilter==='sales')    await reportSales(rc);
+}
+
+async function reportSales(rc) {
+  if (ROLE!=='master') { rc.innerHTML='<p class="empty">Access denied</p>'; return; }
+  const socs = allSocs || [];
+  // Group by referral code / referred_by
+  const byRef = {};
+  socs.forEach(s => {
+    const key = s.referral_code || '__none__';
+    if (!byRef[key]) byRef[key] = { code: s.referral_code||'—', name: s.referred_by||'Direct / Unknown', commission: s.commission_percent||0, societies: [] };
+    byRef[key].societies.push(s);
+  });
+  const rows = Object.values(byRef).sort((a,b)=>b.societies.length-a.societies.length);
+  const total = socs.length;
+  const referred = socs.filter(s=>s.referral_code).length;
+  const direct = total - referred;
+
+  rc.innerHTML = `
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:16px">
+      <div class="sc"><div class="lb">Total Societies</div><div class="vl" style="font-size:22px">${total}</div></div>
+      <div class="sc"><div class="lb">Via Referral</div><div class="vl" style="color:#6d28d9;font-size:22px">${referred}</div></div>
+      <div class="sc"><div class="lb">Direct / Walk-in</div><div class="vl" style="font-size:22px">${direct}</div></div>
+    </div>
+    <div class="card">
+      <div class="card-head"><h3>Sales by Referral Code</h3><button class="btn btn-sm" onclick="exportSalesCSV()"><i class="ti ti-download"></i> Export CSV</button></div>
+      <div class="tbl-wrap">
+        <table><thead><tr>
+          <th>Referral Code</th><th>Salesperson</th><th>Societies Sold</th><th>Commission %</th><th>Plans</th>
+        </tr></thead>
+        <tbody>
+          ${rows.map(r=>`<tr>
+            <td><span class="badge" style="background:#ede9fe;color:#6d28d9">${r.code}</span></td>
+            <td style="font-weight:500">${r.name}</td>
+            <td style="text-align:center;font-weight:600;color:#6d28d9">${r.societies.length}</td>
+            <td style="text-align:center">${r.commission?r.commission+'%':'—'}</td>
+            <td style="font-size:11px">${r.societies.map(s=>`<span class="plan-tag ${PLAN_BG[s.plan||'basic']}" style="font-size:9px">${(s.plan||'basic').toUpperCase()}</span>`).join(' ')}</td>
+          </tr>
+          <tr style="background:#fafafa;font-size:11px">
+            <td colspan="5" style="padding:4px 12px 10px;color:#64748b">
+              ${r.societies.map(s=>`${s.name}${s.city?' ('+s.city+')':''}`).join(' · ')}
+            </td>
+          </tr>`).join('')}
+        </tbody></table>
+      </div>
+    </div>`;
+}
+
+function exportSalesCSV() {
+  const socs = allSocs||[];
+  const rows = [['Society Name','City','Plan','Referral Code','Referred By','Commission %','Joined']];
+  socs.forEach(s=>rows.push([s.name,s.city||'',s.plan||'basic',s.referral_code||'',s.referred_by||'',s.commission_percent||'',s.created_at?.substring(0,10)||'']));
+  const csv = rows.map(r=>r.map(v=>`"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n');
+  const blob = new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a'); a.href=url; a.download='sales_report.csv'; a.click();
+  URL.revokeObjectURL(url);
 }
 
 async function reportPL(rc) {
@@ -3217,6 +3293,8 @@ async function submitSignupRequest() {
       admin_name: name, admin_email: email, admin_mobile: mobile,
       admin_designation: fv('su-desig'), requested_plan: plan,
       billing_preference: fv('su-billing'), notes: fv('su-notes'),
+      referral_code: fv('su-ref-code').toUpperCase().trim()||null,
+      referred_by: fv('su-ref-name').trim()||null,
       status: 'pending'
     });
 
