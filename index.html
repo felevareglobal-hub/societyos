@@ -586,6 +586,56 @@ tr:hover td{background:#fafafa}
 
 <!-- ===== MODALS ===== -->
 
+<!-- TERMS & PRIVACY MODAL -->
+<div class="mo" id="mo-terms">
+  <div class="md" style="max-width:600px;max-height:80vh">
+    <div class="md-head"><h3>Terms of Service, Privacy Policy & Disclaimer</h3><button class="md-close" onclick="closeModal('mo-terms')"><i class="ti ti-x"></i></button></div>
+    <div class="md-body" style="overflow-y:auto;max-height:60vh;font-size:12.5px;color:#374151;line-height:1.7">
+
+      <p style="font-size:11px;color:#64748b;margin-bottom:12px">Last updated: June 2026 &nbsp;|&nbsp; Operated by <strong>Falconrise Ventures Global</strong> (FGVL), Mumbai, India</p>
+
+      <h4 style="color:#0f172a;margin:14px 0 6px">1. Acceptance of Terms</h4>
+      <p>By registering on SocietyOS, you ("Society Admin") agree to these Terms on behalf of your housing society. If you do not agree, do not use this platform.</p>
+
+      <h4 style="color:#0f172a;margin:14px 0 6px">2. Data Collection & Storage</h4>
+      <p>SocietyOS collects and stores the following data for the purpose of society management:</p>
+      <ul style="padding-left:18px;margin:6px 0">
+        <li>Society details (name, address, registration number)</li>
+        <li>Member details (name, flat, mobile, Aadhaar — for nominee records only)</li>
+        <li>Tenant details (name, contact, lease details)</li>
+        <li>Financial records (maintenance dues, payments, accounts)</li>
+        <li>Nominee details (name, relationship, contact, Aadhaar)</li>
+      </ul>
+      <p>All data is stored securely on <strong>Supabase</strong> (SOC 2 Type II certified) servers and is accessible only to authorised admins of your society.</p>
+
+      <h4 style="color:#0f172a;margin:14px 0 6px">3. Data Ownership</h4>
+      <p>Your society's data belongs to you. FGVL / SocietyOS does not sell, share, or use your data for any commercial purpose other than providing this service. Upon plan cancellation, data can be exported in CSV format upon request.</p>
+
+      <h4 style="color:#0f172a;margin:14px 0 6px">4. Aadhaar Data Disclaimer</h4>
+      <p><strong>Important:</strong> SocietyOS is <em>not</em> an Aadhaar Authentication Service Provider (ASP) authorised by UIDAI. Aadhaar numbers stored in the system (for nominee records) are used solely for internal identification and are <strong>not verified or authenticated</strong> against UIDAI databases. Users are advised not to treat this as an official KYC process.</p>
+
+      <h4 style="color:#0f172a;margin:14px 0 6px">5. Security</h4>
+      <p>We employ industry-standard security practices including encrypted data transmission (HTTPS/TLS), role-based access control (Master Admin & Society Admin), and Row Level Security (RLS) on all database tables. However, no system is 100% breach-proof and FGVL is not liable for unauthorised access resulting from user negligence (e.g. sharing passwords).</p>
+
+      <h4 style="color:#0f172a;margin:14px 0 6px">6. Subscription & Billing</h4>
+      <p>Plans are billed monthly or annually as selected. A 7-day free trial is available for new societies. After the trial, continued use requires an active paid subscription. FGVL reserves the right to suspend accounts with overdue payments after a 7-day grace period.</p>
+
+      <h4 style="color:#0f172a;margin:14px 0 6px">7. Limitation of Liability</h4>
+      <p>SocietyOS is a management tool. FGVL is not liable for any financial, legal, or operational decisions made by society administrators based on data in the system. Always verify critical financial data independently.</p>
+
+      <h4 style="color:#0f172a;margin:14px 0 6px">8. Governing Law</h4>
+      <p>These terms are governed by the laws of India. Any disputes are subject to the jurisdiction of courts in Mumbai, Maharashtra.</p>
+
+      <h4 style="color:#0f172a;margin:14px 0 6px">9. Contact</h4>
+      <p>For data requests, privacy concerns, or legal queries contact us at <strong>connect@frvs.in</strong> or call <strong>+91 8850 242 811</strong>.</p>
+
+    </div>
+    <div class="md-foot">
+      <button class="btn btn-p" onclick="closeModal('mo-terms');document.getElementById('su-consent').checked=true">I Agree & Accept</button>
+    </div>
+  </div>
+</div>
+
 <!-- REFERRAL CODE MODAL -->
 <div class="mo" id="mo-referral">
   <div class="md" style="max-width:460px">
@@ -646,11 +696,18 @@ tr:hover td{background:#fafafa}
         <div class="fi"><label>Mobile *</label><input id="su-mobile" type="tel" placeholder="+91 XXXXX XXXXX"></div>
 
         <div class="fd"><i class="ti ti-calendar" style="font-size:12px"></i> Billing Preference</div>
-        <div class="fi"><label>Billing Cycle</label><select id="su-billing"><option value="monthly">Monthly</option><option value="yearly">Yearly (Save 20%)</option></select></div>
+        <div class="fi"><label>Billing Cycle</label><select id="su-billing" onchange="toggleSignupBilling(this.value)"><option value="monthly">Monthly</option><option value="yearly">Yearly (Save 20%)</option></select></div>
         <div class="fi full"><label>Message / Notes (optional)</label><textarea id="su-notes" rows="2" placeholder="Any specific requirements or questions…"></textarea></div>
         <div class="fd"><i class="ti ti-tag" style="font-size:12px"></i> Referral (optional)</div>
         <div class="fi"><label>Referral Code</label><input id="su-ref-code" placeholder="e.g. SP001" style="text-transform:uppercase"></div>
         <div class="fi"><label>Referred By (Name)</label><input id="su-ref-name" placeholder="Salesperson name"></div>
+
+        <div class="fi full" style="margin-top:4px">
+          <label style="display:flex;align-items:flex-start;gap:8px;cursor:pointer;font-weight:400;font-size:12px;color:#475569">
+            <input type="checkbox" id="su-consent" style="margin-top:2px;flex-shrink:0">
+            <span>I agree to the <a href="#" onclick="openModal('mo-terms');return false" style="color:#2563eb;text-decoration:underline">Terms of Service, Privacy Policy & Data Processing Agreement</a>. I understand that SocietyOS will collect and store society and member data on secure servers for the purpose of property management.</span>
+          </label>
+        </div>
       </div>
       <div id="su-msg" style="margin-top:12px;font-size:12px;padding:10px;border-radius:7px;display:none"></div>
     </div>
@@ -1124,6 +1181,28 @@ tr:hover td{background:#fafafa}
 <div class="toast" id="toast"></div>
 
 <script>
+// ═══════════════════════════════════════════════
+// SECURITY WARNING
+// ═══════════════════════════════════════════════
+(function(){
+  const s = [
+    '%c⚠️ SocietyOS Security Warning',
+    'color:#ef4444;font-size:18px;font-weight:bold'
+  ];
+  console.log(...s);
+  console.log('%cThis is a browser feature intended for developers. Do NOT paste any code here if someone asked you to — this is a common scam known as "self-XSS".', 'color:#64748b;font-size:13px');
+})();
+
+// Input sanitization — strip HTML tags from user input
+function sanitize(str) {
+  if (!str) return '';
+  return String(str).replace(/[<>'"]/g, c => ({'<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));
+}
+
+// Signup rate limiting — max 3 attempts per session
+let _signupAttempts = 0;
+const MAX_SIGNUP_ATTEMPTS = 3;
+
 // ═══════════════════════════════════════════════
 // CONFIG
 // ═══════════════════════════════════════════════
@@ -3231,18 +3310,29 @@ async function openSignupModal() {
 
     const container = $('signup-plan-cards');
     if (!container) return;
-    container.innerHTML = plans.map(p => `
+    container.innerHTML = plans.map(p => {
+      const mo = Number(p.price_monthly);
+      const yr = Math.round(mo * 12 * 0.8); // 20% off yearly
+      const moGst = Math.round(mo * (1 + GST));
+      const yrGst = Math.round(yr * (1 + GST));
+      return `
       <div id="sp-${p.id}" onclick="selectSignupPlan('${p.id}')"
         style="cursor:pointer;padding:14px;border:2px solid ${BDR[p.id]};border-radius:10px;background:${BG[p.id]};text-align:center;transition:all .2s">
         ${POPULAR[p.id]?`<div style="font-size:9px;font-weight:700;color:${BDR[p.id]};margin-bottom:3px">${POPULAR[p.id]}</div>`:''}
         <h3 style="font-size:14px;color:${PLAN_COLORS[p.id]};font-weight:700">${p.name}</h3>
-        <div style="font-size:28px;font-weight:800;color:${PLAN_COLORS[p.id]};margin:8px 0">
-          ₹${Number(p.price_monthly).toLocaleString('en-IN')}<span style="font-size:11px;font-weight:400;color:#64748b">/mo</span>
+        <div class="sp-mo-price" style="font-size:24px;font-weight:800;color:${PLAN_COLORS[p.id]};margin:8px 0">
+          ₹${mo.toLocaleString('en-IN')}<span style="font-size:11px;font-weight:400;color:#64748b">/mo</span>
         </div>
-        <div style="font-size:12px;color:#64748b;margin-top:2px">+GST 18% = ₹${Math.round(Number(p.price_monthly)*(1+GST)).toLocaleString('en-IN')}/mo</div>
+        <div class="sp-mo-gst" style="font-size:11px;color:#64748b">+18% GST = ₹${moGst.toLocaleString('en-IN')}/mo</div>
+        <div class="sp-yr-price" style="display:none;font-size:24px;font-weight:800;color:${PLAN_COLORS[p.id]};margin:8px 0">
+          ₹${Math.round(yr/12).toLocaleString('en-IN')}<span style="font-size:11px;font-weight:400;color:#64748b">/mo</span>
+        </div>
+        <div class="sp-yr-gst" style="display:none;font-size:11px;color:#64748b">₹${yr.toLocaleString('en-IN')}/yr billed annually (+18% GST = ₹${yrGst.toLocaleString('en-IN')})</div>
+        <div class="sp-yr-save" style="display:none;font-size:10px;color:#16a34a;font-weight:700;margin-top:3px">Save ₹${(mo*12 - yr).toLocaleString('en-IN')}/year!</div>
         <div style="font-size:10px;color:#64748b;margin-top:3px">${DESC[p.id]||''}</div>
         <div style="font-size:10px;color:#16a34a;margin-top:5px;font-weight:600">🎉 7 days FREE trial</div>
-      </div>`).join('');
+      </div>`;
+    }).join('');
 
     // Select basic by default
     selectSignupPlan('basic');
@@ -3252,26 +3342,41 @@ async function openSignupModal() {
     if (container) container.innerHTML = `
       <div id="sp-basic" onclick="selectSignupPlan('basic')" style="cursor:pointer;padding:14px;border:2px solid #94a3b8;border-radius:10px;background:#f8fafc;text-align:center">
         <h3 style="font-size:14px;color:#475569">Basic</h3>
-        <div style="font-size:18px;font-weight:700;color:#475569;margin:4px 0">₹999<span style="font-size:11px">/mo</span></div>
-        <div style="font-size:10px;color:#64748b">+GST 18% = ₹1,179/mo</div>
+        <div class="sp-mo-price" style="font-size:20px;font-weight:700;color:#475569;margin:4px 0">₹999<span style="font-size:11px">/mo</span></div>
+        <div class="sp-mo-gst" style="font-size:10px;color:#64748b">+18% GST = ₹1,179/mo</div>
+        <div class="sp-yr-price" style="display:none;font-size:20px;font-weight:700;color:#475569;margin:4px 0">₹799<span style="font-size:11px">/mo</span></div>
+        <div class="sp-yr-gst" style="display:none;font-size:10px;color:#64748b">₹9,590/yr billed annually (+18% GST = ₹11,316)</div>
+        <div class="sp-yr-save" style="display:none;font-size:10px;color:#16a34a;font-weight:700;margin-top:3px">Save ₹2,398/year!</div>
         <div style="font-size:10px;color:#16a34a;margin-top:4px;font-weight:600">🎉 7 days FREE trial</div>
       </div>
       <div id="sp-standard" onclick="selectSignupPlan('standard')" style="cursor:pointer;padding:14px;border:2px solid #2563eb;border-radius:10px;background:#eff6ff;text-align:center">
         <div style="font-size:9px;font-weight:700;color:#2563eb">POPULAR</div>
         <h3 style="font-size:14px;color:#1e40af">Standard</h3>
-        <div style="font-size:18px;font-weight:700;color:#1e40af;margin:4px 0">₹1,999<span style="font-size:11px">/mo</span></div>
-        <div style="font-size:10px;color:#64748b">+GST 18% = ₹2,359/mo</div>
+        <div class="sp-mo-price" style="font-size:20px;font-weight:700;color:#1e40af;margin:4px 0">₹1,999<span style="font-size:11px">/mo</span></div>
+        <div class="sp-mo-gst" style="font-size:10px;color:#64748b">+18% GST = ₹2,359/mo</div>
+        <div class="sp-yr-price" style="display:none;font-size:20px;font-weight:700;color:#1e40af;margin:4px 0">₹1,599<span style="font-size:11px">/mo</span></div>
+        <div class="sp-yr-gst" style="display:none;font-size:10px;color:#64748b">₹19,190/yr billed annually (+18% GST = ₹22,644)</div>
+        <div class="sp-yr-save" style="display:none;font-size:10px;color:#16a34a;font-weight:700;margin-top:3px">Save ₹4,798/year!</div>
         <div style="font-size:10px;color:#16a34a;margin-top:4px;font-weight:600">🎉 7 days FREE trial</div>
       </div>
       <div id="sp-premium" onclick="selectSignupPlan('premium')" style="cursor:pointer;padding:14px;border:2px solid #7c3aed;border-radius:10px;background:#f5f3ff;text-align:center">
         <div style="font-size:9px;font-weight:700;color:#7c3aed">ALL FEATURES</div>
         <h3 style="font-size:14px;color:#5b21b6">Premium</h3>
-        <div style="font-size:18px;font-weight:700;color:#5b21b6;margin:4px 0">₹2,999<span style="font-size:11px">/mo</span></div>
-        <div style="font-size:10px;color:#64748b">+GST 18% = ₹3,539/mo</div>
+        <div class="sp-mo-price" style="font-size:20px;font-weight:700;color:#5b21b6;margin:4px 0">₹2,999<span style="font-size:11px">/mo</span></div>
+        <div class="sp-mo-gst" style="font-size:10px;color:#64748b">+18% GST = ₹3,539/mo</div>
+        <div class="sp-yr-price" style="display:none;font-size:20px;font-weight:700;color:#5b21b6;margin:4px 0">₹2,399<span style="font-size:11px">/mo</span></div>
+        <div class="sp-yr-gst" style="display:none;font-size:10px;color:#64748b">₹28,790/yr billed annually (+18% GST = ₹33,972)</div>
+        <div class="sp-yr-save" style="display:none;font-size:10px;color:#16a34a;font-weight:700;margin-top:3px">Save ₹7,198/year!</div>
         <div style="font-size:10px;color:#16a34a;margin-top:4px;font-weight:600">🎉 7 days FREE trial</div>
       </div>`;
     selectSignupPlan('basic');
   }
+}
+
+function toggleSignupBilling(val) {
+  const isYearly = val === 'yearly';
+  document.querySelectorAll('.sp-mo-price,.sp-mo-gst').forEach(el => el.style.display = isYearly ? 'none' : '');
+  document.querySelectorAll('.sp-yr-price,.sp-yr-gst,.sp-yr-save').forEach(el => el.style.display = isYearly ? '' : 'none');
 }
 
 function selectSignupPlan(plan) {
@@ -3289,6 +3394,14 @@ function selectSignupPlan(plan) {
 }
 
 async function submitSignupRequest() {
+  // Rate limiting
+  _signupAttempts++;
+  if (_signupAttempts > MAX_SIGNUP_ATTEMPTS) {
+    const msg = $('su-msg');
+    msg.style.display='block'; msg.style.background='#fee2e2'; msg.style.color='#991b1b';
+    msg.textContent='Too many attempts. Please refresh the page and try again.';
+    return;
+  }
   const socName  = fv('su-soc-name').trim();
   const name     = fv('su-name').trim();
   const email    = fv('su-email').trim().toLowerCase();
@@ -3301,6 +3414,11 @@ async function submitSignupRequest() {
   if (!socName||!name||!email||!mobile||!city) {
     msg.style.display='block'; msg.style.background='#fee2e2'; msg.style.color='#991b1b';
     msg.textContent='Please fill in all required fields (Society Name, City, Your Name, Email, Mobile)';
+    return;
+  }
+  if (!$('su-consent')?.checked) {
+    msg.style.display='block'; msg.style.background='#fee2e2'; msg.style.color='#991b1b';
+    msg.textContent='Please read and accept the Terms of Service & Privacy Policy to proceed.';
     return;
   }
 
