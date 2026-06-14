@@ -2166,7 +2166,7 @@ async function renderReports() {
   rc.innerHTML = '<p class="empty">Loading report…</p>';
   // Show Sales Report tab only for master admin
   document.querySelectorAll('.rep-master-only').forEach(el => {
-    el.style.display = (ROLE==='master') ? '' : 'none';
+    el.style.display = (CU && CU.role==='master') ? '' : 'none';
   });
   if (!CS && repFilter!=='sales') { rc.innerHTML='<p class="empty">Please select a society first</p>'; return; }
   if (repFilter==='pl')       await reportPL(rc);
@@ -2177,7 +2177,7 @@ async function renderReports() {
 }
 
 async function reportSales(rc) {
-  if (ROLE!=='master') { rc.innerHTML='<p class="empty">Access denied</p>'; return; }
+  if (!CU || CU.role!=='master') { rc.innerHTML='<p class="empty">Access denied</p>'; return; }
   const socs = allSocs || [];
   // Group by referral code / referred_by
   const byRef = {};
