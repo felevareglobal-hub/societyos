@@ -99,6 +99,11 @@ tr:hover td{background:#fafafa}
 .btn:hover{background:#f8fafc}
 .wa-btn{background:none;border:none;cursor:pointer;color:#25D366;padding:4px 6px;border-radius:5px;font-size:15px;display:inline-flex;align-items:center;transition:background .15s}
 .wa-btn:hover{background:#dcfce7}
+.lock-notice{display:flex;align-items:center;justify-content:center;min-height:60vh;width:100%}
+.locked-overlay{text-align:center;padding:48px 32px;background:#fff;border-radius:16px;border:2px dashed #e2e8f0;max-width:380px;box-shadow:0 4px 24px rgba(0,0,0,.06)}
+.locked-overlay i{font-size:48px;color:#cbd5e1;display:block;margin-bottom:12px}
+.locked-overlay h4{font-size:18px;font-weight:700;color:#0f172a;margin-bottom:8px}
+.locked-overlay p{font-size:13px;color:#64748b;margin-bottom:20px;line-height:1.6}
 .btn-p{background:#2563eb;color:#fff;border-color:#2563eb;font-weight:600}
 .btn-p:hover{background:#1d4ed8}
 .ab{background:none;border:none;cursor:pointer;padding:4px 6px;border-radius:5px;color:#94a3b8;font-size:13px}
@@ -1366,8 +1371,9 @@ function goPage(id) {
     const lockPg = $('page-'+id);
     if (lockPg) {
       lockPg.classList.add('show');
+      // Remove existing content so nothing is accessible underneath
       let ld = lockPg.querySelector('.lock-notice');
-      if (!ld) { ld=document.createElement('div'); ld.className='lock-notice'; lockPg.insertBefore(ld,lockPg.firstChild); }
+      if (!ld) { ld=document.createElement('div'); ld.className='lock-notice'; lockPg.innerHTML=''; lockPg.appendChild(ld); }
       ld.innerHTML = getLockedHTML(checkId);
     }
     const niL = document.querySelector('.ni[data-page="'+id+'"]');
