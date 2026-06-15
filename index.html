@@ -1417,6 +1417,18 @@ const PAGE_META = {
 };
 
 function goPage(id) {
+  // ── FD intercept — routes to Accounts page with FD tab active ──
+  if (id==='fd') {
+    goPage('accounts');
+    setTimeout(()=>switchAccTab('fd'), 50);
+    document.querySelectorAll('.ni').forEach(n=>n.classList.remove('active'));
+    const niF = document.querySelector('.ni[data-page="fd"]');
+    if (niF) niF.classList.add('active');
+    $('pg-title').textContent = '🏦 Fixed Deposits';
+    $('pg-meta').textContent = CS ? CS.name+' — Fixed Deposit Register' : '';
+    if (window.innerWidth<768) { closeSidebar(); }
+    return;
+  }
   // ── Plan lock check (for society admins only) ──
   const lockedMods = ['services','amenities','tenants','rent','accounts','reports'];
   const checkId = id==='rent' ? 'tenants' : id;
@@ -1463,7 +1475,6 @@ function goPage(id) {
   if (id==='payments')        renderPayments();
   if (id==='signup-requests') renderSignupRequests();
   if (id==='referrals')       renderReferrals();
-  if (id==='fd')              { goPage('accounts'); switchAccTab('fd'); return; }
   if (id==='tenants')   renderTenants();
   if (id==='rent')      renderRent();
   if (id==='accounts')  renderAccounts();
