@@ -229,6 +229,7 @@ tr:hover td{background:#fafafa}
     <div class="ni" data-page="rent"><i class="ti ti-coin"></i> Rent Tracking</div>
     <div class="sb-sec">Finance</div>
     <div class="ni" data-page="accounts"><i class="ti ti-cash"></i> Accounts</div>
+    <div class="ni" data-page="fd"><i class="ti ti-building-bank"></i> Fixed Deposits</div>
     <div class="sb-sec">Reports</div>
     <div class="ni" data-page="reports"><i class="ti ti-chart-bar"></i> Reports & Analytics</div>
     <div class="ni" id="nav-pricing" style="display:none" data-page="pricing"><i class="ti ti-crown"></i> Upgrade Plan</div>
@@ -545,6 +546,14 @@ tr:hover td{background:#fafafa}
 
       <!-- ACCOUNTS -->
       <div class="page" id="page-accounts">
+        <!-- Tab toggle: Accounts | Fixed Deposits -->
+        <div class="fb" id="acc-tab-bar" style="margin-bottom:14px">
+          <div class="fc active" data-filter="acc-tab-accounts" onclick="switchAccTab('accounts')">📒 Accounts & Finance</div>
+          <div class="fc" data-filter="acc-tab-fd" onclick="switchAccTab('fd')">🏦 Fixed Deposits</div>
+        </div>
+
+        <!-- ACCOUNTS SECTION -->
+        <div id="acc-section">
         <!-- Summary Cards -->
         <div class="stats" id="acc-stats">
           <div class="sc"><div class="lb">Total Income</div><div class="vl" id="acc-income" style="color:#16a34a">₹0</div><div class="sb">This month</div></div>
@@ -571,6 +580,22 @@ tr:hover td{background:#fafafa}
             <tbody id="acc-tbody"></tbody></table>
           </div>
         </div>
+        </div><!-- /acc-section -->
+
+        <!-- FD SECTION -->
+        <div id="fd-section" style="display:none">
+          <div class="stats" id="fd-stats">
+            <div class="sc"><div class="lb">Total FDs</div><div class="vl" id="fd-total">0</div><div class="sb">Active</div></div>
+            <div class="sc"><div class="lb">Total Principal</div><div class="vl" id="fd-principal" style="color:#1e40af">₹0</div><div class="sb">Invested</div></div>
+            <div class="sc"><div class="lb">Total Maturity</div><div class="vl" id="fd-maturity-val" style="color:#16a34a">₹0</div><div class="sb">Expected</div></div>
+            <div class="sc"><div class="lb">Maturing Soon</div><div class="vl" id="fd-alert" style="color:#ef4444">0</div><div class="sb">Within 30 days</div></div>
+          </div>
+          <div class="card">
+            <div class="card-head"><h3>Fixed Deposits</h3><button class="btn btn-p" onclick="openFDModal()"><i class="ti ti-plus"></i> Add FD</button></div>
+            <div id="fd-list"></div>
+          </div>
+        </div><!-- /fd-section -->
+
       </div>
 
       <!-- REPORTS -->
@@ -637,6 +662,36 @@ tr:hover td{background:#fafafa}
     </div>
     <div class="md-foot">
       <button class="btn btn-p" onclick="closeModal('mo-terms');document.getElementById('su-consent').checked=true">I Agree & Accept</button>
+    </div>
+  </div>
+</div>
+
+<!-- FIXED DEPOSIT MODAL -->
+<div class="mo" id="mo-fd">
+  <div class="md" style="max-width:520px">
+    <div class="md-head"><h3 id="fd-modal-title">Add Fixed Deposit</h3><button class="md-close" onclick="closeModal('mo-fd')"><i class="ti ti-x"></i></button></div>
+    <div class="md-body"><div class="fg">
+      <div class="fd"><i class="ti ti-building-bank" style="font-size:12px"></i> Bank Details</div>
+      <div class="fi"><label>Bank Name *</label><input id="fd-bank" placeholder="e.g. State Bank of India"></div>
+      <div class="fi"><label>Branch</label><input id="fd-branch" placeholder="Branch name"></div>
+      <div class="fi"><label>FD Number *</label><input id="fd-number" placeholder="FD account / receipt number"></div>
+      <div class="fi"><label>FD Type</label><select id="fd-type"><option value="cumulative">Cumulative (interest at maturity)</option><option value="non-cumulative">Non-Cumulative (periodic interest)</option></select></div>
+
+      <div class="fd"><i class="ti ti-currency-rupee" style="font-size:12px"></i> Financial Details</div>
+      <div class="fi"><label>Principal Amount (₹) *</label><input id="fd-principal-amt" type="number" placeholder="e.g. 500000"></div>
+      <div class="fi"><label>Interest Rate (% p.a.) *</label><input id="fd-rate" type="number" step="0.01" placeholder="e.g. 7.5"></div>
+      <div class="fi"><label>Start Date *</label><input id="fd-start" type="date"></div>
+      <div class="fi"><label>Maturity Date *</label><input id="fd-maturity" type="date" onchange="calcFDMaturity()"></div>
+      <div class="fi"><label>Maturity Amount (₹)</label><input id="fd-maturity-amt" type="number" placeholder="Auto-calculated or enter manually" readonly style="background:#f8fafc"></div>
+
+      <div class="fd"><i class="ti ti-refresh" style="font-size:12px"></i> Renewal & Status</div>
+      <div class="fi"><label>Auto-Renewal</label><select id="fd-renewal"><option value="yes">Yes — auto renews on maturity</option><option value="no">No — will be encashed</option></select></div>
+      <div class="fi"><label>Status</label><select id="fd-status"><option value="active">Active</option><option value="matured">Matured</option><option value="encashed">Encashed</option></select></div>
+      <div class="fi full"><label>Notes</label><textarea id="fd-notes" rows="2" placeholder="Any remarks…"></textarea></div>
+    </div></div>
+    <div class="md-foot">
+      <button class="btn" onclick="closeModal('mo-fd')">Cancel</button>
+      <button class="btn btn-p" onclick="saveFD()"><i class="ti ti-check"></i> Save FD</button>
     </div>
   </div>
 </div>
@@ -1408,6 +1463,7 @@ function goPage(id) {
   if (id==='payments')        renderPayments();
   if (id==='signup-requests') renderSignupRequests();
   if (id==='referrals')       renderReferrals();
+  if (id==='fd')              { goPage('accounts'); switchAccTab('fd'); return; }
   if (id==='tenants')   renderTenants();
   if (id==='rent')      renderRent();
   if (id==='accounts')  renderAccounts();
@@ -2328,7 +2384,34 @@ function exportSalesCSV() {
 
 async function reportPL(rc) {
   if (!accounts.length) accounts = await GET('accounts', `?society_id=eq.${CS.id}&order=date.desc`);
-  const totalInc = accounts.filter(a=>a.type==='income').reduce((s,a)=>s+Number(a.amount),0);
+
+  // Fetch active FDs and calculate accrued/earned interest
+  let fds = [];
+  try { fds = await GET('fixed_deposits', `?society_id=eq.${CS.id}&status=eq.active`); } catch(e){}
+  const today = new Date();
+  let totalFDInterest = 0;
+  const fdBreakdown = [];
+  fds.forEach(f => {
+    const principal = Number(f.principal_amount||0);
+    const rate = Number(f.interest_rate||0);
+    const start = new Date(f.start_date);
+    const maturity = new Date(f.maturity_date);
+    const endDate = today < maturity ? today : maturity;
+    const days = Math.max(0, (endDate - start)/(1000*60*60*24));
+    const years = days/365;
+    let interest;
+    if (f.fd_type==='cumulative') {
+      interest = principal * (Math.pow(1+(rate/100)/4, 4*years) - 1);
+    } else {
+      interest = principal * rate * years / 100;
+    }
+    interest = Math.round(interest);
+    totalFDInterest += interest;
+    if (interest > 0) fdBreakdown.push({ bank: f.bank_name, fdNum: f.fd_number, interest });
+  });
+
+  const totalAccInc = accounts.filter(a=>a.type==='income').reduce((s,a)=>s+Number(a.amount),0);
+  const totalInc = totalAccInc + totalFDInterest;
   const totalExp = accounts.filter(a=>a.type==='expense').reduce((s,a)=>s+Number(a.amount),0);
   const net = totalInc - totalExp;
 
@@ -2338,6 +2421,10 @@ async function reportPL(rc) {
     if (a.type==='income')  incCats[a.category]  = (incCats[a.category]||0)  + Number(a.amount);
     if (a.type==='expense') expCats[a.category] = (expCats[a.category]||0) + Number(a.amount);
   });
+  // Add FD interest as Other Income line
+  if (totalFDInterest > 0) {
+    incCats['FD Interest Income (Accrued)'] = (incCats['FD Interest Income (Accrued)']||0) + totalFDInterest;
+  }
 
   // Monthly trend
   const monthly={};
@@ -2351,17 +2438,25 @@ async function reportPL(rc) {
 
   rc.innerHTML = `
     <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:16px">
-      <div class="sc"><div class="lb">Total Income</div><div class="vl" style="color:#16a34a;font-size:20px">₹${totalInc.toLocaleString('en-IN')}</div></div>
+      <div class="sc"><div class="lb">Total Income</div><div class="vl" style="color:#16a34a;font-size:20px">₹${totalInc.toLocaleString('en-IN')}</div>
+        ${totalFDInterest>0?`<div class="sb" style="color:#6d28d9">incl. ₹${totalFDInterest.toLocaleString('en-IN')} FD interest</div>`:''}</div>
       <div class="sc"><div class="lb">Total Expenses</div><div class="vl" style="color:#991b1b;font-size:20px">₹${totalExp.toLocaleString('en-IN')}</div></div>
       <div class="sc"><div class="lb">Net Balance</div><div class="vl" style="color:${net>=0?'#16a34a':'#991b1b'};font-size:20px">₹${Math.abs(net).toLocaleString('en-IN')}<span style="font-size:12px;margin-left:4px">${net>=0?'Surplus':'Deficit'}</span></div></div>
     </div>
+    ${totalFDInterest>0?`
+    <div style="background:#f5f3ff;border:1px solid #ddd6fe;border-radius:8px;padding:10px 14px;margin-bottom:14px;font-size:12.5px">
+      <strong style="color:#6d28d9">🏦 FD Interest (Other Income) — ₹${totalFDInterest.toLocaleString('en-IN')} accrued</strong>
+      <div style="margin-top:6px;display:flex;flex-wrap:wrap;gap:8px">
+        ${fdBreakdown.map(f=>`<span style="background:#ede9fe;color:#5b21b6;padding:2px 8px;border-radius:10px;font-size:11px">${f.bank} · ${f.fdNum} · ₹${f.interest.toLocaleString('en-IN')}</span>`).join('')}
+      </div>
+    </div>`:''}
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:16px">
       <div class="card">
         <div class="card-head"><h3>Income Breakdown</h3><button class="btn btn-sm" onclick="exportReportCSV('pl-income')"><i class="ti ti-download"></i> CSV</button></div>
         <div class="card-body">
           ${Object.keys(incCats).length ? Object.entries(incCats).sort((a,b)=>b[1]-a[1]).map(([k,v])=>`
             <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid #f1f5f9;font-size:12px">
-              <span>${k}</span>
+              <span${k.includes('FD Interest')?' style="color:#6d28d9;font-weight:600"':''}>${k.includes('FD Interest')?'🏦 ':''} ${k}</span>
               <span style="font-weight:600;color:#16a34a">₹${v.toLocaleString('en-IN')}</span>
             </div>`).join('') : '<p class="empty">No income records</p>'}
         </div>
@@ -3937,6 +4032,190 @@ async function deleteRefCode(id) {
     await renderReferrals();
     toast('Deleted');
   } catch(e) { toast('Error: ' + e.message, false); }
+}
+
+// ═══════════════════════════════════════════════
+// FIXED DEPOSITS
+// ═══════════════════════════════════════════════
+let fixedDeposits = [];
+let editFDId = null;
+
+function switchAccTab(tab) {
+  $('acc-section').style.display  = tab==='accounts' ? '' : 'none';
+  $('fd-section').style.display   = tab==='fd'       ? '' : 'none';
+  document.querySelectorAll('#acc-tab-bar .fc').forEach(f => {
+    f.classList.toggle('active', f.dataset.filter === 'acc-tab-'+tab);
+  });
+  if (tab==='fd') renderFDs();
+}
+
+function calcFDMaturity() {
+  const p = parseFloat($('fd-principal-amt')?.value) || 0;
+  const r = parseFloat($('fd-rate')?.value) || 0;
+  const start = $('fd-start')?.value;
+  const maturity = $('fd-maturity')?.value;
+  if (!p || !r || !start || !maturity) return;
+  const days = (new Date(maturity) - new Date(start)) / (1000*60*60*24);
+  const years = days / 365;
+  const type = $('fd-type')?.value;
+  let matAmt;
+  if (type === 'cumulative') {
+    // Compound quarterly
+    matAmt = p * Math.pow(1 + (r/100)/4, 4*years);
+  } else {
+    // Simple interest
+    matAmt = p + (p * r * years / 100);
+  }
+  if ($('fd-maturity-amt')) $('fd-maturity-amt').value = Math.round(matAmt);
+}
+
+async function renderFDs() {
+  const list = $('fd-list');
+  if (!CS) { list.innerHTML='<p class="empty">Select a society first</p>'; return; }
+  list.innerHTML = '<p class="empty">Loading…</p>';
+  try {
+    fixedDeposits = await GET('fixed_deposits', `?society_id=eq.${CS.id}&order=maturity_date`);
+    const today = new Date();
+    const soon = fixedDeposits.filter(f => {
+      const d = new Date(f.maturity_date);
+      const diff = (d - today) / (1000*60*60*24);
+      return diff >= 0 && diff <= 30 && f.status === 'active';
+    });
+
+    // Stats
+    const active = fixedDeposits.filter(f=>f.status==='active');
+    const totalPrincipal = active.reduce((s,f)=>s+Number(f.principal_amount||0),0);
+    const totalMaturity = active.reduce((s,f)=>s+Number(f.maturity_amount||0),0);
+    $('fd-total').textContent = active.length;
+    $('fd-principal').textContent = '₹'+totalPrincipal.toLocaleString('en-IN');
+    $('fd-maturity-val').textContent = '₹'+totalMaturity.toLocaleString('en-IN');
+    $('fd-alert').textContent = soon.length;
+
+    if (!fixedDeposits.length) {
+      list.innerHTML='<p class="empty">No Fixed Deposits added yet. Click "Add FD" to get started.</p>';
+      return;
+    }
+
+    list.innerHTML = `
+      ${soon.length ? `<div style="background:#fef3c7;border:1px solid #fbbf24;border-radius:8px;padding:10px 14px;margin-bottom:12px;font-size:12.5px;color:#92400e">
+        <strong>⚠️ ${soon.length} FD${soon.length>1?'s':''} maturing within 30 days:</strong>
+        ${soon.map(f=>`<strong>${f.fd_number}</strong> — ${f.bank_name} (${f.maturity_date})`).join(', ')}
+      </div>` : ''}
+      <div class="tbl-wrap">
+        <table><thead><tr>
+          <th>Bank</th><th>FD Number</th><th>Type</th><th>Principal (₹)</th>
+          <th>Rate</th><th>Start</th><th>Maturity</th><th>Maturity Amt (₹)</th>
+          <th>Auto-Renew</th><th>Status</th><th></th>
+        </tr></thead>
+        <tbody>
+          ${fixedDeposits.map(f => {
+            const today = new Date();
+            const matDate = new Date(f.maturity_date);
+            const daysLeft = Math.ceil((matDate - today)/(1000*60*60*24));
+            const isSoon = daysLeft >= 0 && daysLeft <= 30 && f.status==='active';
+            const statusColor = f.status==='active'?'#16a34a':f.status==='matured'?'#d97706':'#64748b';
+            return `<tr style="${isSoon?'background:#fffbeb':''}">
+              <td><strong>${f.bank_name}</strong>${f.branch?`<div style="font-size:10px;color:#64748b">${f.branch}</div>`:''}</td>
+              <td style="font-family:monospace;font-size:12px">${f.fd_number}</td>
+              <td style="font-size:11px">${f.fd_type==='cumulative'?'Cumulative':'Non-Cumul.'}</td>
+              <td style="font-weight:600">₹${Number(f.principal_amount).toLocaleString('en-IN')}</td>
+              <td style="text-align:center">${f.interest_rate}%</td>
+              <td style="font-size:11px">${f.start_date}</td>
+              <td style="font-size:11px;font-weight:${isSoon?'700':'400'};color:${isSoon?'#ef4444':'inherit'}">
+                ${f.maturity_date}
+                ${isSoon?`<div style="font-size:10px;color:#ef4444">⚠️ ${daysLeft}d left</div>`:''}
+                ${daysLeft<0&&f.status==='active'?`<div style="font-size:10px;color:#d97706">Overdue</div>`:''}
+              </td>
+              <td style="font-weight:600;color:#16a34a">${f.maturity_amount?'₹'+Number(f.maturity_amount).toLocaleString('en-IN'):'—'}</td>
+              <td style="text-align:center">${f.auto_renewal==='yes'?'✅':'❌'}</td>
+              <td><span style="font-size:10px;font-weight:600;color:${statusColor};text-transform:capitalize">${f.status}</span></td>
+              <td>
+                <button class="ab" onclick="openFDModal('${f.id}')" title="Edit"><i class="ti ti-edit"></i></button>
+                <button class="ab" onclick="deleteFD('${f.id}')" style="color:#ef4444" title="Delete"><i class="ti ti-trash"></i></button>
+              </td>
+            </tr>`;
+          }).join('')}
+        </tbody></table>
+      </div>
+      <div style="margin-top:10px;display:flex;justify-content:flex-end">
+        <button class="btn" onclick="exportFDCSV()"><i class="ti ti-download"></i> Export CSV</button>
+      </div>`;
+  } catch(e) {
+    list.innerHTML = `<p class="empty">Error: ${e.message}</p>`;
+  }
+}
+
+function openFDModal(id=null) {
+  editFDId = id;
+  const f = id ? fixedDeposits.find(x=>x.id===id) : null;
+  sv('fd-bank', f?.bank_name||'');
+  sv('fd-branch', f?.branch||'');
+  sv('fd-number', f?.fd_number||'');
+  sv('fd-principal-amt', f?.principal_amount||'');
+  sv('fd-rate', f?.interest_rate||'');
+  sv('fd-start', f?.start_date||'');
+  sv('fd-maturity', f?.maturity_date||'');
+  sv('fd-maturity-amt', f?.maturity_amount||'');
+  sv('fd-notes', f?.notes||'');
+  if ($('fd-type'))    $('fd-type').value    = f?.fd_type    || 'cumulative';
+  if ($('fd-renewal')) $('fd-renewal').value = f?.auto_renewal || 'no';
+  if ($('fd-status'))  $('fd-status').value  = f?.status     || 'active';
+  $('fd-modal-title').textContent = id ? 'Edit Fixed Deposit' : 'Add Fixed Deposit';
+  openModal('mo-fd');
+}
+
+async function saveFD() {
+  const bank    = fv('fd-bank').trim();
+  const fdNum   = fv('fd-number').trim();
+  const principal = parseFloat(fv('fd-principal-amt'));
+  const rate    = parseFloat(fv('fd-rate'));
+  const start   = fv('fd-start');
+  const maturity = fv('fd-maturity');
+  if (!bank||!fdNum||!principal||!rate||!start||!maturity) {
+    toast('Please fill all required fields', false); return;
+  }
+  const d = {
+    society_id: CS.id,
+    bank_name: bank,
+    branch: fv('fd-branch').trim()||null,
+    fd_number: fdNum,
+    fd_type: $('fd-type').value,
+    principal_amount: principal,
+    interest_rate: rate,
+    start_date: start,
+    maturity_date: maturity,
+    maturity_amount: parseFloat(fv('fd-maturity-amt'))||null,
+    auto_renewal: $('fd-renewal').value,
+    status: $('fd-status').value,
+    notes: fv('fd-notes').trim()||null
+  };
+  try {
+    if (editFDId) await PATCH('fixed_deposits', editFDId, d);
+    else await POST('fixed_deposits', d);
+    closeModal('mo-fd');
+    await renderFDs();
+    toast(editFDId ? 'FD updated' : 'FD added successfully');
+  } catch(e) { toast('Error: '+e.message, false); }
+}
+
+async function deleteFD(id) {
+  if (!confirm('Delete this Fixed Deposit record?')) return;
+  try {
+    await DELETE('fixed_deposits', id);
+    await renderFDs();
+    toast('FD deleted');
+  } catch(e) { toast('Error: '+e.message, false); }
+}
+
+function exportFDCSV() {
+  if (!fixedDeposits.length) { toast('No FDs to export', false); return; }
+  const rows = [['Bank','Branch','FD Number','Type','Principal (₹)','Rate (%)','Start Date','Maturity Date','Maturity Amount (₹)','Auto-Renewal','Status','Notes']];
+  fixedDeposits.forEach(f=>rows.push([
+    f.bank_name, f.branch||'', f.fd_number, f.fd_type,
+    f.principal_amount, f.interest_rate, f.start_date, f.maturity_date,
+    f.maturity_amount||'', f.auto_renewal, f.status, f.notes||''
+  ]));
+  downloadCSV(rows, `fixed_deposits_${CS.name.replace(/\s/g,'_')}.csv`);
 }
 
 </script>
