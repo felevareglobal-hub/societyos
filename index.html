@@ -2318,11 +2318,7 @@ function exportSalesCSV() {
   const socs = allSocs||[];
   const rows = [['Society Name','City','Plan','Referral Code','Referred By','Commission %','Joined']];
   socs.forEach(s=>rows.push([s.name,s.city||'',s.plan||'basic',s.referral_code||'',s.referred_by||'',s.commission_percent||'',s.created_at?.substring(0,10)||'']));
-  const csv = rows.map(r=>r.map(v=>`"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n');
-  const blob = new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8'});
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a'); a.href=url; a.download='sales_report.csv'; a.click();
-  URL.revokeObjectURL(url);
+  downloadCSV(rows, 'sales_report.csv');
 }
 
 async function reportPL(rc) {
