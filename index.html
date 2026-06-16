@@ -257,6 +257,8 @@ tr:hover td{background:#fafafa}
 
       <!-- DASHBOARD -->
       <div class="page show" id="page-dashboard">
+        <!-- Plan Banner (hidden for master admin, shown for society admins) -->
+        <div id="dash-plan-banner" style="display:none;margin-bottom:14px"></div>
         <div class="stats">
           <div class="sc"><div class="lb" id="s1l">Societies</div><div class="vl" id="s1v">0</div><div class="sb" id="s1s">Registered</div></div>
           <div class="sc"><div class="lb">Members</div><div class="vl" id="s2v">0</div><div class="sb">In this society</div></div>
@@ -1750,6 +1752,44 @@ function refreshDashboard() {
   $('d-exp').innerHTML=exp.length?'<table style="width:100%;border-collapse:collapse;font-size:12px">'+exp.slice(0,5).map(s=>{const d=daysUntil(s.expiry_date);return`<tr><td style="padding:5px 0;font-weight:600">${s.name}</td><td><span class="badge ${d<=7?'br':'ba'}">${d}d left</span></td></tr>`;}).join('')+'</table>':'<p class="empty">No expirations</p>';
   const oc=notices.filter(n=>n.type==='complaint'&&n.status==='open');
   $('d-comp').innerHTML=oc.length?oc.slice(0,4).map(n=>`<div style="padding:6px 0;border-bottom:1px solid #f1f5f9;font-size:12px"><div style="font-weight:600">${n.title}</div><div style="font-size:10px;color:#94a3b8">${n.flat||'General'}</div></div>`).join(''):'<p class="empty" style="color:#16a34a">✓ No open complaints</p>';
+
+  // Plan banner — only for society admins
+  const banner = $('dash-plan-banner');
+  if (!banner) return;
+  if (CU?.role==='master' || !CS) { banner.style.display='none'; return; }
+
+  const plan = CS?.plan || 'basic';
+  const expiry = CS?.plan_expiry || '';
+  const daysLeft = expiry ? daysUntil(expiry) : null;
+
+  const PLAN_CONFIG = {
+    basic:    { color:'#475569', bg:'#f8fafc', border:'#cbd5e1', icon:'🔹', label:'Basic Plan',    locked:'Services & AMC, Tenant Registry, Accounts & Finance, Reports & Analytics' },
+    standard: { color:'#1e40af', bg:'#eff6ff', border:'#93c5fd', icon:'🔷', label:'Standard Plan', locked:'Accounts & Finance, Reports & Analytics' },
+    premium:  { color:'#5b21b6', bg:'#f5f3ff', border:'#c4b5fd', icon:'💎', label:'Premium Plan',  locked:'' }
+  };
+  const cfg = PLAN_CONFIG[plan] || PLAN_CONFIG.basic;
+
+  banner.style.display = '';
+  banner.innerHTML = `
+    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;
+      background:${cfg.bg};border:1.5px solid ${cfg.border};border-radius:12px;padding:12px 16px">
+      <div style="display:flex;align-items:center;gap:10px">
+        <span style="font-size:22px">${cfg.icon}</span>
+        <div>
+          <div style="font-size:13px;font-weight:700;color:${cfg.color}">${cfg.label}
+            ${expiry?`<span style="font-size:10px;font-weight:400;color:#64748b;margin-left:6px">· Expires ${expiry}${daysLeft!==null&&daysLeft<=30?` <span style="color:#ef4444;font-weight:600">(${daysLeft}d left!)</span>`:''}</span>`:''}
+          </div>
+          ${cfg.locked
+            ? `<div style="font-size:11px;color:#64748b;margin-top:2px">🔒 Locked modules: <strong>${cfg.locked}</strong></div>`
+            : `<div style="font-size:11px;color:#16a34a;margin-top:2px">✅ All modules unlocked — you're on the best plan!</div>`}
+        </div>
+      </div>
+      ${plan!=='premium'
+        ? `<button class="btn btn-p" onclick="goPage('pricing')" style="font-size:12px;white-space:nowrap">
+            <i class="ti ti-crown"></i> Upgrade Plan
+           </button>`
+        : ''}
+    </div>`;
 }
 
 // ═══════════════════════════════════════════════
