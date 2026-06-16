@@ -249,6 +249,10 @@ tr:hover td{background:#fafafa}
         <p id="pg-meta"></p>
       </div>
       <div class="topbar-right">
+        <div id="fy-selector-wrap" style="display:none;align-items:center;gap:6px">
+          <label style="font-size:11px;color:#64748b;font-weight:600;white-space:nowrap">FY</label>
+          <select id="fy-selector" onchange="switchFY(this.value)" style="padding:5px 8px;border:1px solid #e2e8f0;border-radius:7px;font-size:12px;font-weight:600;color:#1e40af;background:#eff6ff;outline:none;cursor:pointer"></select>
+        </div>
         <div class="user-pill"><i class="ti ti-user-circle"></i><span id="u-name">Admin</span></div>
         <button id="mob-menu" style="display:none;background:none;border:none;cursor:pointer;padding:6px;border-radius:6px" onclick="toggleSidebar()"><i class="ti ti-menu-2" style="font-size:22px;color:#475569"></i></button>
       </div>
@@ -259,6 +263,8 @@ tr:hover td{background:#fafafa}
       <div class="page show" id="page-dashboard">
         <!-- Plan Banner (hidden for master admin, shown for society admins) -->
         <div id="dash-plan-banner" style="display:none;margin-bottom:14px"></div>
+        <!-- FY Banner -->
+        <div id="dash-fy-banner" style="display:none;margin-bottom:14px"></div>
         <div class="stats">
           <div class="sc"><div class="lb" id="s1l">Societies</div><div class="vl" id="s1v">0</div><div class="sb" id="s1s">Registered</div></div>
           <div class="sc"><div class="lb">Members</div><div class="vl" id="s2v">0</div><div class="sb">In this society</div></div>
@@ -1612,7 +1618,10 @@ async function loadAllSocs() {
 async function switchSociety(id) {
   if (!id) return;
   CS = allSocs.find(s=>s.id===id)||null;
-  if (CS) await loadSocData();
+  if (CS) {
+    await loadSocData();
+    await initFY();
+  }
   refreshDashboard();
   // Show plan tag in topbar
   if (CS) {
@@ -2149,8 +2158,8 @@ function renderDues() {
 function openDuesModal(){populateFlatSelects();openModal('mo-dues');}
 async function saveDues(){
   if(!fv('d-flat')||!fv('d-amt')){toast('Flat and amount required',false);return;}
-  const d={society_id:CS.id,flat:fv('d-flat'),month:fv('d-month'),amount:parseFloat(fv('d-amt')),due_date:fv('d-due')||null,status:fv('d-stat'),paid_date:fv('d-pdate')||null,payment_mode:fv('d-mode'),txn_ref:fv('d-txn'),late_fee:parseFloat(fv('d-late'))||0,discount:parseFloat(fv('d-disc'))||0,remarks:fv('d-rem')};
-  try{await POST('dues',d);dues=await GET('dues',`?society_id=eq.${CS.id}&order=created_at.desc`);closeModal('mo-dues');renderDues();toast('Record added');}catch(e){toast('Error: '+e.message,false);}
+  const d={society_id:CS.id,flat:fv('d-flat'),month:fv('d-month'),amount:parseFloat(fv('d-amt')),due_date:fv('d-due')||null,status:fv('d-stat'),paid_date:fv('d-pdate')||null,payment_mode:fv('d-mode'),txn_ref:fv('d-txn'),late_fee:parseFloat(fv('d-late'))||0,discount:parseFloat(fv('d-disc'))||0,remarks:fv('d-rem'),financial_year:CURRENT_FY||getCurrentFY()};
+  try{await POST('dues',d);dues=await GET('dues',`?society_id=eq.${CS.id}&financial_year=eq.${CURRENT_FY||getCurrentFY()}&order=created_at.desc`);closeModal('mo-dues');renderDues();toast('Record added');}catch(e){toast('Error: '+e.message,false);}
 }
 async function markPaid(id){try{await PATCH('dues',id,{status:'paid',paid_date:new Date().toISOString().split('T')[0]});const d=dues.find(x=>x.id===id);if(d){d.status='paid';}renderDues();toast('Marked as paid');}catch(e){toast('Error: '+e.message,false);}}
 async function deleteDues(id){if(!confirm('Delete?'))return;try{await DELETE('dues',id);dues=dues.filter(d=>d.id!==id);renderDues();toast('Deleted');}catch(e){toast('Error: '+e.message,false);}}
@@ -2309,8 +2318,8 @@ function openNoticeModal(){populateFlatSelects();openModal('mo-notice');}
 async function saveNotice(){
   const title=fv('n-title').trim(),body=fv('n-body').trim();
   if(!title||!body){toast('Title and description required',false);return;}
-  const d={society_id:CS.id,type:fv('n-type'),category:fv('n-cat'),title,body,posted_by:fv('n-by')||'Management',flat:fv('n-flat'),priority:fv('n-pri'),status:fv('n-stat')};
-  try{await POST('notices',d);notices=await GET('notices',`?society_id=eq.${CS.id}&order=created_at.desc`);closeModal('mo-notice');renderNotices();toast('Posted');}catch(e){toast('Error: '+e.message,false);}
+  const d={society_id:CS.id,type:fv('n-type'),category:fv('n-cat'),title,body,posted_by:fv('n-by')||'Management',flat:fv('n-flat'),priority:fv('n-pri'),status:fv('n-stat'),financial_year:CURRENT_FY||getCurrentFY()};
+  try{await POST('notices',d);notices=await GET('notices',`?society_id=eq.${CS.id}&financial_year=eq.${CURRENT_FY||getCurrentFY()}&order=created_at.desc`);closeModal('mo-notice');renderNotices();toast('Posted');}catch(e){toast('Error: '+e.message,false);}
 }
 async function resolveNotice(id){try{await PATCH('notices',id,{status:'resolved'});const n=notices.find(x=>x.id===id);if(n)n.status='resolved';renderNotices();toast('Marked resolved');}catch(e){toast('Error: '+e.message,false);}}
 async function deleteNotice(id){if(!confirm('Delete?'))return;try{await DELETE('notices',id);notices=notices.filter(n=>n.id!==id);renderNotices();toast('Deleted');}catch(e){toast('Error: '+e.message,false);}}
@@ -2458,16 +2467,18 @@ function openAccountModal(idx=-1) {
 async function saveAccount() {
   const desc = fv('ac-desc').trim(), amt = fv('ac-amt');
   if (!desc||!amt) { toast('Description and amount required', false); return; }
+  const date = fv('ac-date') || new Date().toISOString().substring(0,10);
   const d = {
     society_id: CS.id, type: fv('ac-type'), category: fv('ac-cat'),
-    description: desc, amount: parseFloat(amt), date: fv('ac-date')||null,
+    description: desc, amount: parseFloat(amt), date,
     payment_mode: fv('ac-mode'), reference: fv('ac-ref'),
-    vendor_or_from: fv('ac-from'), notes: fv('ac-notes')
+    vendor_or_from: fv('ac-from'), notes: fv('ac-notes'),
+    financial_year: CURRENT_FY || fyFromDate(date) || getCurrentFY()
   };
   try {
     if (editAccIdx>=0) await PATCH('accounts', accounts[editAccIdx].id, d);
     else await POST('accounts', d);
-    accounts = await GET('accounts', `?society_id=eq.${CS.id}&order=date.desc`);
+    accounts = await GET('accounts', `?society_id=eq.${CS.id}&financial_year=eq.${CURRENT_FY||getCurrentFY()}&order=date.desc`);
     closeModal('mo-account'); renderAccounts();
     toast(editAccIdx>=0 ? 'Entry updated' : 'Entry added');
   } catch(e) { toast('Error: '+e.message, false); }
@@ -4412,6 +4423,186 @@ function exportFDCSV() {
     f.maturity_amount||'', f.auto_renewal, f.status, f.notes||''
   ]));
   downloadCSV(rows, `fixed_deposits_${CS.name.replace(/\s/g,'_')}.csv`);
+}
+
+// ═══════════════════════════════════════════════
+// FINANCIAL YEAR SYSTEM
+// ═══════════════════════════════════════════════
+let CURRENT_FY = null; // e.g. "2026-27"
+let ALL_FYS = [];      // e.g. ["2025-26","2026-27"]
+
+function getFYLabel(fy) { return `FY ${fy}`; }
+
+function getCurrentFY() {
+  const now = new Date();
+  const year = now.getMonth() >= 3 ? now.getFullYear() : now.getFullYear() - 1;
+  return `${year}-${String(year+1).slice(2)}`;
+}
+
+function getFYRange(fy) {
+  const startYear = parseInt(fy.split('-')[0]);
+  return {
+    start: `${startYear}-04-01`,
+    end:   `${startYear+1}-03-31`
+  };
+}
+
+function getMonthsInFY(fy) {
+  const startYear = parseInt(fy.split('-')[0]);
+  const months = [];
+  for (let m = 3; m < 15; m++) {
+    const yr = m < 12 ? startYear : startYear + 1;
+    const mo = (m % 12) + 1;
+    months.push(`${yr}-${String(mo).padStart(2,'0')}`);
+  }
+  return months; // Apr to Mar
+}
+
+function fyFromDate(dateStr) {
+  if (!dateStr) return null;
+  const d = new Date(dateStr);
+  const yr = d.getMonth() >= 3 ? d.getFullYear() : d.getFullYear() - 1;
+  return `${yr}-${String(yr+1).slice(2)}`;
+}
+
+async function initFY() {
+  if (!CS) return;
+  // Load FYs from society's financial_years table
+  let fys = [];
+  try { fys = await GET('financial_years', `?society_id=eq.${CS.id}&order=fy_label`); } catch(e){}
+
+  // If no FYs exist, create current FY automatically
+  if (!fys.length) {
+    const label = getCurrentFY();
+    try {
+      await POST('financial_years', { society_id: CS.id, fy_label: label, is_active: true });
+      fys = await GET('financial_years', `?society_id=eq.${CS.id}&order=fy_label`);
+    } catch(e) {}
+  }
+
+  ALL_FYS = fys.map(f => f.fy_label);
+  CURRENT_FY = ALL_FYS[ALL_FYS.length - 1] || getCurrentFY();
+
+  // Populate FY selector
+  const sel = $('fy-selector');
+  const wrap = $('fy-selector-wrap');
+  if (sel && ALL_FYS.length) {
+    sel.innerHTML = ALL_FYS.map(fy => `<option value="${fy}"${fy===CURRENT_FY?' selected':''}>${getFYLabel(fy)}</option>`).join('');
+    wrap.style.display = 'flex';
+  }
+
+  refreshFYBanner();
+  await reloadDataForFY();
+}
+
+function refreshFYBanner() {
+  const banner = $('dash-fy-banner');
+  if (!banner || !CS || CU?.role==='master') { if(banner) banner.style.display='none'; return; }
+  const nextFYStart = parseInt(CURRENT_FY.split('-')[0]) + 1;
+  const nextFY = `${nextFYStart}-${String(nextFYStart+1).slice(2)}`;
+  const alreadyExists = ALL_FYS.includes(nextFY);
+  banner.style.display = '';
+  banner.innerHTML = `
+    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;
+      background:#f0fdf4;border:1.5px solid #86efac;border-radius:12px;padding:12px 16px">
+      <div style="display:flex;align-items:center;gap:10px">
+        <span style="font-size:22px">📅</span>
+        <div>
+          <div style="font-size:13px;font-weight:700;color:#15803d">Financial Year: ${getFYLabel(CURRENT_FY)}</div>
+          <div style="font-size:11px;color:#64748b">Apr ${CURRENT_FY.split('-')[0]} – Mar 20${CURRENT_FY.split('-')[1]} · All data is scoped to this year</div>
+        </div>
+      </div>
+      ${!alreadyExists ? `<button class="btn" onclick="startNewFY('${nextFY}')" style="background:#15803d;color:#fff;border-color:#15803d;font-size:12px;white-space:nowrap">
+        <i class="ti ti-calendar-plus"></i> Start FY ${nextFY}
+      </button>` : ''}
+    </div>`;
+}
+
+async function switchFY(fy) {
+  CURRENT_FY = fy;
+  refreshFYBanner();
+  await reloadDataForFY();
+  refreshDashboard();
+  // Re-render current page
+  const activePage = document.querySelector('.page.show');
+  if (activePage) {
+    const id = activePage.id.replace('page-','');
+    if (id==='members')  renderMembers();
+    if (id==='dues')     renderDues();
+    if (id==='accounts') renderAccounts();
+    if (id==='notices')  renderNotices();
+    if (id==='tenants')  renderTenants();
+    if (id==='services') renderSvc();
+    if (id==='reports')  renderReports();
+  }
+  toast(`Switched to ${getFYLabel(fy)}`);
+}
+
+async function reloadDataForFY() {
+  if (!CS) return;
+  const id = CS.id;
+  const {start, end} = getFYRange(CURRENT_FY);
+  [members, dues, services, amenities, notices, accounts, tenants, rentRecords] = await Promise.all([
+    GET('members',      `?society_id=eq.${id}&order=name`),
+    GET('dues',         `?society_id=eq.${id}&financial_year=eq.${CURRENT_FY}&order=created_at.desc`),
+    GET('services',     `?society_id=eq.${id}&order=name`),
+    GET('amenities',    `?society_id=eq.${id}&order=name`),
+    GET('notices',      `?society_id=eq.${id}&financial_year=eq.${CURRENT_FY}&order=created_at.desc`),
+    GET('accounts',     `?society_id=eq.${id}&financial_year=eq.${CURRENT_FY}&order=date.desc`),
+    GET('tenants',      `?society_id=eq.${id}&order=tenant_name`),
+    GET('rent_records', `?society_id=eq.${id}&financial_year=eq.${CURRENT_FY}&order=created_at.desc`)
+  ]);
+}
+
+async function startNewFY(nextFY) {
+  if (!confirm(`Start Financial Year ${nextFY}?\n\nThis will:\n✅ Create FY ${nextFY}\n✅ Auto-generate dues for all ${members.length} members for Apr–Mar\n✅ Switch the app to the new FY`)) return;
+
+  toast(`Starting FY ${nextFY}…`);
+
+  try {
+    // 1 — Create FY record
+    await POST('financial_years', { society_id: CS.id, fy_label: nextFY, is_active: true });
+
+    // 2 — Deactivate old FY
+    const oldFY = ALL_FYS.find(f => f === CURRENT_FY);
+    if (oldFY) {
+      const fyRec = await GET('financial_years', `?society_id=eq.${CS.id}&fy_label=eq.${oldFY}`);
+      if (fyRec?.[0]?.id) await PATCH('financial_years', fyRec[0].id, { is_active: false });
+    }
+
+    // 3 — Auto-generate dues for all members for all 12 months
+    const months = getMonthsInFY(nextFY);
+    const defaultMaint = CS.default_maintenance || 0;
+    const duesPayload = [];
+    members.forEach(m => {
+      months.forEach(mo => {
+        duesPayload.push({
+          society_id: CS.id,
+          flat: `${m.wing}-${m.flat}`,
+          month: mo,
+          amount: defaultMaint,
+          status: 'pending',
+          financial_year: nextFY
+        });
+      });
+    });
+
+    // Batch insert in chunks of 50
+    for (let i = 0; i < duesPayload.length; i += 50) {
+      await POST('dues', duesPayload.slice(i, i+50));
+    }
+
+    // 4 — Update local state & switch to new FY
+    ALL_FYS.push(nextFY);
+    const sel = $('fy-selector');
+    if (sel) sel.innerHTML = ALL_FYS.map(fy => `<option value="${fy}"${fy===nextFY?' selected':''}>${getFYLabel(fy)}</option>`).join('');
+    CURRENT_FY = nextFY;
+    await reloadDataForFY();
+    refreshDashboard();
+    refreshFYBanner();
+    renderDues();
+    toast(`FY ${nextFY} started! ${duesPayload.length} dues generated for ${members.length} members ✅`);
+  } catch(e) { toast('Error: '+e.message, false); }
 }
 
 </script>
