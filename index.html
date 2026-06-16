@@ -1601,7 +1601,9 @@ async function doResetPass() {
 // SOCIETIES
 // ═══════════════════════════════════════════════
 async function loadAllSocs() {
-  allSocs = await GET('societies','?order=name');
+  const all = await GET('societies','?order=name');
+  window._archivedSocs = all.filter(s => s.is_deleted);
+  allSocs = all.filter(s => !s.is_deleted);
   const sel=$('soc-switcher');
   sel.innerHTML='<option value="">— Select Society —</option>'+allSocs.map(s=>`<option value="${s.id}">${s.name}</option>`).join('');
   if (allSocs.length) { sel.value=allSocs[0].id; await switchSociety(allSocs[0].id); }
@@ -1636,14 +1638,16 @@ async function loadSocData() {
 
 function renderSocieties() {
   const g=$('soc-grid');
-  if (!allSocs.length) { g.innerHTML='<p class="empty">No societies yet. Add your first one.</p>'; return; }
-  g.innerHTML=allSocs.map(s=>`
+  const archived = window._archivedSocs || [];
+  if (!allSocs.length && !archived.length) { g.innerHTML='<p class="empty">No societies yet. Add your first one.</p>'; return; }
+  g.innerHTML = allSocs.map(s=>`
     <div class="scard">
       <div style="display:flex;justify-content:space-between;align-items:flex-start">
         <div><h4>${s.name}</h4><p>${[s.city,s.state].filter(Boolean).join(' · ')||'—'}</p></div>
         <div style="display:flex;gap:4px">
+          <button class="ab" onclick="exportSocietyData('${s.id}','${s.name.replace(/'/g,"\\'")}') " title="Export Data"><i class="ti ti-download"></i></button>
           <button class="ab" onclick="editSociety('${s.id}')" title="Edit"><i class="ti ti-edit"></i></button>
-          <button class="ab" onclick="deleteSociety('${s.id}')" style="color:#ef4444" title="Delete"><i class="ti ti-trash"></i></button>
+          <button class="ab" onclick="deleteSociety('${s.id}')" style="color:#ef4444" title="Archive"><i class="ti ti-archive"></i></button>
         </div>
       </div>
       <div class="scard-stats">
@@ -1656,7 +1660,32 @@ function renderSocieties() {
         ${s.plan_expiry&&daysUntil(s.plan_expiry)<=30?`<span class="badge br" style="font-size:9px">Expires ${s.plan_expiry}</span>`:''}
         ${s.referral_code?`<span class="badge" style="font-size:9px;background:#ede9fe;color:#6d28d9"><i class="ti ti-tag" style="font-size:9px"></i> ${s.referral_code}${s.referred_by?' · '+s.referred_by:''}</span>`:''}
       </div>
-    </div>`).join('');
+    </div>`).join('') +
+
+  (archived.length ? `
+    <div style="grid-column:1/-1;margin-top:20px">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
+        <span style="font-size:13px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:.5px">🗄️ Archived Societies (${archived.length})</span>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px">
+        ${archived.map(s=>`
+          <div class="scard" style="opacity:.6;border-style:dashed">
+            <div style="display:flex;justify-content:space-between;align-items:flex-start">
+              <div><h4 style="color:#94a3b8">${s.name}</h4>
+                <p style="font-size:10px;color:#ef4444">Archived on ${s.deleted_at?.substring(0,10)||'—'} by ${s.deleted_by||'—'}</p>
+              </div>
+              <div style="display:flex;gap:4px">
+                <button class="ab" onclick="exportSocietyData('${s.id}','${s.name.replace(/'/g,"\\'")}') " title="Export Data"><i class="ti ti-download"></i></button>
+                <button class="ab" onclick="restoreSociety('${s.id}')" style="color:#16a34a" title="Restore Society"><i class="ti ti-rotate-clockwise"></i></button>
+              </div>
+            </div>
+            <div style="margin-top:6px">
+              <span class="badge br" style="font-size:9px">ARCHIVED</span>
+              <span class="plan-tag ${PLAN_BG[s.plan||'basic']}" style="font-size:9px">${(s.plan||'BASIC').toUpperCase()}</span>
+            </div>
+          </div>`).join('')}
+      </div>
+    </div>` : '');
 }
 
 function openSocietyModal(id=null) {
@@ -1687,8 +1716,124 @@ async function saveSociety() {
   } catch(e){toast('Error: '+e.message,false);}
 }
 async function deleteSociety(id) {
-  if (!confirm('Delete this society and ALL its data? This cannot be undone.')) return;
-  try { await DELETE('societies',id); await loadAllSocs(); renderSocieties(); toast('Society deleted'); } catch(e){toast('Error: '+e.message,false);}
+  const s = allSocs.find(x=>x.id===id);
+  if (!s) return;
+
+  // Step 1 — Custom confirmation modal
+  const confirmed = await showDeleteConfirm(s.name);
+  if (!confirmed) return;
+
+  // Step 2 — Export all data before archiving
+  toast('Exporting society data before archiving…');
+  await exportSocietyData(id, s.name);
+
+  // Step 3 — Soft delete (set is_deleted = true, deleted_at = now)
+  try {
+    await PATCH('societies', id, {
+      is_deleted: true,
+      deleted_at: new Date().toISOString(),
+      deleted_by: CU?.email || 'master'
+    });
+    await loadAllSocs();
+    renderSocieties();
+    toast(`"${s.name}" archived successfully. Data exported & recoverable.`);
+  } catch(e) { toast('Error: '+e.message, false); }
+}
+
+function showDeleteConfirm(name) {
+  return new Promise(resolve => {
+    const overlay = document.createElement('div');
+    overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:9999;display:flex;align-items:center;justify-content:center;padding:16px';
+    overlay.innerHTML = `
+      <div style="background:#fff;border-radius:16px;padding:28px;max-width:420px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,.3)">
+        <div style="text-align:center;margin-bottom:16px">
+          <div style="font-size:48px">⚠️</div>
+          <h3 style="font-size:18px;font-weight:700;color:#0f172a;margin:8px 0">Archive Society?</h3>
+          <p style="font-size:13px;color:#475569;line-height:1.6">You are about to archive <strong>"${name}"</strong>.<br>
+          The society will be hidden from the app but <strong>all data will be preserved</strong> and can be restored by Master Admin.<br><br>
+          A <strong>full CSV export</strong> of all data will be downloaded automatically.</p>
+        </div>
+        <div style="background:#fef3c7;border:1px solid #fbbf24;border-radius:8px;padding:10px 14px;font-size:12px;color:#92400e;margin-bottom:16px">
+          <strong>⚡ This will NOT permanently delete data.</strong> Society can be restored anytime from the Archived Societies section.
+        </div>
+        <div style="display:flex;gap:10px">
+          <button id="del-cancel" style="flex:1;padding:10px;border:1px solid #e2e8f0;background:#fff;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600">Cancel</button>
+          <button id="del-confirm" style="flex:1;padding:10px;background:#ef4444;color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600">Archive & Export</button>
+        </div>
+      </div>`;
+    document.body.appendChild(overlay);
+    overlay.querySelector('#del-cancel').onclick  = () => { overlay.remove(); resolve(false); };
+    overlay.querySelector('#del-confirm').onclick = () => { overlay.remove(); resolve(true); };
+  });
+}
+
+async function exportSocietyData(id, name) {
+  try {
+    const [mems, ds, tens, accs, nots, svcs, fds, noms] = await Promise.all([
+      GET('members',    `?society_id=eq.${id}`),
+      GET('dues',       `?society_id=eq.${id}`),
+      GET('tenants',    `?society_id=eq.${id}`),
+      GET('accounts',   `?society_id=eq.${id}`),
+      GET('notices',    `?society_id=eq.${id}`),
+      GET('services',   `?society_id=eq.${id}`),
+      GET('fixed_deposits', `?society_id=eq.${id}`).catch(()=>[]),
+      GET('nominees',   `?society_id=eq.${id}`).catch(()=>[])
+    ]);
+
+    // Build multi-sheet CSV (sections separated by blank lines)
+    let csv = `SOCIETY EXPORT — ${name}\nExported on: ${new Date().toLocaleString('en-IN')}\n\n`;
+
+    const section = (title, headers, rows) => {
+      csv += `=== ${title} ===\n`;
+      csv += headers.map(h=>`"${h}"`).join(',') + '\n';
+      rows.forEach(r => { csv += r.map(v=>`"${String(v??'').replace(/"/g,'""')}"`).join(',') + '\n'; });
+      csv += '\n';
+    };
+
+    section('MEMBERS', ['Wing','Flat','Name','Mobile','Email','Type','Status'],
+      mems.map(m=>[m.wing,m.flat,m.name,m.mobile||'',m.email||'',m.ownership||'',m.status||'']));
+
+    section('DUES', ['Flat','Month','Amount','Late Fee','Discount','Status'],
+      ds.map(d=>[d.flat,d.month,d.amount,d.late_fee||0,d.discount||0,d.status]));
+
+    section('TENANTS', ['Wing','Flat','Tenant Name','Mobile','Rent','Lease Start','Lease End'],
+      tens.map(t=>[t.wing,t.flat,t.tenant_name,t.tenant_mobile||'',t.monthly_rent||'',t.lease_start||'',t.lease_end||'']));
+
+    section('ACCOUNTS', ['Date','Type','Category','Description','Amount','Mode'],
+      accs.map(a=>[a.date,a.type,a.category,a.description||'',a.amount,a.payment_mode||'']));
+
+    section('NOTICES', ['Date','Type','Title','Body','Status'],
+      nots.map(n=>[n.created_at?.substring(0,10),n.type,n.title,n.body||'',n.status]));
+
+    section('SERVICES & AMC', ['Name','Vendor','Expiry Date','Amount','Status'],
+      svcs.map(s=>[s.name,s.vendor||'',s.expiry_date||'',s.amount||'',s.status||'']));
+
+    section('FIXED DEPOSITS', ['Bank','FD Number','Principal','Rate','Start','Maturity','Status'],
+      fds.map(f=>[f.bank_name,f.fd_number,f.principal_amount,f.interest_rate,f.start_date,f.maturity_date,f.status]));
+
+    section('NOMINEES', ['Member ID','Name','Relationship','Mobile','Aadhaar'],
+      noms.map(n=>[n.member_id,n.name,n.relationship||'',n.mobile||'',n.aadhaar||'']));
+
+    const blob = new Blob(['\uFEFF'+csv], {type:'text/csv;charset=utf-8'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${name.replace(/\s/g,'_')}_export_${new Date().toISOString().substring(0,10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  } catch(e) {
+    toast('Export failed: '+e.message, false);
+  }
+}
+
+async function restoreSociety(id) {
+  if (!confirm('Restore this society? It will become active again.')) return;
+  try {
+    await PATCH('societies', id, { is_deleted: false, deleted_at: null, deleted_by: null });
+    await loadAllSocs();
+    renderSocieties();
+    toast('Society restored successfully ✅');
+  } catch(e) { toast('Error: '+e.message, false); }
 }
 
 // ═══════════════════════════════════════════════
