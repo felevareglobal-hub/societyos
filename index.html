@@ -1580,7 +1580,10 @@ async function doLogin() {
       if (CU.society_id) {
         const socs = await GET('societies',`?id=eq.${CU.society_id}`);
         CS = socs[0]||null;
-        if (CS) await loadSocData();
+        if (CS) {
+          await loadSocData();
+          await initFY();
+        }
       }
     }
     goPage('dashboard');
