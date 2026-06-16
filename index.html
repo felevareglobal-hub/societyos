@@ -277,6 +277,18 @@ tr:hover td{background:#fafafa}
         </div>
       </div>
 
+      <!-- FY OVERVIEW (MASTER ADMIN) -->
+      <div class="page" id="page-fy-overview">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:10px">
+          <div style="font-size:13px;color:#64748b">Financial performance across all societies for the selected FY</div>
+          <div style="display:flex;align-items:center;gap:8px">
+            <label style="font-size:12px;font-weight:600;color:#64748b">View FY:</label>
+            <select id="fy-overview-selector" onchange="CURRENT_FY=this.value;renderFYOverview()" style="padding:6px 10px;border:1px solid #e2e8f0;border-radius:7px;font-size:12px;font-weight:600;color:#1e40af;background:#eff6ff;outline:none"></select>
+          </div>
+        </div>
+        <div id="fy-overview-content"><p class="empty">Loading…</p></div>
+      </div>
+
       <!-- SOCIETIES -->
       <div class="page" id="page-societies">
         <div style="display:flex;justify-content:flex-end;margin-bottom:14px">
@@ -1420,6 +1432,7 @@ const PAGE_META = {
   payments:  ()=> 'Track all subscription payments from societies',
   'signup-requests': ()=> 'Review and approve society registration requests',
   'referrals':       ()=> 'Manage referral codes and track salesperson performance',
+  'fy-overview':     ()=> 'Financial Year performance across all societies',
   accounts:  ()=> CS ? CS.name+' — Income & Expenses' : '',
   reports:   ()=> CS ? CS.name+' — Reports' : ''
 };
@@ -1483,6 +1496,7 @@ function goPage(id) {
   if (id==='payments')        renderPayments();
   if (id==='signup-requests') renderSignupRequests();
   if (id==='referrals')       renderReferrals();
+  if (id==='fy-overview')     { populateFYOverviewSelector(); renderFYOverview(); }
   if (id==='tenants')   renderTenants();
   if (id==='rent')      renderRent();
   if (id==='accounts')  renderAccounts();
@@ -1549,6 +1563,7 @@ async function doLogin() {
       $('master-nav').innerHTML = `
         <div class="sb-sec">Master Admin</div>
         <div class="ni" data-page="societies"><i class="ti ti-building-skyscraper"></i> All Societies</div>
+        <div class="ni" data-page="fy-overview"><i class="ti ti-chart-bar"></i> FY Overview</div>
         <div class="ni" data-page="admins"><i class="ti ti-shield-check"></i> Manage Admins</div>
         <div class="ni" data-page="signup-requests"><i class="ti ti-user-plus"></i> Sign Up Requests <span id="req-badge" style="background:#ef4444;color:#fff;font-size:9px;padding:1px 6px;border-radius:10px;margin-left:4px;display:none">0</span></div>
         <div class="ni" data-page="referrals"><i class="ti ti-tag"></i> Referral Codes</div>
@@ -4467,11 +4482,8 @@ function fyFromDate(dateStr) {
 
 async function initFY() {
   if (!CS) return;
-  // Load FYs from society's financial_years table
   let fys = [];
   try { fys = await GET('financial_years', `?society_id=eq.${CS.id}&order=fy_label`); } catch(e){}
-
-  // If no FYs exist, create current FY automatically
   if (!fys.length) {
     const label = getCurrentFY();
     try {
@@ -4479,28 +4491,26 @@ async function initFY() {
       fys = await GET('financial_years', `?society_id=eq.${CS.id}&order=fy_label`);
     } catch(e) {}
   }
-
   ALL_FYS = fys.map(f => f.fy_label);
   CURRENT_FY = ALL_FYS[ALL_FYS.length - 1] || getCurrentFY();
-
-  // Populate FY selector
   const sel = $('fy-selector');
   const wrap = $('fy-selector-wrap');
   if (sel && ALL_FYS.length) {
     sel.innerHTML = ALL_FYS.map(fy => `<option value="${fy}"${fy===CURRENT_FY?' selected':''}>${getFYLabel(fy)}</option>`).join('');
-    wrap.style.display = 'flex';
+    wrap.style.display = 'flex'; // Show for ALL roles
   }
-
   refreshFYBanner();
   await reloadDataForFY();
 }
 
 function refreshFYBanner() {
   const banner = $('dash-fy-banner');
-  if (!banner || !CS || CU?.role==='master') { if(banner) banner.style.display='none'; return; }
+  if (!banner || !CS) { if(banner) banner.style.display='none'; return; }
   const nextFYStart = parseInt(CURRENT_FY.split('-')[0]) + 1;
   const nextFY = `${nextFYStart}-${String(nextFYStart+1).slice(2)}`;
   const alreadyExists = ALL_FYS.includes(nextFY);
+  // Count outstanding arrears from previous FY
+  const prevFY = ALL_FYS.length > 1 ? ALL_FYS[ALL_FYS.length - 2] : null;
   banner.style.display = '';
   banner.innerHTML = `
     <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;
@@ -4509,12 +4519,17 @@ function refreshFYBanner() {
         <span style="font-size:22px">📅</span>
         <div>
           <div style="font-size:13px;font-weight:700;color:#15803d">Financial Year: ${getFYLabel(CURRENT_FY)}</div>
-          <div style="font-size:11px;color:#64748b">Apr ${CURRENT_FY.split('-')[0]} – Mar 20${CURRENT_FY.split('-')[1]} · All data is scoped to this year</div>
+          <div style="font-size:11px;color:#64748b">Apr ${CURRENT_FY.split('-')[0]} – Mar 20${CURRENT_FY.split('-')[1]} · All data scoped to this year</div>
         </div>
       </div>
-      ${!alreadyExists ? `<button class="btn" onclick="startNewFY('${nextFY}')" style="background:#15803d;color:#fff;border-color:#15803d;font-size:12px;white-space:nowrap">
-        <i class="ti ti-calendar-plus"></i> Start FY ${nextFY}
-      </button>` : ''}
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        ${!alreadyExists ? `<button class="btn" onclick="startNewFY('${nextFY}')" style="background:#15803d;color:#fff;border-color:#15803d;font-size:12px;white-space:nowrap">
+          <i class="ti ti-calendar-plus"></i> Start FY ${nextFY}
+        </button>` : ''}
+        ${prevFY ? `<button class="btn" onclick="carryForwardArrears('${prevFY}','${CURRENT_FY}')" style="font-size:12px;color:#d97706;border-color:#d97706;white-space:nowrap">
+          <i class="ti ti-transfer"></i> Carry Forward Arrears from ${prevFY}
+        </button>` : ''}
+      </div>
     </div>`;
 }
 
@@ -4523,7 +4538,6 @@ async function switchFY(fy) {
   refreshFYBanner();
   await reloadDataForFY();
   refreshDashboard();
-  // Re-render current page
   const activePage = document.querySelector('.page.show');
   if (activePage) {
     const id = activePage.id.replace('page-','');
@@ -4541,7 +4555,6 @@ async function switchFY(fy) {
 async function reloadDataForFY() {
   if (!CS) return;
   const id = CS.id;
-  const {start, end} = getFYRange(CURRENT_FY);
   [members, dues, services, amenities, notices, accounts, tenants, rentRecords] = await Promise.all([
     GET('members',      `?society_id=eq.${id}&order=name`),
     GET('dues',         `?society_id=eq.${id}&financial_year=eq.${CURRENT_FY}&order=created_at.desc`),
@@ -4555,44 +4568,51 @@ async function reloadDataForFY() {
 }
 
 async function startNewFY(nextFY) {
-  if (!confirm(`Start Financial Year ${nextFY}?\n\nThis will:\n✅ Create FY ${nextFY}\n✅ Auto-generate dues for all ${members.length} members for Apr–Mar\n✅ Switch the app to the new FY`)) return;
+  if (!confirm(`Start Financial Year ${nextFY}?\n\nThis will:\n✅ Create FY ${nextFY}\n✅ Auto-generate dues for all ${members.length} members (Apr–Mar)\n✅ Carry forward outstanding arrears from ${CURRENT_FY}\n✅ Switch the app to the new FY`)) return;
 
   toast(`Starting FY ${nextFY}…`);
-
   try {
     // 1 — Create FY record
     await POST('financial_years', { society_id: CS.id, fy_label: nextFY, is_active: true });
 
     // 2 — Deactivate old FY
-    const oldFY = ALL_FYS.find(f => f === CURRENT_FY);
-    if (oldFY) {
-      const fyRec = await GET('financial_years', `?society_id=eq.${CS.id}&fy_label=eq.${oldFY}`);
-      if (fyRec?.[0]?.id) await PATCH('financial_years', fyRec[0].id, { is_active: false });
-    }
+    const fyRec = await GET('financial_years', `?society_id=eq.${CS.id}&fy_label=eq.${CURRENT_FY}`);
+    if (fyRec?.[0]?.id) await PATCH('financial_years', fyRec[0].id, { is_active: false });
 
-    // 3 — Auto-generate dues for all members for all 12 months
+    // 3 — Auto-generate dues for all 12 months
     const months = getMonthsInFY(nextFY);
     const defaultMaint = CS.default_maintenance || 0;
     const duesPayload = [];
     members.forEach(m => {
       months.forEach(mo => {
         duesPayload.push({
-          society_id: CS.id,
-          flat: `${m.wing}-${m.flat}`,
-          month: mo,
-          amount: defaultMaint,
-          status: 'pending',
-          financial_year: nextFY
+          society_id: CS.id, flat: `${m.wing}-${m.flat}`,
+          month: mo, amount: defaultMaint,
+          status: 'pending', financial_year: nextFY
         });
       });
     });
-
-    // Batch insert in chunks of 50
     for (let i = 0; i < duesPayload.length; i += 50) {
       await POST('dues', duesPayload.slice(i, i+50));
     }
 
-    // 4 — Update local state & switch to new FY
+    // 4 — Carry forward outstanding arrears automatically
+    const prevDues = await GET('dues', `?society_id=eq.${CS.id}&financial_year=eq.${CURRENT_FY}&status=in.(pending,overdue)`);
+    if (prevDues.length) {
+      const arrearPayload = prevDues.map(d => ({
+        society_id: CS.id, flat: d.flat,
+        month: `Arrears-${CURRENT_FY}`,
+        amount: (Number(d.amount) + Number(d.late_fee||0) - Number(d.discount||0)),
+        status: 'pending', financial_year: nextFY,
+        remarks: `Carried forward from FY ${CURRENT_FY} — ${d.month}`
+      }));
+      for (let i = 0; i < arrearPayload.length; i += 50) {
+        await POST('dues', arrearPayload.slice(i, i+50));
+      }
+      toast(`${arrearPayload.length} arrear records carried forward from FY ${CURRENT_FY}`);
+    }
+
+    // 5 — Switch to new FY
     ALL_FYS.push(nextFY);
     const sel = $('fy-selector');
     if (sel) sel.innerHTML = ALL_FYS.map(fy => `<option value="${fy}"${fy===nextFY?' selected':''}>${getFYLabel(fy)}</option>`).join('');
@@ -4601,8 +4621,118 @@ async function startNewFY(nextFY) {
     refreshDashboard();
     refreshFYBanner();
     renderDues();
-    toast(`FY ${nextFY} started! ${duesPayload.length} dues generated for ${members.length} members ✅`);
+    toast(`FY ${nextFY} started! ${duesPayload.length} dues + ${prevDues.length} arrears carried forward ✅`);
   } catch(e) { toast('Error: '+e.message, false); }
+}
+
+async function carryForwardArrears(fromFY, toFY) {
+  const prevDues = await GET('dues', `?society_id=eq.${CS.id}&financial_year=eq.${fromFY}&status=in.(pending,overdue)`);
+  if (!prevDues.length) { toast(`No outstanding dues in FY ${fromFY}`, false); return; }
+  // Check if already carried forward
+  const existing = await GET('dues', `?society_id=eq.${CS.id}&financial_year=eq.${toFY}&month=like.Arrears-${fromFY}*`).catch(()=>[]);
+  if (existing.length) { toast(`Arrears from FY ${fromFY} already carried forward`, false); return; }
+  if (!confirm(`Carry forward ${prevDues.length} outstanding dues from FY ${fromFY} to FY ${toFY}?`)) return;
+  const arrearPayload = prevDues.map(d => ({
+    society_id: CS.id, flat: d.flat,
+    month: `Arrears-${fromFY}`,
+    amount: (Number(d.amount) + Number(d.late_fee||0) - Number(d.discount||0)),
+    status: 'pending', financial_year: toFY,
+    remarks: `Carried forward from FY ${fromFY} — ${d.month}`
+  }));
+  for (let i = 0; i < arrearPayload.length; i += 50) {
+    await POST('dues', arrearPayload.slice(i, i+50));
+  }
+  await reloadDataForFY();
+  renderDues();
+  toast(`${arrearPayload.length} arrears carried forward from FY ${fromFY} ✅`);
+}
+
+function populateFYOverviewSelector() {
+  const sel = $('fy-overview-selector');
+  if (!sel) return;
+  // Collect all unique FYs across all societies — use ALL_FYS or generate a range
+  const thisYear = new Date().getFullYear();
+  const fys = [];
+  for (let y = thisYear - 2; y <= thisYear + 1; y++) {
+    fys.push(`${y}-${String(y+1).slice(2)}`);
+  }
+  // Also include any from ALL_FYS
+  ALL_FYS.forEach(f => { if (!fys.includes(f)) fys.push(f); });
+  fys.sort();
+  const cur = CURRENT_FY || getCurrentFY();
+  sel.innerHTML = fys.map(fy => `<option value="${fy}"${fy===cur?' selected':''}>${getFYLabel(fy)}</option>`).join('');
+}
+
+// ═══════════════════════════════════════════════
+// MASTER ADMIN — FY OVERVIEW ACROSS ALL SOCIETIES
+// ═══════════════════════════════════════════════
+async function renderFYOverview() {
+  const el = $('fy-overview-content');
+  if (!el) return;
+  el.innerHTML = '<p class="empty">Loading FY overview…</p>';
+  try {
+    const socs = allSocs || [];
+    if (!socs.length) { el.innerHTML='<p class="empty">No societies yet</p>'; return; }
+    const fy = CURRENT_FY || getCurrentFY();
+
+    // Load dues summary for all societies for current FY
+    const results = await Promise.all(socs.map(async s => {
+      const [allDues, allAcc] = await Promise.all([
+        GET('dues',     `?society_id=eq.${s.id}&financial_year=eq.${fy}`).catch(()=>[]),
+        GET('accounts', `?society_id=eq.${s.id}&financial_year=eq.${fy}`).catch(()=>[])
+      ]);
+      const totalDues     = allDues.reduce((sum,d)=>sum+Number(d.amount||0)+Number(d.late_fee||0)-Number(d.discount||0),0);
+      const collected     = allDues.filter(d=>d.status==='paid').reduce((sum,d)=>sum+Number(d.amount||0),0);
+      const outstanding   = allDues.filter(d=>d.status!=='paid').reduce((sum,d)=>sum+Number(d.amount||0)+Number(d.late_fee||0)-Number(d.discount||0),0);
+      const arrears       = allDues.filter(d=>d.month?.startsWith('Arrears')).reduce((sum,d)=>sum+Number(d.amount||0),0);
+      const income        = allAcc.filter(a=>a.type==='income').reduce((sum,a)=>sum+Number(a.amount||0),0);
+      const expense       = allAcc.filter(a=>a.type==='expense').reduce((sum,a)=>sum+Number(a.amount||0),0);
+      return { s, totalDues, collected, outstanding, arrears, income, expense, net: income-expense };
+    }));
+
+    const totals = results.reduce((t,r)=>({
+      totalDues: t.totalDues+r.totalDues, collected: t.collected+r.collected,
+      outstanding: t.outstanding+r.outstanding, arrears: t.arrears+r.arrears,
+      income: t.income+r.income, expense: t.expense+r.expense, net: t.net+r.net
+    }), {totalDues:0,collected:0,outstanding:0,arrears:0,income:0,expense:0,net:0});
+
+    el.innerHTML = `
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px">
+        <div class="sc"><div class="lb">Total Dues Billed</div><div class="vl" style="font-size:18px">₹${totals.totalDues.toLocaleString('en-IN')}</div><div class="sb">All societies · ${getFYLabel(fy)}</div></div>
+        <div class="sc"><div class="lb">Total Collected</div><div class="vl" style="color:#16a34a;font-size:18px">₹${totals.collected.toLocaleString('en-IN')}</div><div class="sb">Paid dues</div></div>
+        <div class="sc"><div class="lb">Outstanding</div><div class="vl" style="color:#ef4444;font-size:18px">₹${totals.outstanding.toLocaleString('en-IN')}</div><div class="sb">Pending + Overdue</div></div>
+        <div class="sc"><div class="lb">Net Balance (Accounts)</div><div class="vl" style="color:${totals.net>=0?'#16a34a':'#ef4444'};font-size:18px">₹${Math.abs(totals.net).toLocaleString('en-IN')}</div><div class="sb">${totals.net>=0?'Surplus':'Deficit'}</div></div>
+      </div>
+      <div class="tbl-wrap">
+        <table><thead><tr>
+          <th>Society</th><th>Plan</th><th>Dues Billed</th><th>Collected</th>
+          <th>Outstanding</th><th>Arrears</th><th>Income</th><th>Expense</th><th>Net</th>
+        </tr></thead>
+        <tbody>
+          ${results.map(r=>`<tr>
+            <td style="font-weight:600">${r.s.name}<div style="font-size:10px;color:#94a3b8">${r.s.city||''}</div></td>
+            <td><span class="plan-tag ${PLAN_BG[r.s.plan||'basic']}" style="font-size:9px">${(r.s.plan||'basic').toUpperCase()}</span></td>
+            <td>₹${r.totalDues.toLocaleString('en-IN')}</td>
+            <td style="color:#16a34a;font-weight:600">₹${r.collected.toLocaleString('en-IN')}</td>
+            <td style="color:${r.outstanding>0?'#ef4444':'#16a34a'};font-weight:600">₹${r.outstanding.toLocaleString('en-IN')}</td>
+            <td style="color:#d97706">${r.arrears>0?'₹'+r.arrears.toLocaleString('en-IN'):'—'}</td>
+            <td style="color:#16a34a">₹${r.income.toLocaleString('en-IN')}</td>
+            <td style="color:#991b1b">₹${r.expense.toLocaleString('en-IN')}</td>
+            <td style="font-weight:700;color:${r.net>=0?'#16a34a':'#ef4444'}">₹${Math.abs(r.net).toLocaleString('en-IN')} ${r.net>=0?'▲':'▼'}</td>
+          </tr>`).join('')}
+          <tr style="background:#f8fafc;font-weight:700;border-top:2px solid #e2e8f0">
+            <td colspan="2">TOTAL</td>
+            <td>₹${totals.totalDues.toLocaleString('en-IN')}</td>
+            <td style="color:#16a34a">₹${totals.collected.toLocaleString('en-IN')}</td>
+            <td style="color:#ef4444">₹${totals.outstanding.toLocaleString('en-IN')}</td>
+            <td style="color:#d97706">₹${totals.arrears.toLocaleString('en-IN')}</td>
+            <td style="color:#16a34a">₹${totals.income.toLocaleString('en-IN')}</td>
+            <td style="color:#991b1b">₹${totals.expense.toLocaleString('en-IN')}</td>
+            <td style="color:${totals.net>=0?'#16a34a':'#ef4444'}">₹${Math.abs(totals.net).toLocaleString('en-IN')} ${totals.net>=0?'▲':'▼'}</td>
+          </tr>
+        </tbody></table>
+      </div>`;
+  } catch(e) { el.innerHTML=`<p class="empty">Error: ${e.message}</p>`; }
 }
 
 </script>
