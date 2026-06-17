@@ -277,6 +277,11 @@ tr:hover td{background:#fafafa}
         </div>
       </div>
 
+      <!-- DB MONITOR (MASTER ADMIN) -->
+      <div class="page" id="page-db-monitor">
+        <div id="db-monitor-content"><p class="empty">Loading…</p></div>
+      </div>
+
       <!-- FY OVERVIEW (MASTER ADMIN) -->
       <div class="page" id="page-fy-overview">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:10px">
@@ -1433,6 +1438,7 @@ const PAGE_META = {
   'signup-requests': ()=> 'Review and approve society registration requests',
   'referrals':       ()=> 'Manage referral codes and track salesperson performance',
   'fy-overview':     ()=> 'Financial Year performance across all societies',
+  'db-monitor':      ()=> 'Database usage, storage & growth monitoring',
   accounts:  ()=> CS ? CS.name+' — Income & Expenses' : '',
   reports:   ()=> CS ? CS.name+' — Reports' : ''
 };
@@ -1497,6 +1503,7 @@ function goPage(id) {
   if (id==='signup-requests') renderSignupRequests();
   if (id==='referrals')       renderReferrals();
   if (id==='fy-overview')     { populateFYOverviewSelector(); renderFYOverview(); }
+  if (id==='db-monitor')      renderDBMonitor();
   if (id==='tenants')   renderTenants();
   if (id==='rent')      renderRent();
   if (id==='accounts')  renderAccounts();
@@ -1564,6 +1571,7 @@ async function doLogin() {
         <div class="sb-sec">Master Admin</div>
         <div class="ni" data-page="societies"><i class="ti ti-building-skyscraper"></i> All Societies</div>
         <div class="ni" data-page="fy-overview"><i class="ti ti-chart-bar"></i> FY Overview</div>
+        <div class="ni" data-page="db-monitor"><i class="ti ti-database"></i> DB Monitor</div>
         <div class="ni" data-page="admins"><i class="ti ti-shield-check"></i> Manage Admins</div>
         <div class="ni" data-page="signup-requests"><i class="ti ti-user-plus"></i> Sign Up Requests <span id="req-badge" style="background:#ef4444;color:#fff;font-size:9px;padding:1px 6px;border-radius:10px;margin-left:4px;display:none">0</span></div>
         <div class="ni" data-page="referrals"><i class="ti ti-tag"></i> Referral Codes</div>
@@ -4736,6 +4744,164 @@ async function renderFYOverview() {
         </tbody></table>
       </div>`;
   } catch(e) { el.innerHTML=`<p class="empty">Error: ${e.message}</p>`; }
+}
+
+// ═══════════════════════════════════════════════
+// DATABASE MONITOR
+// ═══════════════════════════════════════════════
+async function renderDBMonitor() {
+  const el = $('db-monitor-content');
+  el.innerHTML = '<p class="empty">⏳ Fetching database stats…</p>';
+
+  try {
+    // Count rows in each table
+    const tables = ['societies','members','dues','accounts','notices','tenants','rent_records',
+                    'services','amenities','nominees','financial_years','referral_codes',
+                    'fixed_deposits','signup_requests'];
+
+    const counts = await Promise.all(tables.map(t =>
+      fetch(`${URL}/rest/v1/${t}?select=id`, {
+        headers: { 'apikey': KEY, 'Authorization': 'Bearer '+KEY, 'Prefer': 'count=exact', 'Range': '0-0' }
+      }).then(r => ({ table: t, count: parseInt(r.headers.get('content-range')?.split('/')[1]||'0') }))
+        .catch(() => ({ table: t, count: 0 }))
+    ));
+
+    const totalRows = counts.reduce((s,c)=>s+c.count, 0);
+
+    // Estimate storage — avg bytes per row varies by table
+    const ROW_SIZES = {
+      societies: 800, members: 1200, dues: 400, accounts: 500,
+      notices: 600, tenants: 800, rent_records: 300, services: 400,
+      amenities: 300, nominees: 400, financial_years: 150,
+      referral_codes: 300, fixed_deposits: 600, signup_requests: 1000
+    };
+    let estimatedBytes = 0;
+    counts.forEach(c => { estimatedBytes += c.count * (ROW_SIZES[c.table]||400); });
+    const estimatedMB = estimatedBytes / (1024*1024);
+    const FREE_LIMIT_MB = 500;
+    const usedPct = Math.min((estimatedMB / FREE_LIMIT_MB) * 100, 100);
+
+    // Growth projection
+    const activeSocs = allSocs.length;
+    const avgPerSoc = activeSocs > 0 ? estimatedMB / activeSocs : 0;
+    const projAt500 = 500 * avgPerSoc;
+    const projAt1000 = 1000 * avgPerSoc;
+    const recSocsBeforeUpgrade = avgPerSoc > 0 ? Math.floor((FREE_LIMIT_MB * 0.8) / avgPerSoc) : '—';
+
+    // Color for usage bar
+    const barColor = usedPct < 50 ? '#16a34a' : usedPct < 80 ? '#d97706' : '#ef4444';
+    const statusLabel = usedPct < 50 ? '🟢 Healthy' : usedPct < 80 ? '🟡 Monitor Closely' : '🔴 Upgrade Soon';
+
+    el.innerHTML = `
+      <!-- Summary Cards -->
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px">
+        <div class="sc">
+          <div class="lb">Est. Storage Used</div>
+          <div class="vl" style="color:${barColor};font-size:22px">${estimatedMB.toFixed(1)} MB</div>
+          <div class="sb">of 500 MB free limit</div>
+        </div>
+        <div class="sc">
+          <div class="lb">Storage Status</div>
+          <div class="vl" style="font-size:16px;margin-top:4px">${statusLabel}</div>
+          <div class="sb">${usedPct.toFixed(1)}% used</div>
+        </div>
+        <div class="sc">
+          <div class="lb">Total Rows</div>
+          <div class="vl" style="font-size:22px">${totalRows.toLocaleString('en-IN')}</div>
+          <div class="sb">Across all tables</div>
+        </div>
+        <div class="sc">
+          <div class="lb">Active Societies</div>
+          <div class="vl" style="font-size:22px">${activeSocs}</div>
+          <div class="sb">~${avgPerSoc.toFixed(2)} MB per society</div>
+        </div>
+      </div>
+
+      <!-- Usage Bar -->
+      <div class="card" style="margin-bottom:16px">
+        <div class="card-head"><h3>📊 Storage Usage</h3></div>
+        <div class="card-body">
+          <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:6px">
+            <span style="font-weight:600;color:${barColor}">${estimatedMB.toFixed(1)} MB used</span>
+            <span style="color:#64748b">500 MB free limit</span>
+          </div>
+          <div style="background:#f1f5f9;border-radius:20px;height:18px;overflow:hidden">
+            <div style="width:${usedPct}%;background:${barColor};height:100%;border-radius:20px;transition:width .5s;display:flex;align-items:center;justify-content:center">
+              ${usedPct>15?`<span style="font-size:10px;color:#fff;font-weight:700">${usedPct.toFixed(1)}%</span>`:''}
+            </div>
+          </div>
+          <div style="display:flex;justify-content:space-between;font-size:10px;color:#94a3b8;margin-top:4px">
+            <span>0 MB</span><span style="color:#d97706">⚠️ 400 MB (Upgrade zone)</span><span>500 MB</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Growth Projection -->
+      <div class="card" style="margin-bottom:16px">
+        <div class="card-head"><h3>📈 Growth Projection</h3></div>
+        <div class="card-body">
+          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;text-align:center">
+            <div style="padding:12px;background:#f0fdf4;border-radius:8px;border:1px solid #86efac">
+              <div style="font-size:11px;color:#64748b;margin-bottom:4px">Current (${activeSocs} societies)</div>
+              <div style="font-size:20px;font-weight:700;color:#16a34a">${estimatedMB.toFixed(1)} MB</div>
+              <div style="font-size:10px;color:#16a34a">✅ Well within free limit</div>
+            </div>
+            <div style="padding:12px;background:#fffbeb;border-radius:8px;border:1px solid #fbbf24">
+              <div style="font-size:11px;color:#64748b;margin-bottom:4px">At 500 Societies</div>
+              <div style="font-size:20px;font-weight:700;color:#d97706">${projAt500.toFixed(0)} MB</div>
+              <div style="font-size:10px;color:#d97706">${projAt500>400?'⚠️ Upgrade recommended':'✅ Still manageable'}</div>
+            </div>
+            <div style="padding:12px;background:#fef2f2;border-radius:8px;border:1px solid #fca5a5">
+              <div style="font-size:11px;color:#64748b;margin-bottom:4px">At 1,000 Societies</div>
+              <div style="font-size:20px;font-weight:700;color:#ef4444">${projAt1000.toFixed(0)} MB</div>
+              <div style="font-size:10px;color:#ef4444">⚡ Upgrade to Pro required</div>
+            </div>
+          </div>
+          <div style="margin-top:12px;padding:10px 14px;background:#eff6ff;border-radius:8px;font-size:12.5px;color:#1e40af">
+            <strong>💡 Recommendation:</strong> Upgrade to Supabase Pro ($25/month, 8GB) when you reach 
+            <strong>${recSocsBeforeUpgrade} societies</strong>. At ₹999/society/month, that's 
+            <strong>₹${typeof recSocsBeforeUpgrade==='number'?(recSocsBeforeUpgrade*999).toLocaleString('en-IN'):'—'}/month revenue</strong> — 
+            well worth the upgrade cost!
+          </div>
+        </div>
+      </div>
+
+      <!-- Table Breakdown -->
+      <div class="card">
+        <div class="card-head"><h3>🗄️ Table Breakdown</h3></div>
+        <div class="tbl-wrap">
+          <table><thead><tr>
+            <th>Table</th><th>Rows</th><th>Est. Size</th><th>% of Total</th><th></th>
+          </tr></thead>
+          <tbody>
+            ${counts.sort((a,b)=>b.count-a.count).map(c => {
+              const sz = (c.count * (ROW_SIZES[c.table]||400)) / (1024*1024);
+              const pct = totalRows>0 ? (c.count/totalRows*100) : 0;
+              return `<tr>
+                <td style="font-family:monospace;font-size:12px;font-weight:600">${c.table}</td>
+                <td style="text-align:center;font-weight:600">${c.count.toLocaleString('en-IN')}</td>
+                <td style="text-align:center">${sz.toFixed(3)} MB</td>
+                <td style="min-width:120px">
+                  <div style="display:flex;align-items:center;gap:6px">
+                    <div style="flex:1;background:#f1f5f9;border-radius:10px;height:6px">
+                      <div style="width:${pct}%;background:#2563eb;height:100%;border-radius:10px"></div>
+                    </div>
+                    <span style="font-size:10px;color:#64748b;white-space:nowrap">${pct.toFixed(1)}%</span>
+                  </div>
+                </td>
+                <td style="font-size:10px;color:#94a3b8">${c.count===0?'Empty':c.count<100?'Low':'Normal'}</td>
+              </tr>`;
+            }).join('')}
+          </tbody></table>
+        </div>
+        <div style="padding:10px 14px;font-size:11px;color:#94a3b8;border-top:1px solid #f1f5f9">
+          ⚠️ Storage estimates are approximate. Actual usage may vary based on photo sizes and text length. Check exact usage at 
+          <a href="https://supabase.com/dashboard/project/mbmrzyhcjivrbiaayiah/settings/billing" target="_blank" style="color:#2563eb">Supabase Dashboard → Settings → Billing</a>
+        </div>
+      </div>`;
+  } catch(e) {
+    el.innerHTML = `<p class="empty">Error loading DB stats: ${e.message}</p>`;
+  }
 }
 
 </script>
