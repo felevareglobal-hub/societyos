@@ -1359,15 +1359,16 @@ function waSendAll(phoneList, msg) {
 }
 
 // ── Universal CSV Download (works on all browsers including mobile) ──
-function downloadCSV(rows, filename) {
+function downloadCSV(rows, filename, rawCsv, rawFilename) {
   try {
     // Add BOM for Excel compatibility with UTF-8
     const BOM = '\uFEFF';
-    const csv = BOM + rows.map(r => r.map(x => {
+    // Accept either rows array or raw CSV string
+    const csv = rawCsv ? (BOM + rawCsv) : BOM + rows.map(r => r.map(x => {
       const val = String(x === null || x === undefined ? '' : x);
-      // Escape quotes and wrap in quotes
       return '"' + val.replace(/"/g, '""') + '"';
     }).join(',')).join('\r\n');
+    const fname = rawFilename || filename;
 
     // Method 1: Blob + anchor (modern browsers)
     try {
@@ -1375,7 +1376,7 @@ function downloadCSV(rows, filename) {
       const url  = URL.createObjectURL(blob);
       const a    = document.createElement('a');
       a.href     = url;
-      a.download = filename;
+      a.download = fname;
       a.style.display = 'none';
       document.body.appendChild(a);
       a.click();
@@ -1391,7 +1392,7 @@ function downloadCSV(rows, filename) {
       const dataUri = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csv);
       const a = document.createElement('a');
       a.href = dataUri;
-      a.download = filename;
+      a.download = fname;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
@@ -4073,16 +4074,76 @@ function previewPhoto(prefix, areaId, previewWrapperId) {
   const input = $(prefix + '-photo-input');
   const file  = input.files[0];
   if (!file) return;
-  if (file.size > 5 * 1024 * 1024) { toast('File too large. Max 5MB', false); input.value=''; return; }
+
+  // Reject non-images
+  if (!file.type.startsWith('image/')) { toast('Please select an image file', false); input.value=''; return; }
+
+  const MAX_KB = 100;
+  const MAX_BYTES = MAX_KB * 1024;
+  const area = $(areaId);
+  const wrap = $(previewWrapperId);
+
+  // Show compressing indicator
+  wrap.innerHTML = `<div style="font-size:12px;color:#64748b;padding:10px">⏳ Compressing photo…</div>`;
+
   const reader = new FileReader();
   reader.onload = (e) => {
-    const area = $(areaId);
-    const wrap = $(previewWrapperId);
-    wrap.innerHTML = `<img src="${e.target.result}" class="photo-preview" alt="Preview">
-      <div style="font-size:11px;color:#2563eb;font-weight:500">Photo selected ✓</div>`;
-    area.classList.add('has-photo');
-    $(prefix + '-photo-actions').style.display = 'block';
-    $(prefix + '-photo-url').value = ''; // clear old URL — new file will be uploaded on save
+    const img = new Image();
+    img.onload = () => {
+      // Start with quality 0.85, reduce until under 100KB
+      const canvas = document.createElement('canvas');
+      let quality = 0.85;
+      let dataUrl = '';
+      let attempts = 0;
+
+      // Scale down if image is very large (max 400x400 for avatar)
+      let w = img.width, h = img.height;
+      const MAX_DIM = 400;
+      if (w > MAX_DIM || h > MAX_DIM) {
+        const ratio = Math.min(MAX_DIM/w, MAX_DIM/h);
+        w = Math.round(w * ratio);
+        h = Math.round(h * ratio);
+      }
+      canvas.width = w;
+      canvas.height = h;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0, w, h);
+
+      // Compress until under 100KB
+      do {
+        dataUrl = canvas.toDataURL('image/jpeg', quality);
+        const sizeBytes = Math.round((dataUrl.length - 'data:image/jpeg;base64,'.length) * 3/4);
+        if (sizeBytes <= MAX_BYTES) break;
+        quality -= 0.1;
+        attempts++;
+      } while (quality > 0.1 && attempts < 10);
+
+      // Final size check
+      const finalBytes = Math.round((dataUrl.length - 'data:image/jpeg;base64,'.length) * 3/4);
+      const finalKB = Math.round(finalBytes / 1024);
+
+      if (finalKB > MAX_KB) {
+        toast(`Photo too large even after compression (${finalKB}KB). Please use a smaller image.`, false);
+        input.value = '';
+        wrap.innerHTML = `
+          <i class="ti ti-user-circle" style="font-size:40px;color:#cbd5e1;display:block;margin-bottom:8px"></i>
+          <div style="font-size:12px;font-weight:500;color:#64748b">Click to upload photo</div>
+          <div style="font-size:11px;color:#94a3b8;margin-top:3px">JPG, PNG · Max 100KB · Auto-compressed</div>`;
+        return;
+      }
+
+      // Success — show preview
+      wrap.innerHTML = `
+        <img src="${dataUrl}" class="photo-preview" alt="Preview"
+          style="width:100px;height:100px;border-radius:50%;object-fit:cover;border:3px solid #2563eb;margin:0 auto 6px;display:block">
+        <div style="font-size:11px;color:#16a34a;font-weight:600">✅ Photo ready (${finalKB}KB)</div>`;
+      area.classList.add('has-photo');
+      $(prefix + '-photo-actions').style.display = 'block';
+      // Store compressed base64 in hidden input
+      $(prefix + '-photo-url').value = dataUrl;
+      toast(`Photo compressed to ${finalKB}KB ✓`);
+    };
+    img.src = e.target.result;
   };
   reader.readAsDataURL(file);
 }
@@ -4094,7 +4155,7 @@ function removePhoto(prefix, areaId, previewWrapperId) {
   $(previewWrapperId).innerHTML = `
     <i class="ti ti-user-circle" style="font-size:40px;color:#cbd5e1;display:block;margin-bottom:8px"></i>
     <div style="font-size:12px;font-weight:500;color:#64748b">Click to upload photo</div>
-    <div style="font-size:11px;color:#94a3b8;margin-top:3px">JPG, PNG • Max 2MB</div>`;
+    <div style="font-size:11px;color:#94a3b8;margin-top:3px">JPG, PNG · Max 100KB · Auto-compressed</div>`;
   $(prefix + '-photo-actions').style.display = 'none';
 }
 
@@ -4116,7 +4177,7 @@ function loadExistingPhoto(prefix, photoUrl, areaId, previewWrapperId) {
     wrap.innerHTML = `
       <i class="ti ti-user-circle" style="font-size:40px;color:#cbd5e1;display:block;margin-bottom:8px"></i>
       <div style="font-size:12px;font-weight:500;color:#64748b">Click to upload photo</div>
-      <div style="font-size:11px;color:#94a3b8;margin-top:3px">JPG, PNG • Max 2MB • Camera supported on mobile</div>`;
+      <div style="font-size:11px;color:#94a3b8;margin-top:3px">JPG, PNG · Max 100KB · Auto-compressed · Camera supported on mobile</div>`;
     area.classList.remove('has-photo');
     if(actions) actions.style.display = 'none';
   }
@@ -4974,54 +5035,63 @@ async function renderDBMonitor() {
 
 async function runFullBackup() {
   const btn = $('backup-btn');
-  if (btn) { btn.disabled=true; btn.innerHTML='<i class="ti ti-loader"></i> Backing up all data…'; }
+  if (btn) { btn.disabled=true; btn.innerHTML='<i class="ti ti-loader"></i> Backing up…'; }
 
   try {
-    const socs = await GET('societies', '?order=name');
+    // Fetch societies without heavy columns (photos etc.)
+    const socs = await GET('societies', '?select=id,name,city,state,plan,registration_no,total_units,is_deleted&order=name');
     const activeSocs = socs.filter(s=>!s.is_deleted);
-    const tables = ['members','dues','accounts','notices','tenants','services','amenities',
-                    'nominees','fixed_deposits','financial_years','rent_records'];
+
+    const tables = [
+      { name:'members',          cols:'id,wing,flat,name,mobile,email,ownership,status' },
+      { name:'dues',             cols:'id,flat,month,amount,late_fee,discount,status,paid_date,payment_mode,financial_year' },
+      { name:'accounts',         cols:'id,date,type,category,description,amount,payment_mode,financial_year' },
+      { name:'notices',          cols:'id,type,title,body,status,created_at,financial_year' },
+      { name:'tenants',          cols:'id,wing,flat,tenant_name,tenant_mobile,monthly_rent,lease_start,lease_end' },
+      { name:'services',         cols:'id,name,vendor,amount,expiry_date,status' },
+      { name:'amenities',        cols:'id,name,capacity,status' },
+      { name:'nominees',         cols:'id,member_id,name,relationship,mobile,aadhaar,share_percent' },
+      { name:'fixed_deposits',   cols:'id,bank_name,fd_number,principal_amount,interest_rate,start_date,maturity_date,status' },
+      { name:'financial_years',  cols:'id,fy_label,is_active,created_at' },
+    ];
 
     let csv = `SOCIETYOS FULL BACKUP\nGenerated: ${new Date().toLocaleString('en-IN')}\nTotal Societies: ${activeSocs.length}\n\n`;
 
     for (const soc of activeSocs) {
       csv += `${'='.repeat(60)}\nSOCIETY: ${soc.name} (${soc.city||''})\nPlan: ${(soc.plan||'basic').toUpperCase()} | Reg: ${soc.registration_no||'—'}\n${'='.repeat(60)}\n\n`;
 
-      for (const table of tables) {
+      for (const t of tables) {
         try {
-          const rows = await GET(table, `?society_id=eq.${soc.id}`);
+          const rows = await GET(t.name, `?society_id=eq.${soc.id}&select=${t.cols}`);
           if (!rows.length) continue;
           const headers = Object.keys(rows[0]);
-          csv += `--- ${table.toUpperCase()} (${rows.length} records) ---\n`;
+          csv += `--- ${t.name.toUpperCase()} (${rows.length} records) ---\n`;
           csv += headers.map(h=>`"${h}"`).join(',') + '\n';
           rows.forEach(r => {
             csv += headers.map(h=>`"${String(r[h]??'').replace(/"/g,'""')}"`).join(',') + '\n';
           });
           csv += '\n';
-        } catch(e) {}
+        } catch(e) {
+          csv += `--- ${t.name.toUpperCase()} — Error: ${e.message} ---\n\n`;
+        }
       }
     }
 
-    // Download
-    const blob = new Blob(['\uFEFF'+csv], {type:'text/csv;charset=utf-8'});
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `SocietyOS_FullBackup_${new Date().toISOString().substring(0,10)}.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
+    // Download using universal method
+    downloadCSV(null, null, csv, `SocietyOS_FullBackup_${new Date().toISOString().substring(0,10)}.csv`);
 
-    // Log backup
+    // Log
     const now = new Date().toLocaleString('en-IN');
     localStorage.setItem('sos_last_backup', now);
     const log = $('backup-log');
-    if (log) log.innerHTML = `✅ <strong>${now}</strong> — Full backup of ${activeSocs.length} societies downloaded successfully.`;
+    if (log) log.innerHTML = `✅ <strong>${now}</strong> — Full backup of ${activeSocs.length} societies downloaded.`;
     const lbi = $('last-backup-info');
     if (lbi) lbi.innerHTML = `🕐 Last backup: <strong>${now}</strong>`;
     toast(`✅ Full backup downloaded — ${activeSocs.length} societies`);
 
   } catch(e) {
     toast('Backup failed: '+e.message, false);
+    console.error('Backup error:', e);
   } finally {
     if (btn) { btn.disabled=false; btn.innerHTML='<i class="ti ti-download"></i> Download Full Backup Now'; }
   }
