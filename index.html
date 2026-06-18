@@ -1637,11 +1637,9 @@ async function sendOTP(mobile) {
 
     if (data.Status === 'Success') {
       _otpSessionId = data.Details;
-      // Detect if it was SMS or Voice
-      const channel = apiUrl.includes('/VOICE/') ? '📞 voice call' : '📱 SMS';
       $('login-step1').style.display = 'none';
       $('login-step2').style.display = 'block';
-      $('otp-sent-msg').textContent = `OTP sent via ${channel} to +91 XXXXXX${phone.slice(-4)}`;
+      $('otp-sent-msg').textContent = `OTP sent to +91 XXXXXX${phone.slice(-4)} (via SMS or Call)`;
       $('li-otp').value = '';
       $('li-otp').focus();
       $('otp-err').textContent = '';
