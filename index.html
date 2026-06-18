@@ -1618,17 +1618,30 @@ async function sendOTP(mobile) {
   const phone = String(mobile).replace(/\D/g,'').slice(-10);
   $('li-btn').innerHTML='<i class="ti ti-loader"></i> Sending OTP…';
   try {
-    // Use allorigins CORS proxy to bypass browser CORS restriction
-    const apiUrl = `https://2factor.in/API/V1/${OTP_API_KEY}/SMS/${phone}/AUTOGEN`;
-    const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(apiUrl)}`;
-    const res = await fetch(proxyUrl);
-    const json = await res.json();
-    const data = JSON.parse(json.contents);
+    // Try SMS first
+    let apiUrl = `https://2factor.in/API/V1/${OTP_API_KEY}/SMS/${phone}/AUTOGEN`;
+    let proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(apiUrl)}`;
+    let res = await fetch(proxyUrl);
+    let json = await res.json();
+    let data = JSON.parse(json.contents);
+
+    // If SMS fails, fallback to Voice OTP
+    if (data.Status !== 'Success') {
+      console.warn('SMS OTP failed, trying Voice OTP:', data.Details);
+      apiUrl = `https://2factor.in/API/V1/${OTP_API_KEY}/VOICE/${phone}/AUTOGEN`;
+      proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(apiUrl)}`;
+      res = await fetch(proxyUrl);
+      json = await res.json();
+      data = JSON.parse(json.contents);
+    }
+
     if (data.Status === 'Success') {
       _otpSessionId = data.Details;
+      // Detect if it was SMS or Voice
+      const channel = apiUrl.includes('/VOICE/') ? '📞 voice call' : '📱 SMS';
       $('login-step1').style.display = 'none';
       $('login-step2').style.display = 'block';
-      $('otp-sent-msg').textContent = `OTP sent to +91 XXXXXX${phone.slice(-4)}`;
+      $('otp-sent-msg').textContent = `OTP sent via ${channel} to +91 XXXXXX${phone.slice(-4)}`;
       $('li-otp').value = '';
       $('li-otp').focus();
       $('otp-err').textContent = '';
