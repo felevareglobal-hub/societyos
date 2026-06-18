@@ -1615,15 +1615,17 @@ async function doLogin() {
 }
 
 async function sendOTP(mobile) {
+  const phone = String(mobile).replace(/\D/g,'').slice(-10);
+  $('li-btn').innerHTML='<i class="ti ti-loader"></i> Sending OTP…';
   try {
-    const phone = String(mobile).replace(/\D/g,'').slice(-10);
-    const res = await fetch(`https://2factor.in/API/V1/${OTP_API_KEY}/SMS/${phone}/AUTOGEN`, {
-      method: 'GET'
-    });
-    const data = await res.json();
+    // Use allorigins CORS proxy to bypass browser CORS restriction
+    const apiUrl = `https://2factor.in/API/V1/${OTP_API_KEY}/SMS/${phone}/AUTOGEN`;
+    const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(apiUrl)}`;
+    const res = await fetch(proxyUrl);
+    const json = await res.json();
+    const data = JSON.parse(json.contents);
     if (data.Status === 'Success') {
       _otpSessionId = data.Details;
-      // Show OTP screen
       $('login-step1').style.display = 'none';
       $('login-step2').style.display = 'block';
       $('otp-sent-msg').textContent = `OTP sent to +91 XXXXXX${phone.slice(-4)}`;
@@ -1639,10 +1641,20 @@ async function sendOTP(mobile) {
       $('li-btn').disabled=false;
     }
   } catch(e) {
-    // If OTP fails (CORS or network), skip OTP and login directly
-    console.warn('OTP send failed, skipping OTP:', e.message);
-    await completeLogin(_otpAdmin);
+    $('li-err').textContent = 'OTP service unavailable. Please try again.';
+    console.error('OTP send failed:', e.message);
+    $('li-btn').innerHTML='<i class="ti ti-login" style="margin-right:6px"></i> Sign In';
+    $('li-btn').disabled=false;
   }
+}
+
+async function verifyOTPCall(otp) {
+  // Use CORS proxy for verification too
+  const apiUrl = `https://2factor.in/API/V1/${OTP_API_KEY}/SMS/VERIFY/${_otpSessionId}/${otp}`;
+  const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(apiUrl)}`;
+  const res = await fetch(proxyUrl);
+  const json = await res.json();
+  return JSON.parse(json.contents);
 }
 
 function startOTPTimer() {
@@ -1668,8 +1680,7 @@ async function verifyOTP() {
   if (!otp || otp.length < 4) { $('otp-err').textContent = 'Enter the OTP sent to your mobile'; return; }
   $('otp-btn').innerHTML='<i class="ti ti-loader"></i> Verifying…'; $('otp-btn').disabled=true;
   try {
-    const res = await fetch(`https://2factor.in/API/V1/${OTP_API_KEY}/SMS/VERIFY/${_otpSessionId}/${otp}`);
-    const data = await res.json();
+    const data = await verifyOTPCall(otp);
     if (data.Status === 'Success' && data.Details === 'OTP Matched') {
       clearInterval(_otpTimerInterval);
       await completeLogin(_otpAdmin);
