@@ -1618,37 +1618,13 @@ async function sendOTP(mobile) {
   const phone = String(mobile).replace(/\D/g,'').slice(-10);
   $('li-btn').innerHTML='<i class="ti ti-loader"></i> Sending OTP…';
   $('li-err').textContent = '';
-
-  // Try multiple CORS proxies in sequence
-  async function callAPI(url) {
-    const proxies = [
-      `https://corsproxy.io/?${encodeURIComponent(url)}`,
-      `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`,
-      `https://thingproxy.freeboard.io/fetch/${url}`
-    ];
-    for (const proxy of proxies) {
-      try {
-        const res = await fetch(proxy, { signal: AbortSignal.timeout(8000) });
-        const text = await res.text();
-        // allorigins wraps in {contents:...}, others return raw
-        let jsonStr = text;
-        try { const wrapped = JSON.parse(text); if (wrapped.contents) jsonStr = wrapped.contents; } catch(e){}
-        return JSON.parse(jsonStr);
-      } catch(e) { console.warn('Proxy failed:', proxy, e.message); }
-    }
-    throw new Error('All proxies failed');
-  }
-
   try {
-    // Try Voice first (account has Voice OTP active)
-    let data = await callAPI(`https://2factor.in/API/V1/${OTP_API_KEY}/VOICE/${phone}/AUTOGEN`);
-
-    // If Voice fails, try SMS
-    if (data.Status !== 'Success') {
-      console.warn('Voice OTP failed, trying SMS:', data.Details);
-      data = await callAPI(`https://2factor.in/API/V1/${OTP_API_KEY}/SMS/${phone}/AUTOGEN`);
-    }
-
+    const res = await fetch(`${URL}/functions/v1/send-otp`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer '+KEY },
+      body: JSON.stringify({ action: 'send', phone, api_key: OTP_API_KEY })
+    });
+    const data = await res.json();
     if (data.Status === 'Success') {
       _otpSessionId = data.Details;
       $('login-step1').style.display = 'none';
@@ -1661,36 +1637,24 @@ async function sendOTP(mobile) {
       $('li-btn').disabled=false;
       startOTPTimer();
     } else {
-      $('li-err').textContent = 'Failed to send OTP: ' + (data.Details||'Unknown error');
+      $('li-err').textContent = 'Failed to send OTP: ' + (data.Details||data.error||'Unknown error');
       $('li-btn').innerHTML='<i class="ti ti-login" style="margin-right:6px"></i> Sign In';
       $('li-btn').disabled=false;
     }
   } catch(e) {
     $('li-err').textContent = 'OTP service error: ' + e.message;
-    console.error('OTP error:', e);
     $('li-btn').innerHTML='<i class="ti ti-login" style="margin-right:6px"></i> Sign In';
     $('li-btn').disabled=false;
   }
 }
 
 async function verifyOTPCall(otp) {
-  async function callAPI(url) {
-    const proxies = [
-      `https://corsproxy.io/?${encodeURIComponent(url)}`,
-      `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`
-    ];
-    for (const proxy of proxies) {
-      try {
-        const res = await fetch(proxy, { signal: AbortSignal.timeout(8000) });
-        const text = await res.text();
-        let jsonStr = text;
-        try { const wrapped = JSON.parse(text); if (wrapped.contents) jsonStr = wrapped.contents; } catch(e){}
-        return JSON.parse(jsonStr);
-      } catch(e) { console.warn('Proxy failed:', proxy, e.message); }
-    }
-    throw new Error('Verification proxy failed');
-  }
-  return callAPI(`https://2factor.in/API/V1/${OTP_API_KEY}/SMS/VERIFY/${_otpSessionId}/${otp}`);
+  const res = await fetch(`${URL}/functions/v1/send-otp`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer '+KEY },
+    body: JSON.stringify({ action: 'verify', session_id: _otpSessionId, otp, api_key: OTP_API_KEY })
+  });
+  return res.json();
 }
 
 function startOTPTimer() {
