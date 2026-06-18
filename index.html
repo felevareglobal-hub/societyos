@@ -5098,55 +5098,56 @@ async function runFullBackup() {
 }
 
 function copyAppsScript() {
-  const SURL = URL;
-  const SKEY = KEY;
-  const script = '// SocietyOS → Google Sheets Auto Backup\n'
-    + '// Setup: Extensions → Apps Script → Paste → Save → Add weekly trigger\n\n'
-    + 'var SUPABASE_URL = "' + SURL + '";\n'
-    + 'var SUPABASE_KEY = "' + SKEY + '";\n'
-    + 'var TABLES = ["societies","members","dues","accounts","notices","tenants","services","amenities","nominees","fixed_deposits"];\n\n'
-    + 'function backupToSheets() {\n'
-    + '  var ss = SpreadsheetApp.getActiveSpreadsheet();\n'
-    + '  var date = new Date().toISOString().substring(0, 10);\n\n'
-    + '  for (var i = 0; i < TABLES.length; i++) {\n'
-    + '    var table = TABLES[i];\n'
-    + '    try {\n'
-    + '      var res = UrlFetchApp.fetch(SUPABASE_URL + "/rest/v1/" + table + "?limit=10000", {\n'
-    + '        headers: { "apikey": SUPABASE_KEY, "Authorization": "Bearer " + SUPABASE_KEY }\n'
-    + '      });\n'
-    + '      var rows = JSON.parse(res.getContentText());\n'
-    + '      if (!rows || !rows.length) continue;\n\n'
-    + '      var sheet = ss.getSheetByName(table);\n'
-    + '      if (!sheet) sheet = ss.insertSheet(table);\n'
-    + '      sheet.clearContents();\n\n'
-    + '      var headers = Object.keys(rows[0]);\n'
-    + '      sheet.getRange(1, 1, 1, headers.length).setValues([headers]);\n'
-    + '      sheet.getRange(1, 1, 1, headers.length).setFontWeight("bold").setBackground("#1a3c6e").setFontColor("#ffffff");\n\n'
-    + '      var data = [];\n'
-    + '      for (var j = 0; j < rows.length; j++) {\n'
-    + '        var row = [];\n'
-    + '        for (var k = 0; k < headers.length; k++) {\n'
-    + '          var val = rows[j][headers[k]];\n'
-    + '          row.push(val === null || val === undefined ? "" : String(val));\n'
-    + '        }\n'
-    + '        data.push(row);\n'
-    + '      }\n'
-    + '      sheet.getRange(2, 1, data.length, headers.length).setValues(data);\n'
-    + '      Logger.log("Backed up " + rows.length + " rows from " + table);\n'
-    + '    } catch(e) {\n'
-    + '      Logger.log("Error backing up " + table + ": " + e.message);\n'
-    + '    }\n'
-    + '  }\n\n'
-    + '  var logSheet = ss.getSheetByName("Backup Log");\n'
-    + '  if (!logSheet) logSheet = ss.insertSheet("Backup Log");\n'
-    + '  logSheet.appendRow([new Date(), "Full backup completed", TABLES.length + " tables"]);\n'
-    + '  Logger.log("SocietyOS backup completed: " + date);\n'
-    + '}\n\n'
-    + '// To schedule: Triggers (clock icon) → Add Trigger → backupToSheets → Weekly';
-
+  var lines = [
+    'var SUPABASE_URL = "' + URL + '";',
+    'var SUPABASE_KEY = "' + KEY + '";',
+    'var TABLES = ["societies","members","dues","accounts","notices","tenants","services","amenities","nominees","fixed_deposits"];',
+    '',
+    'function backupToSheets() {',
+    '  var ss = SpreadsheetApp.getActiveSpreadsheet();',
+    '  var date = new Date().toISOString().substring(0, 10);',
+    '  for (var i = 0; i < TABLES.length; i++) {',
+    '    var table = TABLES[i];',
+    '    try {',
+    '      var options = { headers: { "apikey": SUPABASE_KEY, "Authorization": "Bearer " + SUPABASE_KEY } };',
+    '      var res = UrlFetchApp.fetch(SUPABASE_URL + "/rest/v1/" + table + "?limit=10000", options);',
+    '      var rows = JSON.parse(res.getContentText());',
+    '      if (!rows || rows.length === 0) { continue; }',
+    '      var sheet = ss.getSheetByName(table);',
+    '      if (sheet === null) { sheet = ss.insertSheet(table); }',
+    '      sheet.clearContents();',
+    '      var headers = Object.keys(rows[0]);',
+    '      sheet.getRange(1, 1, 1, headers.length).setValues([headers]);',
+    '      sheet.getRange(1, 1, 1, headers.length).setFontWeight("bold").setBackground("#1a3c6e").setFontColor("#ffffff");',
+    '      var data = [];',
+    '      for (var j = 0; j < rows.length; j++) {',
+    '        var row = [];',
+    '        for (var k = 0; k < headers.length; k++) {',
+    '          var val = rows[j][headers[k]];',
+    '          if (val === null || val === undefined) {',
+    '            row.push("");',
+    '          } else {',
+    '            row.push(String(val));',
+    '          }',
+    '        }',
+    '        data.push(row);',
+    '      }',
+    '      sheet.getRange(2, 1, data.length, headers.length).setValues(data);',
+    '      Logger.log("Backed up " + rows.length + " rows from " + table);',
+    '    } catch (e) {',
+    '      Logger.log("Error: " + table + " - " + e.message);',
+    '    }',
+    '  }',
+    '  var logSheet = ss.getSheetByName("Backup Log");',
+    '  if (logSheet === null) { logSheet = ss.insertSheet("Backup Log"); }',
+    '  logSheet.appendRow([new Date(), "Backup done", date]);',
+    '  Logger.log("Done: " + date);',
+    '}'
+  ];
+  var script = lines.join('\n');
   navigator.clipboard.writeText(script)
-    .then(() => toast('✅ Apps Script copied! Paste it in Google Sheets → Extensions → Apps Script'))
-    .catch(() => toast('Copy failed — please try again', false));
+    .then(function() { toast('Apps Script copied! Clear old code in Apps Script then paste this.'); })
+    .catch(function() { toast('Copy failed — please try again', false); });
 }
 
 </script>
