@@ -4898,10 +4898,188 @@ async function renderDBMonitor() {
           ⚠️ Storage estimates are approximate. Actual usage may vary based on photo sizes and text length. Check exact usage at 
           <a href="https://supabase.com/dashboard/project/mbmrzyhcjivrbiaayiah/settings/billing" target="_blank" style="color:#2563eb">Supabase Dashboard → Settings → Billing</a>
         </div>
+      </div>
+
+      <!-- BACKUP SECTION -->
+      <div class="card" style="margin-top:16px">
+        <div class="card-head"><h3>💾 Backup & Export</h3></div>
+        <div class="card-body">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+
+            <!-- Manual Backup -->
+            <div style="padding:16px;background:#f0fdf4;border:1.5px solid #86efac;border-radius:10px">
+              <div style="font-size:14px;font-weight:700;color:#15803d;margin-bottom:6px">📥 Manual Full Backup</div>
+              <div style="font-size:12px;color:#64748b;margin-bottom:12px;line-height:1.6">
+                Downloads a complete CSV backup of <strong>all societies</strong> and <strong>all data</strong> — members, dues, accounts, notices, tenants, FDs, nominees and more.
+              </div>
+              <div id="last-backup-info" style="font-size:11px;color:#94a3b8;margin-bottom:10px"></div>
+              <button class="btn" onclick="runFullBackup()" id="backup-btn"
+                style="background:#15803d;color:#fff;border-color:#15803d;width:100%;justify-content:center;font-size:13px;padding:10px">
+                <i class="ti ti-download"></i> Download Full Backup Now
+              </button>
+            </div>
+
+            <!-- Google Sheets -->
+            <div style="padding:16px;background:#eff6ff;border:1.5px solid #93c5fd;border-radius:10px">
+              <div style="font-size:14px;font-weight:700;color:#1e40af;margin-bottom:6px">📊 Google Sheets Backup</div>
+              <div style="font-size:12px;color:#64748b;margin-bottom:12px;line-height:1.6">
+                Set up automatic weekly backup to Google Sheets using Apps Script. Your data stays in a readable spreadsheet — accessible from anywhere.
+              </div>
+              <div style="font-size:11px;color:#64748b;margin-bottom:10px">
+                <strong>Step 1:</strong> Click below to open Google Sheets<br>
+                <strong>Step 2:</strong> Go to Extensions → Apps Script<br>
+                <strong>Step 3:</strong> Paste the script → Set trigger → Done!
+              </div>
+              <div style="display:flex;gap:8px;flex-wrap:wrap">
+                <button class="btn" onclick="copyAppsScript()"
+                  style="background:#1e40af;color:#fff;border-color:#1e40af;flex:1;justify-content:center;font-size:12px;padding:8px">
+                  <i class="ti ti-copy"></i> Copy Apps Script
+                </button>
+                <a href="https://sheets.new" target="_blank" class="btn"
+                  style="background:#fff;color:#1e40af;border-color:#1e40af;flex:1;justify-content:center;font-size:12px;padding:8px;text-decoration:none">
+                  <i class="ti ti-external-link"></i> Open Google Sheets
+                </a>
+              </div>
+            </div>
+          </div>
+
+          <!-- Backup Log -->
+          <div style="margin-top:14px;padding:12px 14px;background:#f8fafc;border-radius:8px;border:1px solid #e2e8f0">
+            <div style="font-size:12px;font-weight:600;color:#475569;margin-bottom:8px">📋 Backup Log (This Session)</div>
+            <div id="backup-log" style="font-size:11px;color:#94a3b8">No backups taken yet in this session.</div>
+          </div>
+        </div>
       </div>`;
+
   } catch(e) {
     el.innerHTML = `<p class="empty">Error loading DB stats: ${e.message}</p>`;
   }
+
+  // Update last backup info
+  const lastBackup = localStorage.getItem('sos_last_backup');
+  const lbi = $('last-backup-info');
+  if (lbi) {
+    lbi.innerHTML = lastBackup
+      ? `🕐 Last backup: <strong>${lastBackup}</strong>`
+      : '⚠️ No backup taken yet — we recommend weekly backups.';
+    // Warn if overdue
+    if (lastBackup) {
+      const daysSince = Math.floor((Date.now() - new Date(lastBackup).getTime()) / (1000*60*60*24));
+      if (daysSince >= 7) {
+        lbi.innerHTML += `<br><span style="color:#ef4444;font-weight:600">⚠️ ${daysSince} days since last backup! Please backup now.</span>`;
+      }
+    }
+  }
+}
+
+async function runFullBackup() {
+  const btn = $('backup-btn');
+  if (btn) { btn.disabled=true; btn.innerHTML='<i class="ti ti-loader"></i> Backing up all data…'; }
+
+  try {
+    const socs = await GET('societies', '?order=name');
+    const activeSocs = socs.filter(s=>!s.is_deleted);
+    const tables = ['members','dues','accounts','notices','tenants','services','amenities',
+                    'nominees','fixed_deposits','financial_years','rent_records'];
+
+    let csv = `SOCIETYOS FULL BACKUP\nGenerated: ${new Date().toLocaleString('en-IN')}\nTotal Societies: ${activeSocs.length}\n\n`;
+
+    for (const soc of activeSocs) {
+      csv += `${'='.repeat(60)}\nSOCIETY: ${soc.name} (${soc.city||''})\nPlan: ${(soc.plan||'basic').toUpperCase()} | Reg: ${soc.registration_no||'—'}\n${'='.repeat(60)}\n\n`;
+
+      for (const table of tables) {
+        try {
+          const rows = await GET(table, `?society_id=eq.${soc.id}`);
+          if (!rows.length) continue;
+          const headers = Object.keys(rows[0]);
+          csv += `--- ${table.toUpperCase()} (${rows.length} records) ---\n`;
+          csv += headers.map(h=>`"${h}"`).join(',') + '\n';
+          rows.forEach(r => {
+            csv += headers.map(h=>`"${String(r[h]??'').replace(/"/g,'""')}"`).join(',') + '\n';
+          });
+          csv += '\n';
+        } catch(e) {}
+      }
+    }
+
+    // Download
+    const blob = new Blob(['\uFEFF'+csv], {type:'text/csv;charset=utf-8'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `SocietyOS_FullBackup_${new Date().toISOString().substring(0,10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+
+    // Log backup
+    const now = new Date().toLocaleString('en-IN');
+    localStorage.setItem('sos_last_backup', now);
+    const log = $('backup-log');
+    if (log) log.innerHTML = `✅ <strong>${now}</strong> — Full backup of ${activeSocs.length} societies downloaded successfully.`;
+    const lbi = $('last-backup-info');
+    if (lbi) lbi.innerHTML = `🕐 Last backup: <strong>${now}</strong>`;
+    toast(`✅ Full backup downloaded — ${activeSocs.length} societies`);
+
+  } catch(e) {
+    toast('Backup failed: '+e.message, false);
+  } finally {
+    if (btn) { btn.disabled=false; btn.innerHTML='<i class="ti ti-download"></i> Download Full Backup Now'; }
+  }
+}
+
+function copyAppsScript() {
+  const script = `// SocietyOS → Google Sheets Auto Backup
+// Setup: Extensions → Apps Script → Paste this → Save → Add weekly trigger
+
+const SUPABASE_URL = '${URL}';
+const SUPABASE_KEY = '${KEY}';
+const TABLES = ['societies','members','dues','accounts','notices','tenants','services','amenities','nominees','fixed_deposits'];
+
+function backupToSheets() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const date = new Date().toISOString().substring(0,10);
+
+  TABLES.forEach(table => {
+    try {
+      const res = UrlFetchApp.fetch(SUPABASE_URL+'/rest/v1/'+table+'?limit=10000', {
+        headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer '+SUPABASE_KEY }
+      });
+      const rows = JSON.parse(res.getContentText());
+      if (!rows.length) return;
+
+      // Get or create sheet for this table
+      let sheet = ss.getSheetByName(table);
+      if (!sheet) sheet = ss.insertSheet(table);
+      sheet.clearContents();
+
+      // Write headers
+      const headers = Object.keys(rows[0]);
+      sheet.getRange(1, 1, 1, headers.length).setValues([headers]);
+      sheet.getRange(1, 1, 1, headers.length).setFontWeight('bold').setBackground('#1a3c6e').setFontColor('#ffffff');
+
+      // Write data
+      const data = rows.map(r => headers.map(h => r[h]??''));
+      sheet.getRange(2, 1, data.length, headers.length).setValues(data);
+
+      Logger.log('Backed up ' + rows.length + ' rows from ' + table);
+    } catch(e) {
+      Logger.log('Error backing up ' + table + ': ' + e.message);
+    }
+  });
+
+  // Log backup
+  let logSheet = ss.getSheetByName('Backup Log');
+  if (!logSheet) logSheet = ss.insertSheet('Backup Log');
+  logSheet.appendRow([new Date(), 'Full backup completed', TABLES.length + ' tables']);
+
+  Logger.log('SocietyOS backup completed: ' + date);
+}
+
+// Run manually or set a weekly time-based trigger`;
+
+  navigator.clipboard.writeText(script)
+    .then(() => toast('✅ Apps Script copied! Now paste it in Google Sheets → Extensions → Apps Script'))
+    .catch(() => toast('Copy failed — please try again', false));
 }
 
 </script>
