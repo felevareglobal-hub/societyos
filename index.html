@@ -731,6 +731,14 @@ tr:hover td{background:#fafafa}
       <div class="fi"><label>Bank Name *</label><input id="fd-bank" placeholder="e.g. State Bank of India"></div>
       <div class="fi"><label>Branch</label><input id="fd-branch" placeholder="Branch name"></div>
       <div class="fi"><label>FD Number *</label><input id="fd-number" placeholder="FD account / receipt number"></div>
+      <div class="fi"><label>FD Category *</label><select id="fd-category">
+        <option value="sinking_fund">Sinking Fund</option>
+        <option value="repair_fund">Repair Fund</option>
+        <option value="regular">Regular FD</option>
+        <option value="maintenance_fund">Maintenance Fund</option>
+        <option value="reserve_fund">Reserve Fund</option>
+        <option value="other">Other</option>
+      </select></div>
       <div class="fi"><label>FD Type</label><select id="fd-type"><option value="cumulative">Cumulative (interest at maturity)</option><option value="non-cumulative">Non-Cumulative (periodic interest)</option></select></div>
 
       <div class="fd"><i class="ti ti-currency-rupee" style="font-size:12px"></i> Financial Details</div>
@@ -742,7 +750,24 @@ tr:hover td{background:#fafafa}
 
       <div class="fd"><i class="ti ti-refresh" style="font-size:12px"></i> Renewal & Status</div>
       <div class="fi"><label>Auto-Renewal</label><select id="fd-renewal"><option value="yes">Yes — auto renews on maturity</option><option value="no">No — will be encashed</option></select></div>
-      <div class="fi"><label>Status</label><select id="fd-status"><option value="active">Active</option><option value="matured">Matured</option><option value="encashed">Encashed</option></select></div>
+      <div class="fi"><label>Status</label><select id="fd-status" onchange="togglePrematureSection()">
+        <option value="active">Active</option>
+        <option value="matured">Matured</option>
+        <option value="encashed">Encashed</option>
+        <option value="premature_withdrawal">Premature Withdrawal</option>
+      </select></div>
+
+      <!-- Premature Withdrawal Section — shown only when status = premature_withdrawal -->
+      <div id="fd-premature-section" style="display:none;grid-column:1/-1;background:#fef3c7;border:1px solid #fbbf24;border-radius:8px;padding:12px 14px">
+        <div style="font-size:12px;font-weight:700;color:#92400e;margin-bottom:10px">⚠️ Premature Withdrawal Details</div>
+        <div class="fg" style="gap:10px">
+          <div class="fi"><label>Withdrawal Date *</label><input id="fd-withdrawal-date" type="date"></div>
+          <div class="fi"><label>Amount Received (₹)</label><input id="fd-withdrawal-amt" type="number" placeholder="Actual amount received"></div>
+          <div class="fi full"><label>Reason (optional)</label><textarea id="fd-withdrawal-reason" rows="2" placeholder="e.g. Emergency repairs, Urgent maintenance work…"></textarea></div>
+          <div class="fi"><label>Penalty / Loss (₹)</label><input id="fd-withdrawal-penalty" type="number" placeholder="Interest penalty if any"></div>
+        </div>
+      </div>
+
       <div class="fi full"><label>Notes</label><textarea id="fd-notes" rows="2" placeholder="Any remarks…"></textarea></div>
     </div></div>
     <div class="md-foot">
@@ -4544,7 +4569,7 @@ async function renderFDs() {
       </div>` : ''}
       <div class="tbl-wrap">
         <table><thead><tr>
-          <th>Bank</th><th>FD Number</th><th>Type</th><th>Principal (₹)</th>
+          <th>Bank</th><th>FD Number</th><th>Category</th><th>Type</th><th>Principal (₹)</th>
           <th>Rate</th><th>Start</th><th>Maturity</th><th>Maturity Amt (₹)</th>
           <th>Auto-Renew</th><th>Status</th><th></th>
         </tr></thead>
@@ -4554,10 +4579,15 @@ async function renderFDs() {
             const matDate = new Date(f.maturity_date);
             const daysLeft = Math.ceil((matDate - today)/(1000*60*60*24));
             const isSoon = daysLeft >= 0 && daysLeft <= 30 && f.status==='active';
-            const statusColor = f.status==='active'?'#16a34a':f.status==='matured'?'#d97706':'#64748b';
-            return `<tr style="${isSoon?'background:#fffbeb':''}">
+            const isPremature = f.status==='premature_withdrawal';
+            const CAT_LABELS = {sinking_fund:'Sinking Fund',repair_fund:'Repair Fund',regular:'Regular',maintenance_fund:'Maintenance Fund',reserve_fund:'Reserve Fund',other:'Other'};
+            const CAT_COLORS = {sinking_fund:'#6d28d9',repair_fund:'#d97706',regular:'#2563eb',maintenance_fund:'#16a34a',reserve_fund:'#0891b2',other:'#64748b'};
+            const cat = f.fd_category||'regular';
+            const statusColor = f.status==='active'?'#16a34a':f.status==='matured'?'#d97706':isPremature?'#ef4444':'#64748b';
+            return `<tr style="${isSoon?'background:#fffbeb':''}${isPremature?'background:#fef2f2;':''}">
               <td><strong>${f.bank_name}</strong>${f.branch?`<div style="font-size:10px;color:#64748b">${f.branch}</div>`:''}</td>
               <td style="font-family:monospace;font-size:12px">${f.fd_number}</td>
+              <td><span style="font-size:10px;font-weight:600;color:${CAT_COLORS[cat]};background:${CAT_COLORS[cat]}18;padding:2px 7px;border-radius:10px">${CAT_LABELS[cat]||cat}</span></td>
               <td style="font-size:11px">${f.fd_type==='cumulative'?'Cumulative':'Non-Cumul.'}</td>
               <td style="font-weight:600">₹${Number(f.principal_amount).toLocaleString('en-IN')}</td>
               <td style="text-align:center">${f.interest_rate}%</td>
@@ -4569,7 +4599,14 @@ async function renderFDs() {
               </td>
               <td style="font-weight:600;color:#16a34a">${f.maturity_amount?'₹'+Number(f.maturity_amount).toLocaleString('en-IN'):'—'}</td>
               <td style="text-align:center">${f.auto_renewal==='yes'?'✅':'❌'}</td>
-              <td><span style="font-size:10px;font-weight:600;color:${statusColor};text-transform:capitalize">${f.status}</span></td>
+              <td>
+                <span style="font-size:10px;font-weight:600;color:${statusColor};text-transform:capitalize">${f.status==='premature_withdrawal'?'Premature':f.status}</span>
+                ${isPremature?`<div style="font-size:10px;color:#ef4444">
+                  ${f.withdrawal_date?`📅 ${f.withdrawal_date}`:''}
+                  ${f.withdrawal_amount?`<br>₹${Number(f.withdrawal_amount).toLocaleString('en-IN')} received`:''}
+                  ${f.withdrawal_reason?`<br><em>${f.withdrawal_reason}</em>`:''}
+                </div>`:''}
+              </td>
               <td>
                 <button class="ab" onclick="openFDModal('${f.id}')" title="Edit"><i class="ti ti-edit"></i></button>
                 <button class="ab" onclick="deleteFD('${f.id}')" style="color:#ef4444" title="Delete"><i class="ti ti-trash"></i></button>
@@ -4586,6 +4623,12 @@ async function renderFDs() {
   }
 }
 
+function togglePrematureSection() {
+  const status = $('fd-status')?.value;
+  const section = $('fd-premature-section');
+  if (section) section.style.display = status === 'premature_withdrawal' ? '' : 'none';
+}
+
 function openFDModal(id=null) {
   editFDId = id;
   const f = id ? fixedDeposits.find(x=>x.id===id) : null;
@@ -4598,10 +4641,16 @@ function openFDModal(id=null) {
   sv('fd-maturity', f?.maturity_date||'');
   sv('fd-maturity-amt', f?.maturity_amount||'');
   sv('fd-notes', f?.notes||'');
-  if ($('fd-type'))    $('fd-type').value    = f?.fd_type    || 'cumulative';
-  if ($('fd-renewal')) $('fd-renewal').value = f?.auto_renewal || 'no';
-  if ($('fd-status'))  $('fd-status').value  = f?.status     || 'active';
+  sv('fd-withdrawal-date', f?.withdrawal_date||'');
+  sv('fd-withdrawal-amt', f?.withdrawal_amount||'');
+  sv('fd-withdrawal-reason', f?.withdrawal_reason||'');
+  sv('fd-withdrawal-penalty', f?.withdrawal_penalty||'');
+  if ($('fd-type'))     $('fd-type').value     = f?.fd_type     || 'cumulative';
+  if ($('fd-renewal'))  $('fd-renewal').value  = f?.auto_renewal || 'no';
+  if ($('fd-status'))   $('fd-status').value   = f?.status      || 'active';
+  if ($('fd-category')) $('fd-category').value = f?.fd_category  || 'regular';
   $('fd-modal-title').textContent = id ? 'Edit Fixed Deposit' : 'Add Fixed Deposit';
+  togglePrematureSection();
   openModal('mo-fd');
 }
 
@@ -4615,11 +4664,13 @@ async function saveFD() {
   if (!bank||!fdNum||!principal||!rate||!start||!maturity) {
     toast('Please fill all required fields', false); return;
   }
+  const status = $('fd-status').value;
   const d = {
     society_id: CS.id,
     bank_name: bank,
     branch: fv('fd-branch').trim()||null,
     fd_number: fdNum,
+    fd_category: $('fd-category').value,
     fd_type: $('fd-type').value,
     principal_amount: principal,
     interest_rate: rate,
@@ -4627,8 +4678,13 @@ async function saveFD() {
     maturity_date: maturity,
     maturity_amount: parseFloat(fv('fd-maturity-amt'))||null,
     auto_renewal: $('fd-renewal').value,
-    status: $('fd-status').value,
-    notes: fv('fd-notes').trim()||null
+    status,
+    notes: fv('fd-notes').trim()||null,
+    // Premature withdrawal fields
+    withdrawal_date: status==='premature_withdrawal' ? (fv('fd-withdrawal-date')||null) : null,
+    withdrawal_amount: status==='premature_withdrawal' ? (parseFloat(fv('fd-withdrawal-amt'))||null) : null,
+    withdrawal_reason: status==='premature_withdrawal' ? (fv('fd-withdrawal-reason').trim()||null) : null,
+    withdrawal_penalty: status==='premature_withdrawal' ? (parseFloat(fv('fd-withdrawal-penalty'))||null) : null
   };
   try {
     if (editFDId) await PATCH('fixed_deposits', editFDId, d);
