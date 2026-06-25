@@ -248,6 +248,7 @@ tr:hover td{background:#fafafa}
     </div>
     <div class="sb-sec">Main</div>
     <div class="ni active" data-page="dashboard"><i class="ti ti-layout-dashboard"></i> Dashboard</div>
+    <div class="ni" data-page="approvals"><i class="ti ti-checkbox"></i> Approvals <span id="approval-badge" style="background:#ef4444;color:#fff;font-size:9px;padding:1px 6px;border-radius:10px;margin-left:4px;display:none">0</span></div>
     <div class="ni" data-page="members"><i class="ti ti-users"></i> Members</div>
     <div class="ni" data-page="dues"><i class="ti ti-receipt"></i> Maintenance Dues</div>
     <div class="sb-sec">Facilities</div>
@@ -289,6 +290,11 @@ tr:hover td{background:#fafafa}
       </div>
     </div>
     <div class="content">
+
+      <!-- APPROVALS -->
+      <div class="page" id="page-approvals">
+        <div id="approvals-content"><p class="empty">Loading…</p></div>
+      </div>
 
       <!-- DASHBOARD -->
       <div class="page show" id="page-dashboard">
@@ -942,7 +948,13 @@ tr:hover td{background:#fafafa}
       <div class="fi full"><label>Full Name *</label><input id="a-name"></div>
       <div class="fi full"><label>Email *</label><input id="a-email" type="email"></div>
       <div class="fi full"><label>Password *</label><input id="a-pass" type="password" placeholder="Min 6 characters"></div>
-      <div class="fi"><label>Role</label><select id="a-role"><option value="society_admin">Society Admin</option><option value="master">Master Admin</option></select></div>
+      <div class="fi"><label>Role</label><select id="a-role" onchange="toggleApproverField()">
+        <option value="society_admin">Society Admin (Chairman/Secretary)</option>
+        <option value="manager">Manager (Requires Approval)</option>
+        <option value="master">Master Admin</option>
+      </select></div>
+      <div class="fi" id="a-approver-wrap" style="display:none"><label>Reports To (Approver)</label><select id="a-approver"><option value="">— Select Approver —</option></select></div>
+      <div class="fi"><label>Mobile (for notifications)</label><input id="a-mobile" type="tel" placeholder="10-digit number"></div>
       <div class="fi"><label>Assign Society</label><select id="a-soc"><option value="">— None —</option></select></div>
     </div></div>
     <div class="md-foot">
@@ -1497,7 +1509,8 @@ const PAGE_META = {
   'fy-overview':     ()=> 'Financial Year performance across all societies',
   'db-monitor':      ()=> 'Database usage, storage & growth monitoring',
   accounts:  ()=> CS ? CS.name+' — Income & Expenses' : '',
-  reports:   ()=> CS ? CS.name+' — Reports' : ''
+  reports:   ()=> CS ? CS.name+' — Reports' : '',
+  approvals: ()=> CS ? CS.name+' — Pending Approvals' : ''
 };
 
 function goPage(id) {
@@ -1565,6 +1578,7 @@ function goPage(id) {
   if (id==='rent')      renderRent();
   if (id==='accounts')  renderAccounts();
   if (id==='reports')   renderReports();
+  if (id==='approvals') renderApprovals();
   if (window.innerWidth<768) { closeSidebar(); }
 }
 
@@ -1763,7 +1777,7 @@ async function completeLogin(admin) {
       if (CU.society_id) {
         const socs = await GET('societies',`?id=eq.${CU.society_id}`);
         CS = socs[0]||null;
-        if (CS) { await loadSocData(); await initFY(); }
+        if (CS) { await loadSocData(); await initFY(); await checkPendingApprovals(); }
       }
     }
     goPage('dashboard');
@@ -2081,7 +2095,7 @@ async function saveAdmin() {
   if (!name||!email||!pass){toast('Name, email and password required',false);return;}
   if (pass.length<6){toast('Password min 6 characters',false);return;}
   try {
-    await POST('admins',{name,email:email.toLowerCase(),password_hash:pass,role:fv('a-role'),society_id:fv('a-soc')||null});
+    await POST('admins',{name,email:email.toLowerCase(),password_hash:pass,role:fv('a-role'),society_id:fv('a-soc')||null,mobile:fv('a-mobile').trim()||null,approver_id:fv('a-approver')||null});
     // Log new admin creation
     await logActivity(null, name, email.toLowerCase(), 'Admin Created', `New admin created by Master Admin (${CU.name}) on ${new Date().toLocaleString('en-IN')}`);
     closeModal('mo-admin'); renderAdmins(); toast('Admin added');
@@ -2300,6 +2314,11 @@ async function saveMember() {
     emergency_contact:fv('m-emerg'), notes:fv('m-notes')
   };
   try {
+    // Manager role — submit for approval
+    if (isManager()) {
+      const approved = await submitForApproval('members', editMem>=0?'update':'create', {...d, ...(editMem>=0?{id:members[editMem].id}:{})}, `${editMem>=0?'Update':'Add'} member: ${d.name} (${d.wing}-${d.flat})`);
+      if (approved) { closeModal('mo-member'); return; }
+    }
     let memberId;
     if(editMem>=0) { await PATCH('members',members[editMem].id,d); memberId=members[editMem].id; }
     else { const r=await POST('members',d); memberId=r?.[0]?.id||null; }
@@ -2358,6 +2377,7 @@ function openDuesModal(){populateFlatSelects();openModal('mo-dues');}
 async function saveDues(){
   if(!fv('d-flat')||!fv('d-amt')){toast('Flat and amount required',false);return;}
   const d={society_id:CS.id,flat:fv('d-flat'),month:fv('d-month'),amount:parseFloat(fv('d-amt')),due_date:fv('d-due')||null,status:fv('d-stat'),paid_date:fv('d-pdate')||null,payment_mode:fv('d-mode'),txn_ref:fv('d-txn'),late_fee:parseFloat(fv('d-late'))||0,discount:parseFloat(fv('d-disc'))||0,remarks:fv('d-rem'),financial_year:CURRENT_FY||getCurrentFY()};
+  if(isManager()){const ok=await submitForApproval('dues','create',d,`Add dues: ${d.flat} — ${d.month} — ₹${d.amount}`);if(ok){closeModal('mo-dues');return;}}
   try{await POST('dues',d);dues=await GET('dues',`?society_id=eq.${CS.id}&financial_year=eq.${CURRENT_FY||getCurrentFY()}&order=created_at.desc`);closeModal('mo-dues');renderDues();toast('Record added');}catch(e){toast('Error: '+e.message,false);}
 }
 async function markPaid(id){try{await PATCH('dues',id,{status:'paid',paid_date:new Date().toISOString().split('T')[0]});const d=dues.find(x=>x.id===id);if(d){d.status='paid';}renderDues();toast('Marked as paid');}catch(e){toast('Error: '+e.message,false);}}
@@ -2518,6 +2538,7 @@ async function saveNotice(){
   const title=fv('n-title').trim(),body=fv('n-body').trim();
   if(!title||!body){toast('Title and description required',false);return;}
   const d={society_id:CS.id,type:fv('n-type'),category:fv('n-cat'),title,body,posted_by:fv('n-by')||'Management',flat:fv('n-flat'),priority:fv('n-pri'),status:fv('n-stat'),financial_year:CURRENT_FY||getCurrentFY()};
+  if(isManager()){const ok=await submitForApproval('notices','create',d,`Post notice: ${title}`);if(ok){closeModal('mo-notice');return;}}
   try{await POST('notices',d);notices=await GET('notices',`?society_id=eq.${CS.id}&financial_year=eq.${CURRENT_FY||getCurrentFY()}&order=created_at.desc`);closeModal('mo-notice');renderNotices();toast('Posted');}catch(e){toast('Error: '+e.message,false);}
 }
 async function resolveNotice(id){try{await PATCH('notices',id,{status:'resolved'});const n=notices.find(x=>x.id===id);if(n)n.status='resolved';renderNotices();toast('Marked resolved');}catch(e){toast('Error: '+e.message,false);}}
@@ -2674,6 +2695,10 @@ async function saveAccount() {
     vendor_or_from: fv('ac-from'), notes: fv('ac-notes'),
     financial_year: CURRENT_FY || fyFromDate(date) || getCurrentFY()
   };
+  if (isManager()) {
+    const ok = await submitForApproval('accounts', editAccIdx>=0?'update':'create', {...d,...(editAccIdx>=0?{id:accounts[editAccIdx].id}:{})}, `${editAccIdx>=0?'Update':'Add'} account entry: ${desc} — ₹${amt}`);
+    if (ok) { closeModal('mo-account'); return; }
+  }
   try {
     if (editAccIdx>=0) await PATCH('accounts', accounts[editAccIdx].id, d);
     else await POST('accounts', d);
@@ -5351,6 +5376,195 @@ function copyAppsScript() {
   navigator.clipboard.writeText(script)
     .then(function() { toast('Apps Script copied! Clear old code in Apps Script then paste this.'); })
     .catch(function() { toast('Copy failed — please try again', false); });
+}
+
+// ═══════════════════════════════════════════════
+// APPROVAL WORKFLOW
+// ═══════════════════════════════════════════════
+const MODULE_LABELS = {
+  members:'Members', dues:'Dues', accounts:'Accounts',
+  notices:'Notices', tenants:'Tenants', rent_records:'Rent'
+};
+
+function isManager() { return CU?.role === 'manager'; }
+function isApprover() { return CU?.role === 'society_admin'; }
+
+// Submit change for approval instead of saving directly
+async function submitForApproval(module, action, data, description) {
+  if (!isManager()) return false; // not a manager, save directly
+  try {
+    // Find approver for this manager
+    const approvers = await GET('admins', `?society_id=eq.${CS.id}&role=eq.society_admin`);
+    const approver = approvers[0] || null;
+    await POST('approvals', {
+      society_id: CS.id,
+      requested_by: CU.id,
+      requested_by_name: CU.name,
+      approver_id: approver?.id || null,
+      approver_name: approver?.name || null,
+      module,
+      action, // 'create', 'update', 'delete'
+      record_data: JSON.stringify(data),
+      description,
+      status: 'pending'
+    });
+    // Notify approver via WhatsApp + Email
+    if (approver?.mobile) {
+      const msg = `📋 *SocietyOS Approval Required*\n\nHi ${approver.name},\n${CU.name} has requested approval for:\n*${description}*\n\nPlease login to SocietyOS to review and approve/reject.\n— ${CS?.name}`;
+      waSend(approver.mobile, msg);
+    }
+    await checkPendingApprovals();
+    toast(`✅ Change submitted for approval by ${approver?.name || 'Society Admin'}`);
+    return true;
+  } catch(e) {
+    toast('Error submitting for approval: '+e.message, false);
+    return false;
+  }
+}
+
+async function checkPendingApprovals() {
+  if (!CS || !isApprover()) return;
+  try {
+    const pending = await GET('approvals', `?society_id=eq.${CS.id}&status=eq.pending`);
+    const badge = $('approval-badge');
+    if (badge) {
+      badge.style.display = pending.length ? '' : 'none';
+      badge.textContent = pending.length;
+    }
+    // Show on dashboard too
+    const dbBadge = $('dash-approval-count');
+    if (dbBadge) dbBadge.textContent = pending.length;
+  } catch(e) {}
+}
+
+async function renderApprovals() {
+  const el = $('approvals-content');
+  if (!CS) { el.innerHTML='<p class="empty">Select a society first</p>'; return; }
+  el.innerHTML = '<p class="empty">Loading…</p>';
+  try {
+    const all = await GET('approvals', `?society_id=eq.${CS.id}&order=created_at.desc`);
+    const pending = all.filter(a=>a.status==='pending');
+    const history = all.filter(a=>a.status!=='pending');
+
+    if (!all.length) {
+      el.innerHTML = `<div style="text-align:center;padding:48px 20px">
+        <div style="font-size:48px;margin-bottom:12px">✅</div>
+        <div style="font-size:16px;font-weight:700;color:#0f172a">No Pending Approvals</div>
+        <div style="font-size:13px;color:#64748b;margin-top:6px">All changes have been reviewed</div>
+      </div>`;
+      return;
+    }
+
+    el.innerHTML = `
+      ${pending.length ? `
+      <div class="card" style="margin-bottom:16px">
+        <div class="card-head"><h3>⏳ Pending Approvals (${pending.length})</h3></div>
+        <div class="tbl-wrap">
+          <table><thead><tr>
+            <th>Date</th><th>Requested By</th><th>Module</th><th>Action</th><th>Description</th><th>Actions</th>
+          </tr></thead>
+          <tbody>
+            ${pending.map(a=>`<tr style="background:#fffbeb">
+              <td style="font-size:11px">${a.created_at?.substring(0,10)}</td>
+              <td style="font-weight:600">${a.requested_by_name}</td>
+              <td><span class="badge bb" style="font-size:10px">${MODULE_LABELS[a.module]||a.module}</span></td>
+              <td><span class="badge ${a.action==='create'?'bg':a.action==='delete'?'br':'ba'}" style="font-size:10px;text-transform:capitalize">${a.action}</span></td>
+              <td style="font-size:12px">${a.description}</td>
+              <td>
+                <button class="btn" onclick="approveChange('${a.id}')" style="background:#16a34a;color:#fff;border-color:#16a34a;font-size:11px;padding:4px 10px;margin-right:4px">
+                  <i class="ti ti-check"></i> Approve
+                </button>
+                <button class="btn" onclick="rejectChange('${a.id}')" style="color:#ef4444;border-color:#ef4444;font-size:11px;padding:4px 10px">
+                  <i class="ti ti-x"></i> Reject
+                </button>
+              </td>
+            </tr>`).join('')}
+          </tbody></table>
+        </div>
+      </div>` : `<div style="background:#f0fdf4;border:1px solid #86efac;border-radius:8px;padding:12px 16px;margin-bottom:16px;font-size:13px;color:#15803d">✅ No pending approvals</div>`}
+
+      ${history.length ? `
+      <div class="card">
+        <div class="card-head"><h3>📋 Approval History</h3></div>
+        <div class="tbl-wrap">
+          <table><thead><tr>
+            <th>Date</th><th>Requested By</th><th>Module</th><th>Description</th><th>Status</th><th>Reviewed By</th>
+          </tr></thead>
+          <tbody>
+            ${history.slice(0,20).map(a=>`<tr>
+              <td style="font-size:11px">${a.created_at?.substring(0,10)}</td>
+              <td>${a.requested_by_name}</td>
+              <td><span class="badge bb" style="font-size:10px">${MODULE_LABELS[a.module]||a.module}</span></td>
+              <td style="font-size:12px">${a.description}</td>
+              <td><span class="badge ${a.status==='approved'?'bg':'br'}" style="font-size:10px;text-transform:capitalize">${a.status}</span>
+                ${a.reject_reason?`<div style="font-size:10px;color:#ef4444">${a.reject_reason}</div>`:''}
+              </td>
+              <td style="font-size:11px;color:#64748b">${a.reviewed_by_name||'—'}</td>
+            </tr>`).join('')}
+          </tbody></table>
+        </div>
+      </div>` : ''}`;
+  } catch(e) {
+    el.innerHTML = `<p class="empty">Error: ${e.message}</p>`;
+  }
+}
+
+async function approveChange(id) {
+  try {
+    const appr = await GET('approvals', `?id=eq.${id}`);
+    const a = appr[0];
+    if (!a) return;
+    const data = JSON.parse(a.record_data);
+
+    // Apply the change to the actual table
+    if (a.action==='create') await POST(a.module, data);
+    else if (a.action==='update' && data.id) { const rid=data.id; delete data.id; await PATCH(a.module, rid, data); }
+    else if (a.action==='delete' && data.id) await DELETE(a.module, data.id);
+
+    // Mark as approved
+    await PATCH('approvals', id, { status:'approved', reviewed_by: CU.id, reviewed_by_name: CU.name, reviewed_at: new Date().toISOString() });
+
+    // Notify manager via WhatsApp
+    const manager = await GET('admins', `?id=eq.${a.requested_by}`);
+    if (manager[0]?.mobile) {
+      waSend(manager[0].mobile, `✅ Your request has been *approved*!\n\n*${a.description}*\n\nApproved by: ${CU.name}\n— ${CS?.name}`);
+    }
+
+    await renderApprovals();
+    await checkPendingApprovals();
+    // Reload affected module data
+    await reloadDataForFY();
+    toast('✅ Change approved and applied!');
+  } catch(e) { toast('Error: '+e.message, false); }
+}
+
+async function rejectChange(id) {
+  const reason = prompt('Reason for rejection (optional):') ?? '';
+  try {
+    const appr = await GET('approvals', `?id=eq.${id}`);
+    const a = appr[0];
+    await PATCH('approvals', id, {
+      status: 'rejected',
+      reviewed_by: CU.id,
+      reviewed_by_name: CU.name,
+      reviewed_at: new Date().toISOString(),
+      reject_reason: reason||null
+    });
+    // Notify manager
+    const manager = await GET('admins', `?id=eq.${a.requested_by}`);
+    if (manager[0]?.mobile) {
+      waSend(manager[0].mobile, `❌ Your request was *rejected*.\n\n*${a.description}*\n\n${reason?'Reason: '+reason+'\n\n':''}Rejected by: ${CU.name}\n— ${CS?.name}`);
+    }
+    await renderApprovals();
+    await checkPendingApprovals();
+    toast('Change rejected');
+  } catch(e) { toast('Error: '+e.message, false); }
+}
+
+function toggleApproverField() {
+  const role = $('a-role')?.value;
+  const wrap = $('a-approver-wrap');
+  if (wrap) wrap.style.display = role==='manager' ? '' : 'none';
 }
 
 </script>
