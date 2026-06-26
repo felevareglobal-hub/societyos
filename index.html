@@ -291,6 +291,11 @@ tr:hover td{background:#fafafa}
     </div>
     <div class="content">
 
+      <!-- MASTER APPROVALS -->
+      <div class="page" id="page-master-approvals">
+        <div id="master-approvals-content"><p class="empty">Loading…</p></div>
+      </div>
+
       <!-- APPROVALS -->
       <div class="page" id="page-approvals">
         <div id="approvals-content"><p class="empty">Loading…</p></div>
@@ -949,8 +954,8 @@ tr:hover td{background:#fafafa}
       <div class="fi full"><label>Email *</label><input id="a-email" type="email"></div>
       <div class="fi full"><label>Password *</label><input id="a-pass" type="password" placeholder="Min 6 characters"></div>
       <div class="fi"><label>Role</label><select id="a-role" onchange="toggleApproverField()">
-        <option value="society_admin">Society Admin (Chairman/Secretary)</option>
-        <option value="manager">Manager (Requires Approval)</option>
+        <option value="society_admin">Society Admin (Chairman / Secretary)</option>
+        <option value="manager">Manager (Changes need approval)</option>
         <option value="master">Master Admin</option>
       </select></div>
       <div class="fi" id="a-approver-wrap" style="display:none"><label>Reports To (Approver)</label><select id="a-approver"><option value="">— Select Approver —</option></select></div>
@@ -1574,6 +1579,7 @@ function goPage(id) {
   if (id==='referrals')       renderReferrals();
   if (id==='fy-overview')     { populateFYOverviewSelector(); renderFYOverview(); }
   if (id==='db-monitor')      renderDBMonitor();
+  if (id==='master-approvals') renderMasterApprovals();
   if (id==='tenants')   renderTenants();
   if (id==='rent')      renderRent();
   if (id==='accounts')  renderAccounts();
@@ -1764,6 +1770,7 @@ async function completeLogin(admin) {
         <div class="ni" data-page="societies"><i class="ti ti-building-skyscraper"></i> All Societies</div>
         <div class="ni" data-page="fy-overview"><i class="ti ti-chart-bar"></i> FY Overview</div>
         <div class="ni" data-page="db-monitor"><i class="ti ti-database"></i> DB Monitor</div>
+        <div class="ni" data-page="master-approvals"><i class="ti ti-checkbox"></i> Approvals <span id="master-approval-badge" style="background:#ef4444;color:#fff;font-size:9px;padding:1px 6px;border-radius:10px;margin-left:4px;display:none">0</span></div>
         <div class="ni" data-page="admins"><i class="ti ti-shield-check"></i> Manage Admins</div>
         <div class="ni" data-page="signup-requests"><i class="ti ti-user-plus"></i> Sign Up Requests <span id="req-badge" style="background:#ef4444;color:#fff;font-size:9px;padding:1px 6px;border-radius:10px;margin-left:4px;display:none">0</span></div>
         <div class="ni" data-page="referrals"><i class="ti ti-tag"></i> Referral Codes</div>
@@ -1772,6 +1779,7 @@ async function completeLogin(admin) {
         <div class="ni" data-page="payments"><i class="ti ti-cash"></i> Subscription Payments</div>`;
       checkPendingRequests();
       await loadAllSocs();
+      await checkPendingApprovals();
     } else {
       $('soc-switcher-wrap').style.display='none';
       if (CU.society_id) {
@@ -4963,8 +4971,129 @@ function populateFYOverviewSelector() {
   sel.innerHTML = fys.map(fy => `<option value="${fy}"${fy===cur?' selected':''}>${getFYLabel(fy)}</option>`).join('');
 }
 
-// ═══════════════════════════════════════════════
-// MASTER ADMIN — FY OVERVIEW ACROSS ALL SOCIETIES
+async function renderMasterApprovals() {
+  const el = $('master-approvals-content');
+  el.innerHTML = '<p class="empty">Loading…</p>';
+  try {
+    const all = await GET('approvals', `?order=created_at.desc`);
+    const pending = all.filter(a=>a.status==='pending');
+    const history = all.filter(a=>a.status!=='pending');
+
+    if (!all.length) {
+      el.innerHTML = `<div style="text-align:center;padding:48px 20px">
+        <div style="font-size:48px;margin-bottom:12px">✅</div>
+        <div style="font-size:16px;font-weight:700;color:#0f172a">No Pending Approvals</div>
+        <div style="font-size:13px;color:#64748b;margin-top:6px">All changes across all societies have been reviewed</div>
+      </div>`;
+      return;
+    }
+
+    el.innerHTML = `
+      ${pending.length ? `
+      <div class="card" style="margin-bottom:16px">
+        <div class="card-head"><h3>⏳ Pending Approvals (${pending.length})</h3></div>
+        <div class="tbl-wrap">
+          <table><thead><tr>
+            <th>Date</th><th>Society</th><th>Requested By</th><th>Module</th><th>Action</th><th>Description</th><th>Actions</th>
+          </tr></thead>
+          <tbody>
+            ${pending.map(a=>`<tr style="background:#fffbeb">
+              <td style="font-size:11px">${a.created_at?.substring(0,10)}</td>
+              <td style="font-weight:600;color:#1e40af">${a.society_name||'—'}</td>
+              <td>${a.requested_by_name}</td>
+              <td><span class="badge bb" style="font-size:10px">${MODULE_LABELS[a.module]||a.module}</span></td>
+              <td><span class="badge ${a.action==='create'?'bg':a.action==='delete'?'br':'ba'}" style="font-size:10px;text-transform:capitalize">${a.action}</span></td>
+              <td style="font-size:12px">${a.description}</td>
+              <td style="white-space:nowrap">
+                <button class="btn" onclick="masterApproveChange('${a.id}')" style="background:#16a34a;color:#fff;border-color:#16a34a;font-size:11px;padding:4px 10px;margin-right:4px">
+                  <i class="ti ti-check"></i> Approve
+                </button>
+                <button class="btn" onclick="masterRejectChange('${a.id}')" style="color:#ef4444;border-color:#ef4444;font-size:11px;padding:4px 10px">
+                  <i class="ti ti-x"></i> Reject
+                </button>
+              </td>
+            </tr>`).join('')}
+          </tbody></table>
+        </div>
+      </div>` : `<div style="background:#f0fdf4;border:1px solid #86efac;border-radius:8px;padding:12px 16px;margin-bottom:16px;font-size:13px;color:#15803d">✅ No pending approvals</div>`}
+
+      ${history.length ? `
+      <div class="card">
+        <div class="card-head"><h3>📋 Approval History (Last 30)</h3></div>
+        <div class="tbl-wrap">
+          <table><thead><tr>
+            <th>Date</th><th>Society</th><th>Requested By</th><th>Module</th><th>Description</th><th>Status</th><th>Reviewed By</th>
+          </tr></thead>
+          <tbody>
+            ${history.slice(0,30).map(a=>`<tr>
+              <td style="font-size:11px">${a.created_at?.substring(0,10)}</td>
+              <td style="font-weight:600;font-size:12px">${a.society_name||'—'}</td>
+              <td style="font-size:12px">${a.requested_by_name}</td>
+              <td><span class="badge bb" style="font-size:10px">${MODULE_LABELS[a.module]||a.module}</span></td>
+              <td style="font-size:12px">${a.description}</td>
+              <td>
+                <span class="badge ${a.status==='approved'?'bg':'br'}" style="font-size:10px;text-transform:capitalize">${a.status}</span>
+                ${a.reject_reason?`<div style="font-size:10px;color:#ef4444">${a.reject_reason}</div>`:''}
+              </td>
+              <td style="font-size:11px;color:#64748b">${a.reviewed_by_name||'—'}</td>
+            </tr>`).join('')}
+          </tbody></table>
+        </div>
+      </div>` : ''}`;
+  } catch(e) {
+    el.innerHTML = `<p class="empty">Error: ${e.message}</p>`;
+  }
+}
+
+async function masterApproveChange(id) {
+  try {
+    const appr = await GET('approvals', `?id=eq.${id}`);
+    const a = appr[0];
+    if (!a) return;
+    const data = JSON.parse(a.record_data);
+
+    // Apply change to actual table
+    if (a.action==='create') await POST(a.module, data);
+    else if (a.action==='update' && data.id) { const rid=data.id; delete data.id; await PATCH(a.module, rid, data); }
+    else if (a.action==='delete' && data.id) await DELETE(a.module, data.id);
+
+    // Mark approved
+    await PATCH('approvals', id, { status:'approved', reviewed_by:CU.id, reviewed_by_name:CU.name, reviewed_at:new Date().toISOString() });
+
+    // Notify Society Admin via WhatsApp
+    const admin = await GET('admins', `?id=eq.${a.requested_by}`);
+    if (admin[0]?.mobile) {
+      waSend(admin[0].mobile, `✅ Your request has been *approved* by Master Admin!\n\n*${a.description}*\n\nApproved by: ${CU.name}\n— SocietyOS`);
+    }
+
+    await renderMasterApprovals();
+    await checkPendingApprovals();
+    toast('✅ Change approved and applied!');
+  } catch(e) { toast('Error: '+e.message, false); }
+}
+
+async function masterRejectChange(id) {
+  const reason = prompt('Reason for rejection (optional):') ?? '';
+  try {
+    const appr = await GET('approvals', `?id=eq.${id}`);
+    const a = appr[0];
+    await PATCH('approvals', id, {
+      status: 'rejected',
+      reviewed_by: CU.id,
+      reviewed_by_name: CU.name,
+      reviewed_at: new Date().toISOString(),
+      reject_reason: reason||null
+    });
+    // Notify Society Admin via WhatsApp
+    const admin = await GET('admins', `?id=eq.${a.requested_by}`);
+    if (admin[0]?.mobile) {
+      waSend(admin[0].mobile, `❌ Your request was *rejected* by Master Admin.\n\n*${a.description}*\n\n${reason?'Reason: '+reason+'\n\n':''}— SocietyOS`);
+    }
+    await renderMasterApprovals();
+    await checkPendingApprovals();
+    toast('Change rejected');
+  } catch(e) { toast('Error: '+e.message, false); }
+}
 // ═══════════════════════════════════════════════
 async function renderFYOverview() {
   const el = $('fy-overview-content');
@@ -5386,35 +5515,36 @@ const MODULE_LABELS = {
   notices:'Notices', tenants:'Tenants', rent_records:'Rent'
 };
 
-function isManager() { return CU?.role === 'manager'; }
-function isApprover() { return CU?.role === 'society_admin'; }
+function isManager() { return CU?.role === 'manager'; } // Manager needs approval
+function isApprover() { return CU?.role === 'society_admin' || CU?.role === 'master'; } // Chairman/Secretary or Master Admin approves
 
 // Submit change for approval instead of saving directly
 async function submitForApproval(module, action, data, description) {
-  if (!isManager()) return false; // not a manager, save directly
+  if (!isManager()) return false;
   try {
-    // Find approver for this manager
-    const approvers = await GET('admins', `?society_id=eq.${CS.id}&role=eq.society_admin`);
-    const approver = approvers[0] || null;
+    // Find Chairman/Secretary (society_admin) for this society
+    const admins = await GET('admins', `?society_id=eq.${CS.id}&role=eq.society_admin`);
+    const approver = admins[0] || null;
     await POST('approvals', {
       society_id: CS.id,
+      society_name: CS.name,
       requested_by: CU.id,
       requested_by_name: CU.name,
       approver_id: approver?.id || null,
       approver_name: approver?.name || null,
       module,
-      action, // 'create', 'update', 'delete'
+      action,
       record_data: JSON.stringify(data),
       description,
       status: 'pending'
     });
-    // Notify approver via WhatsApp + Email
+    // Notify Chairman/Secretary via WhatsApp
     if (approver?.mobile) {
-      const msg = `📋 *SocietyOS Approval Required*\n\nHi ${approver.name},\n${CU.name} has requested approval for:\n*${description}*\n\nPlease login to SocietyOS to review and approve/reject.\n— ${CS?.name}`;
+      const msg = `📋 *SocietyOS Approval Required*\n\nDear ${approver.name},\n\nProperty Manager *${CU.name}* has requested approval for:\n\n*${description}*\n\nPlease login to SocietyOS → Approvals to review.\n— ${CS.name}`;
       waSend(approver.mobile, msg);
     }
     await checkPendingApprovals();
-    toast(`✅ Change submitted for approval by ${approver?.name || 'Society Admin'}`);
+    toast(`✅ Change submitted to ${approver?.name || 'Chairman/Secretary'} for approval`);
     return true;
   } catch(e) {
     toast('Error submitting for approval: '+e.message, false);
@@ -5423,17 +5553,19 @@ async function submitForApproval(module, action, data, description) {
 }
 
 async function checkPendingApprovals() {
-  if (!CS || !isApprover()) return;
   try {
-    const pending = await GET('approvals', `?society_id=eq.${CS.id}&status=eq.pending`);
-    const badge = $('approval-badge');
-    if (badge) {
-      badge.style.display = pending.length ? '' : 'none';
-      badge.textContent = pending.length;
+    let pending = [];
+    if (CU?.role === 'master') {
+      // Master Admin sees all pending across all societies
+      pending = await GET('approvals', `?status=eq.pending&order=created_at.desc`);
+      const mBadge = $('master-approval-badge');
+      if (mBadge) { mBadge.style.display = pending.length ? '' : 'none'; mBadge.textContent = pending.length; }
+    } else if (CU?.role === 'society_admin' && CS) {
+      // Chairman/Secretary sees pending for their society
+      pending = await GET('approvals', `?society_id=eq.${CS.id}&status=eq.pending`);
+      const badge = $('approval-badge');
+      if (badge) { badge.style.display = pending.length ? '' : 'none'; badge.textContent = pending.length; }
     }
-    // Show on dashboard too
-    const dbBadge = $('dash-approval-count');
-    if (dbBadge) dbBadge.textContent = pending.length;
   } catch(e) {}
 }
 
@@ -5522,17 +5654,16 @@ async function approveChange(id) {
     else if (a.action==='delete' && data.id) await DELETE(a.module, data.id);
 
     // Mark as approved
-    await PATCH('approvals', id, { status:'approved', reviewed_by: CU.id, reviewed_by_name: CU.name, reviewed_at: new Date().toISOString() });
+    await PATCH('approvals', id, { status:'approved', reviewed_by:CU.id, reviewed_by_name:CU.name, reviewed_at:new Date().toISOString() });
 
-    // Notify manager via WhatsApp
+    // Notify Manager via WhatsApp
     const manager = await GET('admins', `?id=eq.${a.requested_by}`);
     if (manager[0]?.mobile) {
-      waSend(manager[0].mobile, `✅ Your request has been *approved*!\n\n*${a.description}*\n\nApproved by: ${CU.name}\n— ${CS?.name}`);
+      waSend(manager[0].mobile, `✅ Your request has been *approved!*\n\n*${a.description}*\n\nApproved by: ${CU.name} (${CS?.name})\n— SocietyOS`);
     }
 
     await renderApprovals();
     await checkPendingApprovals();
-    // Reload affected module data
     await reloadDataForFY();
     toast('✅ Change approved and applied!');
   } catch(e) { toast('Error: '+e.message, false); }
@@ -5550,10 +5681,10 @@ async function rejectChange(id) {
       reviewed_at: new Date().toISOString(),
       reject_reason: reason||null
     });
-    // Notify manager
+    // Notify Manager via WhatsApp
     const manager = await GET('admins', `?id=eq.${a.requested_by}`);
     if (manager[0]?.mobile) {
-      waSend(manager[0].mobile, `❌ Your request was *rejected*.\n\n*${a.description}*\n\n${reason?'Reason: '+reason+'\n\n':''}Rejected by: ${CU.name}\n— ${CS?.name}`);
+      waSend(manager[0].mobile, `❌ Your request was *rejected.*\n\n*${a.description}*\n\n${reason?'Reason: '+reason+'\n\n':''}Rejected by: ${CU.name} (${CS?.name})\n— SocietyOS`);
     }
     await renderApprovals();
     await checkPendingApprovals();
