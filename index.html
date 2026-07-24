@@ -97,6 +97,13 @@ tr:hover td{background:#fafafa}
 /* BUTTONS */
 .btn{padding:7px 14px;border-radius:7px;font-size:12.5px;cursor:pointer;border:1px solid #e2e8f0;background:#fff;color:#0f172a;display:inline-flex;align-items:center;gap:5px;font-family:inherit;font-weight:500}
 .btn:hover{background:#f8fafc}
+.wa-btn{background:none;border:none;cursor:pointer;color:#25D366;padding:4px 6px;border-radius:5px;font-size:15px;display:inline-flex;align-items:center;transition:background .15s}
+.wa-btn:hover{background:#dcfce7}
+.lock-notice{display:flex;align-items:center;justify-content:center;min-height:60vh;width:100%}
+.locked-overlay{text-align:center;padding:48px 32px;background:#fff;border-radius:16px;border:2px dashed #e2e8f0;max-width:380px;box-shadow:0 4px 24px rgba(0,0,0,.06)}
+.locked-overlay i{font-size:48px;color:#cbd5e1;display:block;margin-bottom:12px}
+.locked-overlay h4{font-size:18px;font-weight:700;color:#0f172a;margin-bottom:8px}
+.locked-overlay p{font-size:13px;color:#64748b;margin-bottom:20px;line-height:1.6}
 .btn-p{background:#2563eb;color:#fff;border-color:#2563eb;font-weight:600}
 .btn-p:hover{background:#1d4ed8}
 .ab{background:none;border:none;cursor:pointer;padding:4px 6px;border-radius:5px;color:#94a3b8;font-size:13px}
@@ -182,11 +189,42 @@ tr:hover td{background:#fafafa}
       <h1><i class="ti ti-building-community"></i> SocietyOS</h1>
       <p>Multi-Society Management Platform</p>
     </div>
-    <div class="lf"><label>Email</label><input type="email" id="li-email" placeholder="admin@societyos.com"></div>
-    <div class="lf"><label>Password</label><input type="password" id="li-pass" placeholder="••••••••"></div>
-    <button class="login-btn" id="li-btn" onclick="doLogin()"><i class="ti ti-login" style="margin-right:6px"></i> Sign In</button>
-    <div class="login-err" id="li-err"></div>
-    <div class="forgot-link" onclick="openModal('mo-forgot')">Forgot Password?</div>
+
+    <!-- STEP 1: Email & Password -->
+    <div id="login-step1">
+      <div class="lf"><label>Email</label><input type="email" id="li-email" placeholder="admin@societyos.com"></div>
+      <div class="lf"><label>Password</label><input type="password" id="li-pass" placeholder="••••••••"></div>
+      <button class="login-btn" id="li-btn" onclick="doLogin()"><i class="ti ti-login" style="margin-right:6px"></i> Sign In</button>
+      <div class="login-err" id="li-err"></div>
+      <div class="forgot-link" onclick="openModal('mo-forgot')">Forgot Password?</div>
+    </div>
+
+    <!-- STEP 2: OTP Verification -->
+    <div id="login-step2" style="display:none">
+      <div style="text-align:center;margin-bottom:16px">
+        <div style="font-size:32px;margin-bottom:8px">📱</div>
+        <div style="font-size:15px;font-weight:700;color:#0f172a">Enter OTP</div>
+        <div style="font-size:12px;color:#64748b;margin-top:4px" id="otp-sent-msg">OTP sent to your registered mobile number</div>
+      </div>
+      <div class="lf">
+        <label>6-Digit OTP</label>
+        <input type="number" id="li-otp" placeholder="Enter OTP" maxlength="6"
+          style="text-align:center;font-size:24px;font-weight:700;letter-spacing:8px"
+          oninput="if(this.value.length>6)this.value=this.value.slice(0,6)">
+      </div>
+      <button class="login-btn" id="otp-btn" onclick="verifyOTP()"><i class="ti ti-shield-check" style="margin-right:6px"></i> Verify OTP</button>
+      <div class="login-err" id="otp-err"></div>
+      <div style="text-align:center;margin-top:12px">
+        <span id="otp-resend-wrap" style="font-size:12px;color:#64748b">
+          Didn't receive? <span id="otp-resend-btn" onclick="resendOTP()" style="color:#2563eb;cursor:pointer;font-weight:600;display:none">Resend OTP</span>
+          <span id="otp-timer" style="color:#94a3b8"></span>
+        </span>
+      </div>
+      <div style="text-align:center;margin-top:8px">
+        <span onclick="backToLogin()" style="font-size:12px;color:#94a3b8;cursor:pointer">← Back to Login</span>
+      </div>
+    </div>
+
     <div style="margin-top:14px;border-top:1px solid #f1f5f9;padding-top:14px">
       <p style="font-size:11px;color:#94a3b8;text-align:center;margin-bottom:10px">New to SocietyOS? Register your society</p>
       <button onclick="openSignupModal()" style="width:100%;padding:10px;background:#f0fdf4;color:#16a34a;border:1.5px solid #bbf7d0;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px">
@@ -222,6 +260,7 @@ tr:hover td{background:#fafafa}
     <div class="ni" data-page="rent"><i class="ti ti-coin"></i> Rent Tracking</div>
     <div class="sb-sec">Finance</div>
     <div class="ni" data-page="accounts"><i class="ti ti-cash"></i> Accounts</div>
+    <div class="ni" data-page="fd"><i class="ti ti-building-bank"></i> Fixed Deposits</div>
     <div class="sb-sec">Reports</div>
     <div class="ni" data-page="reports"><i class="ti ti-chart-bar"></i> Reports & Analytics</div>
     <div class="ni" id="nav-pricing" style="display:none" data-page="pricing"><i class="ti ti-crown"></i> Upgrade Plan</div>
@@ -241,6 +280,10 @@ tr:hover td{background:#fafafa}
         <p id="pg-meta"></p>
       </div>
       <div class="topbar-right">
+        <div id="fy-selector-wrap" style="display:none;align-items:center;gap:6px">
+          <label style="font-size:11px;color:#64748b;font-weight:600;white-space:nowrap">FY</label>
+          <select id="fy-selector" onchange="switchFY(this.value)" style="padding:5px 8px;border:1px solid #e2e8f0;border-radius:7px;font-size:12px;font-weight:600;color:#1e40af;background:#eff6ff;outline:none;cursor:pointer"></select>
+        </div>
         <div class="user-pill"><i class="ti ti-user-circle"></i><span id="u-name">Admin</span></div>
         <button id="mob-menu" style="display:none;background:none;border:none;cursor:pointer;padding:6px;border-radius:6px" onclick="toggleSidebar()"><i class="ti ti-menu-2" style="font-size:22px;color:#475569"></i></button>
       </div>
@@ -249,6 +292,10 @@ tr:hover td{background:#fafafa}
 
       <!-- DASHBOARD -->
       <div class="page show" id="page-dashboard">
+        <!-- Plan Banner (hidden for master admin, shown for society admins) -->
+        <div id="dash-plan-banner" style="display:none;margin-bottom:14px"></div>
+        <!-- FY Banner -->
+        <div id="dash-fy-banner" style="display:none;margin-bottom:14px"></div>
         <div class="stats">
           <div class="sc"><div class="lb" id="s1l">Societies</div><div class="vl" id="s1v">0</div><div class="sb" id="s1s">Registered</div></div>
           <div class="sc"><div class="lb">Members</div><div class="vl" id="s2v">0</div><div class="sb">In this society</div></div>
@@ -259,6 +306,23 @@ tr:hover td{background:#fafafa}
           <div class="card"><div class="card-head"><h3>Services Expiring Soon</h3></div><div class="card-body" id="d-exp"><p class="empty">No expirations</p></div></div>
           <div class="card"><div class="card-head"><h3>Open Complaints</h3></div><div class="card-body" id="d-comp"><p class="empty">No complaints</p></div></div>
         </div>
+      </div>
+
+      <!-- DB MONITOR (MASTER ADMIN) -->
+      <div class="page" id="page-db-monitor">
+        <div id="db-monitor-content"><p class="empty">Loading…</p></div>
+      </div>
+
+      <!-- FY OVERVIEW (MASTER ADMIN) -->
+      <div class="page" id="page-fy-overview">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:10px">
+          <div style="font-size:13px;color:#64748b">Financial performance across all societies for the selected FY</div>
+          <div style="display:flex;align-items:center;gap:8px">
+            <label style="font-size:12px;font-weight:600;color:#64748b">View FY:</label>
+            <select id="fy-overview-selector" onchange="CURRENT_FY=this.value;renderFYOverview()" style="padding:6px 10px;border:1px solid #e2e8f0;border-radius:7px;font-size:12px;font-weight:600;color:#1e40af;background:#eff6ff;outline:none"></select>
+          </div>
+        </div>
+        <div id="fy-overview-content"><p class="empty">Loading…</p></div>
       </div>
 
       <!-- SOCIETIES -->
@@ -310,8 +374,7 @@ tr:hover td{background:#fafafa}
         <div class="card">
           <div class="card-head">
   <h3>Maintenance Dues</h3>
-  <div style="display:flex;gap:8px;flex-wrap:wrap">
-    <button class="btn" onclick="sendBulkDueReminders()" style="color:#25D366;border-color:#25D366"><i class="ti ti-brand-whatsapp"></i> Send All Reminders</button>
+  <div style="display:flex;gap:8px">
     <button class="btn" onclick="exportReportCSV('dues')"><i class="ti ti-download"></i> Export CSV</button>
     <button class="btn btn-p" onclick="openDuesModal()"><i class="ti ti-plus"></i> Add Record</button>
   </div>
@@ -373,7 +436,8 @@ tr:hover td{background:#fafafa}
           <div class="fc" data-filter="not-open">Open</div>
           <div class="fc" data-filter="not-resolved">Resolved</div>
         </div>
-        <div style="display:flex;justify-content:flex-end;margin-bottom:12px">
+        <div style="display:flex;justify-content:flex-end;gap:8px;margin-bottom:12px">
+          <button class="btn" onclick="sendNoticeToAll()" style="color:#25D366;border-color:#25D366"><svg xmlns='http://www.w3.org/2000/svg' width='15' height='15' viewBox='0 0 24 24' fill='#25D366' style='margin-right:4px'><path d='M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z'/></svg> Send to All</button>
           <button class="btn btn-p" onclick="openNoticeModal()"><i class="ti ti-plus"></i> Post Notice / Complaint</button>
         </div>
         <div id="not-list"></div>
@@ -461,6 +525,21 @@ tr:hover td{background:#fafafa}
         <div id="req-list"></div>
       </div>
 
+      <!-- REFERRAL CODES -->
+      <div class="page" id="page-referrals">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+          <div>
+            <div class="stats" style="margin-bottom:0" id="ref-stats">
+              <div class="sc"><div class="lb">Total Codes</div><div class="vl" id="ref-total">0</div></div>
+              <div class="sc"><div class="lb">Societies Referred</div><div class="vl" id="ref-soc-count" style="color:#6d28d9">0</div></div>
+              <div class="sc"><div class="lb">Active Salespeople</div><div class="vl" id="ref-people">0</div></div>
+            </div>
+          </div>
+          <button class="btn btn-p" onclick="openRefModal()"><i class="ti ti-plus"></i> Add Referral Code</button>
+        </div>
+        <div id="ref-list"></div>
+      </div>
+
       <!-- SUBSCRIPTION PAYMENTS -->
       <div class="page" id="page-payments">
         <!-- Summary -->
@@ -523,6 +602,14 @@ tr:hover td{background:#fafafa}
 
       <!-- ACCOUNTS -->
       <div class="page" id="page-accounts">
+        <!-- Tab toggle: Accounts | Fixed Deposits -->
+        <div class="fb" id="acc-tab-bar" style="margin-bottom:14px">
+          <div class="fc active" data-filter="acc-tab-accounts" onclick="switchAccTab('accounts')">📒 Accounts & Finance</div>
+          <div class="fc" data-filter="acc-tab-fd" onclick="switchAccTab('fd')">🏦 Fixed Deposits</div>
+        </div>
+
+        <!-- ACCOUNTS SECTION -->
+        <div id="acc-section">
         <!-- Summary Cards -->
         <div class="stats" id="acc-stats">
           <div class="sc"><div class="lb">Total Income</div><div class="vl" id="acc-income" style="color:#16a34a">₹0</div><div class="sb">This month</div></div>
@@ -549,6 +636,22 @@ tr:hover td{background:#fafafa}
             <tbody id="acc-tbody"></tbody></table>
           </div>
         </div>
+        </div><!-- /acc-section -->
+
+        <!-- FD SECTION -->
+        <div id="fd-section" style="display:none">
+          <div class="stats" id="fd-stats">
+            <div class="sc"><div class="lb">Total FDs</div><div class="vl" id="fd-total">0</div><div class="sb">Active</div></div>
+            <div class="sc"><div class="lb">Total Principal</div><div class="vl" id="fd-principal" style="color:#1e40af">₹0</div><div class="sb">Invested</div></div>
+            <div class="sc"><div class="lb">Total Maturity</div><div class="vl" id="fd-maturity-val" style="color:#16a34a">₹0</div><div class="sb">Expected</div></div>
+            <div class="sc"><div class="lb">Maturing Soon</div><div class="vl" id="fd-alert" style="color:#ef4444">0</div><div class="sb">Within 30 days</div></div>
+          </div>
+          <div class="card">
+            <div class="card-head"><h3>Fixed Deposits</h3><button class="btn btn-p" onclick="openFDModal()"><i class="ti ti-plus"></i> Add FD</button></div>
+            <div id="fd-list"></div>
+          </div>
+        </div><!-- /fd-section -->
+
       </div>
 
       <!-- REPORTS -->
@@ -558,6 +661,7 @@ tr:hover td{background:#fafafa}
           <div class="fc" data-filter="rep-dues">Dues Collection</div>
           <div class="fc" data-filter="rep-expiry">Service Expiry</div>
           <div class="fc" data-filter="rep-members">Member Directory</div>
+          <div class="fc rep-master-only" data-filter="rep-sales" style="display:none">Sales Report</div>
         </div>
         <div id="report-content"></div>
       </div>
@@ -567,6 +671,106 @@ tr:hover td{background:#fafafa}
 </div>
 
 <!-- ===== MODALS ===== -->
+
+<!-- TERMS & PRIVACY MODAL -->
+<div class="mo" id="mo-terms">
+  <div class="md" style="max-width:600px;max-height:80vh">
+    <div class="md-head"><h3>Terms of Service, Privacy Policy & Disclaimer</h3><button class="md-close" onclick="closeModal('mo-terms')"><i class="ti ti-x"></i></button></div>
+    <div class="md-body" style="overflow-y:auto;max-height:60vh;font-size:12.5px;color:#374151;line-height:1.7">
+
+      <p style="font-size:11px;color:#64748b;margin-bottom:12px">Last updated: June 2026 &nbsp;|&nbsp; Operated by <strong>Felevare Global Ventures LLP</strong>, Mumbai, India</p>
+
+      <h4 style="color:#0f172a;margin:14px 0 6px">1. Acceptance of Terms</h4>
+      <p>By registering on SocietyOS, you ("Society Admin") agree to these Terms on behalf of your housing society. If you do not agree, do not use this platform.</p>
+
+      <h4 style="color:#0f172a;margin:14px 0 6px">2. Data Collection & Storage</h4>
+      <p>SocietyOS collects and stores the following data for the purpose of society management:</p>
+      <ul style="padding-left:18px;margin:6px 0">
+        <li>Society details (name, address, registration number)</li>
+        <li>Member details (name, flat, mobile, Aadhaar — for nominee records only)</li>
+        <li>Tenant details (name, contact, lease details)</li>
+        <li>Financial records (maintenance dues, payments, accounts)</li>
+        <li>Nominee details (name, relationship, contact, Aadhaar)</li>
+      </ul>
+      <p>All data is stored securely on <strong>Supabase</strong> (SOC 2 Type II certified) servers and is accessible only to authorised admins of your society.</p>
+
+      <h4 style="color:#0f172a;margin:14px 0 6px">3. Data Ownership</h4>
+      <p>Your society's data belongs to you. FGVL / SocietyOS does not sell, share, or use your data for any commercial purpose other than providing this service. Upon plan cancellation, data can be exported in CSV format upon request.</p>
+
+      <h4 style="color:#0f172a;margin:14px 0 6px">4. Aadhaar Data Disclaimer</h4>
+      <p><strong>Important:</strong> SocietyOS is <em>not</em> an Aadhaar Authentication Service Provider (ASP) authorised by UIDAI. Aadhaar numbers stored in the system (for nominee records) are used solely for internal identification and are <strong>not verified or authenticated</strong> against UIDAI databases. Users are advised not to treat this as an official KYC process.</p>
+
+      <h4 style="color:#0f172a;margin:14px 0 6px">5. Security</h4>
+      <p>We employ industry-standard security practices including encrypted data transmission (HTTPS/TLS), role-based access control (Master Admin & Society Admin), and Row Level Security (RLS) on all database tables. However, no system is 100% breach-proof and FGVL is not liable for unauthorised access resulting from user negligence (e.g. sharing passwords).</p>
+
+      <h4 style="color:#0f172a;margin:14px 0 6px">6. Subscription & Billing</h4>
+      <p>Plans are billed monthly or annually as selected. A 7-day free trial is available for new societies. After the trial, continued use requires an active paid subscription. FGVL reserves the right to suspend accounts with overdue payments after a 7-day grace period.</p>
+
+      <h4 style="color:#0f172a;margin:14px 0 6px">7. Limitation of Liability</h4>
+      <p>SocietyOS is a management tool. FGVL is not liable for any financial, legal, or operational decisions made by society administrators based on data in the system. Always verify critical financial data independently.</p>
+
+      <h4 style="color:#0f172a;margin:14px 0 6px">8. Governing Law</h4>
+      <p>These terms are governed by the laws of India. Any disputes are subject to the jurisdiction of courts in Mumbai, Maharashtra.</p>
+
+      <h4 style="color:#0f172a;margin:14px 0 6px">9. Contact</h4>
+      <p>For data requests, privacy concerns, or legal queries contact us at <strong>felevareglobal@gmail.com</strong>.</p>
+
+    </div>
+    <div class="md-foot">
+      <button class="btn btn-p" onclick="closeModal('mo-terms');document.getElementById('su-consent').checked=true">I Agree & Accept</button>
+    </div>
+  </div>
+</div>
+
+<!-- FIXED DEPOSIT MODAL -->
+<div class="mo" id="mo-fd">
+  <div class="md" style="max-width:520px">
+    <div class="md-head"><h3 id="fd-modal-title">Add Fixed Deposit</h3><button class="md-close" onclick="closeModal('mo-fd')"><i class="ti ti-x"></i></button></div>
+    <div class="md-body"><div class="fg">
+      <div class="fd"><i class="ti ti-building-bank" style="font-size:12px"></i> Bank Details</div>
+      <div class="fi"><label>Bank Name *</label><input id="fd-bank" placeholder="e.g. State Bank of India"></div>
+      <div class="fi"><label>Branch</label><input id="fd-branch" placeholder="Branch name"></div>
+      <div class="fi"><label>FD Number *</label><input id="fd-number" placeholder="FD account / receipt number"></div>
+      <div class="fi"><label>FD Type</label><select id="fd-type"><option value="cumulative">Cumulative (interest at maturity)</option><option value="non-cumulative">Non-Cumulative (periodic interest)</option></select></div>
+
+      <div class="fd"><i class="ti ti-currency-rupee" style="font-size:12px"></i> Financial Details</div>
+      <div class="fi"><label>Principal Amount (₹) *</label><input id="fd-principal-amt" type="number" placeholder="e.g. 500000"></div>
+      <div class="fi"><label>Interest Rate (% p.a.) *</label><input id="fd-rate" type="number" step="0.01" placeholder="e.g. 7.5"></div>
+      <div class="fi"><label>Start Date *</label><input id="fd-start" type="date"></div>
+      <div class="fi"><label>Maturity Date *</label><input id="fd-maturity" type="date" onchange="calcFDMaturity()"></div>
+      <div class="fi"><label>Maturity Amount (₹)</label><input id="fd-maturity-amt" type="number" placeholder="Auto-calculated or enter manually" readonly style="background:#f8fafc"></div>
+
+      <div class="fd"><i class="ti ti-refresh" style="font-size:12px"></i> Renewal & Status</div>
+      <div class="fi"><label>Auto-Renewal</label><select id="fd-renewal"><option value="yes">Yes — auto renews on maturity</option><option value="no">No — will be encashed</option></select></div>
+      <div class="fi"><label>Status</label><select id="fd-status"><option value="active">Active</option><option value="matured">Matured</option><option value="encashed">Encashed</option></select></div>
+      <div class="fi full"><label>Notes</label><textarea id="fd-notes" rows="2" placeholder="Any remarks…"></textarea></div>
+    </div></div>
+    <div class="md-foot">
+      <button class="btn" onclick="closeModal('mo-fd')">Cancel</button>
+      <button class="btn btn-p" onclick="saveFD()"><i class="ti ti-check"></i> Save FD</button>
+    </div>
+  </div>
+</div>
+
+<!-- REFERRAL CODE MODAL -->
+<div class="mo" id="mo-referral">
+  <div class="md" style="max-width:460px">
+    <div class="md-head"><h3 id="ref-modal-title">Add Referral Code</h3><button class="md-close" onclick="closeModal('mo-referral')"><i class="ti ti-x"></i></button></div>
+    <div class="md-body"><div class="fg">
+      <div class="fi"><label>Referral Code *</label><input id="ref-code" placeholder="e.g. SP001" style="text-transform:uppercase" oninput="this.value=this.value.toUpperCase()"></div>
+      <div class="fi"><label>Salesperson Name *</label><input id="ref-name" placeholder="Full name"></div>
+      <div class="fi"><label>Mobile</label><input id="ref-mobile" type="tel" placeholder="10-digit number"></div>
+      <div class="fi"><label>Email</label><input id="ref-email" type="email" placeholder="salesperson@email.com"></div>
+      <div class="fi"><label>Commission %</label><input id="ref-commission" type="number" min="0" max="100" step="0.5" placeholder="e.g. 10"></div>
+      <div class="fi"><label>Status</label><select id="ref-status"><option value="active">Active</option><option value="inactive">Inactive</option></select></div>
+      <div class="fi full"><label>Notes</label><textarea id="ref-notes" rows="2" placeholder="Any notes about this salesperson…"></textarea></div>
+    </div></div>
+    <div class="md-foot">
+      <button class="btn" onclick="closeModal('mo-referral')">Cancel</button>
+      <button class="btn btn-p" onclick="saveReferral()"><i class="ti ti-check"></i> Save</button>
+    </div>
+  </div>
+</div>
 
 <!-- SIGN UP / REQUEST ACCESS MODAL -->
 <div class="mo" id="mo-signup">
@@ -579,7 +783,17 @@ tr:hover td{background:#fafafa}
       <button class="md-close" onclick="closeModal('mo-signup')"><i class="ti ti-x"></i></button>
     </div>
     <div class="md-body">
-      <!-- Plan Selection at top -->
+      <!-- Billing toggle FIRST so plan cards render with correct prices -->
+      <div style="display:flex;align-items:center;justify-content:center;gap:12px;margin-bottom:14px">
+        <span style="font-size:13px;color:#64748b;font-weight:500">Billing Cycle:</span>
+        <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:13px;font-weight:600;color:${''}" onclick="">
+          <input type="radio" name="su-billing-radio" value="monthly" checked onchange="document.getElementById('su-billing').value='monthly';toggleSignupBilling('monthly')"> Monthly
+        </label>
+        <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:13px;font-weight:600;color:#16a34a">
+          <input type="radio" name="su-billing-radio" value="yearly" onchange="document.getElementById('su-billing').value='yearly';toggleSignupBilling('yearly')"> Yearly <span style="font-size:10px;background:#dcfce7;color:#16a34a;padding:2px 6px;border-radius:10px;font-weight:700">SAVE 20%</span>
+        </label>
+      </div>
+      <!-- Plan Selection -->
       <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:20px" id="signup-plan-select">
         <!-- Plan cards loaded dynamically from database -->
         <div id="signup-plan-cards" style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;width:100%">
@@ -607,9 +821,17 @@ tr:hover td{background:#fafafa}
         <div class="fi"><label>Email *</label><input id="su-email" type="email" placeholder="your@email.com"></div>
         <div class="fi"><label>Mobile *</label><input id="su-mobile" type="tel" placeholder="+91 XXXXX XXXXX"></div>
 
-        <div class="fd"><i class="ti ti-calendar" style="font-size:12px"></i> Billing Preference</div>
-        <div class="fi"><label>Billing Cycle</label><select id="su-billing"><option value="monthly">Monthly</option><option value="yearly">Yearly (Save 20%)</option></select></div>
-        <div class="fi full"><label>Message / Notes (optional)</label><textarea id="su-notes" rows="2" placeholder="Any specific requirements or questions…"></textarea></div>
+        <input type="hidden" id="su-billing" value="monthly">
+        <div class="fd"><i class="ti ti-tag" style="font-size:12px"></i> Referral (optional)</div>
+        <div class="fi"><label>Referral Code</label><input id="su-ref-code" placeholder="e.g. SP001" style="text-transform:uppercase"></div>
+        <div class="fi"><label>Referred By (Name)</label><input id="su-ref-name" placeholder="Salesperson name"></div>
+
+        <div class="fi full" style="margin-top:4px">
+          <label style="display:flex;align-items:flex-start;gap:8px;cursor:pointer;font-weight:400;font-size:12px;color:#475569">
+            <input type="checkbox" id="su-consent" style="margin-top:2px;flex-shrink:0">
+            <span>I agree to the <a href="#" onclick="openModal('mo-terms');return false" style="color:#2563eb;text-decoration:underline">Terms of Service, Privacy Policy & Data Processing Agreement</a>. I understand that SocietyOS will collect and store society and member data on secure servers for the purpose of property management.</span>
+          </label>
+        </div>
       </div>
       <div id="su-msg" style="margin-top:12px;font-size:12px;padding:10px;border-radius:7px;display:none"></div>
     </div>
@@ -656,6 +878,10 @@ tr:hover td{background:#fafafa}
       <div class="fi"><label>Secretary Name</label><input id="s-sec"></div>
       <div class="fi"><label>Secretary Phone</label><input id="s-secph" type="tel"></div>
       <div class="fi"><label>Default Maintenance (₹)</label><input id="s-maint" type="number"></div>
+      <div class="fd" style="grid-column:1/-1"><i class="ti ti-tag" style="font-size:12px"></i> Referral</div>
+      <div class="fi"><label>Referral Code</label><input id="s-ref-code" placeholder="e.g. SP001" style="text-transform:uppercase"></div>
+      <div class="fi"><label>Referred By (Name)</label><input id="s-ref-name" placeholder="Salesperson name"></div>
+      <div class="fi"><label>Commission %</label><input id="s-ref-commission" type="number" min="0" max="100" step="0.5" placeholder="e.g. 10"></div>
     </div></div>
     <div class="md-foot">
       <button class="btn" onclick="closeModal('mo-society')">Cancel</button>
@@ -757,6 +983,13 @@ tr:hover td{background:#fafafa}
       <div class="fi"><label>Status</label><select id="m-stat"><option value="active">Active</option><option value="inactive">Inactive</option><option value="notice_period">Notice Period</option></select></div>
       <div class="fi full"><label>Emergency Contact</label><input id="m-emerg"></div>
       <div class="fi full"><label>Notes</label><textarea id="m-notes"></textarea></div>
+
+      <div class="fd"><i class="ti ti-shield-check" style="font-size:12px"></i> Nominees (up to 4)</div>
+      <div class="fi full" style="padding:0">
+        <div id="nominees-container" style="display:flex;flex-direction:column;gap:10px;padding:2px 0"></div>
+        <button type="button" class="btn" id="add-nominee-btn" onclick="addNomineeRow()" style="margin-top:8px;font-size:12px"><i class="ti ti-plus"></i> Add Nominee</button>
+      </div>
+
     </div></div>
     <div class="md-foot">
       <button class="btn" onclick="closeModal('mo-member')">Cancel</button>
@@ -1073,6 +1306,28 @@ tr:hover td{background:#fafafa}
 
 <script>
 // ═══════════════════════════════════════════════
+// SECURITY WARNING
+// ═══════════════════════════════════════════════
+(function(){
+  const s = [
+    '%c⚠️ SocietyOS Security Warning',
+    'color:#ef4444;font-size:18px;font-weight:bold'
+  ];
+  console.log(...s);
+  console.log('%cThis is a browser feature intended for developers. Do NOT paste any code here if someone asked you to — this is a common scam known as "self-XSS".', 'color:#64748b;font-size:13px');
+})();
+
+// Input sanitization — strip HTML tags from user input
+function sanitize(str) {
+  if (!str) return '';
+  return String(str).replace(/[<>'"]/g, c => ({'<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));
+}
+
+// Signup rate limiting — max 3 attempts per session
+let _signupAttempts = 0;
+const MAX_SIGNUP_ATTEMPTS = 3;
+
+// ═══════════════════════════════════════════════
 // CONFIG
 // ═══════════════════════════════════════════════
 const URL  = 'https://mbmrzyhcjivrbiaayiah.supabase.co';
@@ -1116,79 +1371,35 @@ function closeModal(id) { $(id).classList.remove('show'); }
 function daysUntil(d)   { if(!d) return 9999; return Math.ceil((new Date(d)-new Date())/86400000); }
 function wings()        { return (CS?.wings||'A,B,C,D').split(',').map(w=>w.trim()); }
 
-// ── WhatsApp Messaging ──
-function sendWhatsApp(mobile, message) {
-  if (!mobile) { toast('No mobile number found', false); return; }
-  // Clean mobile number — remove spaces, dashes, brackets
-  let num = mobile.toString().replace(/[^0-9+]/g,'');
-  // Add India country code if not present
-  if (!num.startsWith('+') && !num.startsWith('91')) num = '91' + num;
-  num = num.replace('+','');
-  const encoded = encodeURIComponent(message);
-  const url = `https://wa.me/${num}?text=${encoded}`;
-  window.open(url, '_blank');
+// ═══════════════════════════════════════════════
+// WHATSAPP HELPERS
+// ═══════════════════════════════════════════════
+function waLink(phone, msg) {
+  const num = '91' + String(phone).replace(/\D/g,'').slice(-10);
+  return `https://wa.me/${num}?text=${encodeURIComponent(msg)}`;
 }
-
-function waMsgDue(member, due, society) {
-  return `Dear ${member},
-
-Your maintenance due of ₹${Number(due.amount||0).toLocaleString('en-IN')} for *${due.month}* is *pending*.
-
-Due Date: ${due.due_date||'—'}
-
-Please pay at the earliest to avoid late fees.
-
-— ${society||'Society Management'}`;
+function waSend(phone, msg) {
+  if (!phone) { toast('No phone number saved for this person', false); return; }
+  window.open(waLink(phone, msg), '_blank');
 }
-
-function waMsgPaid(member, due, society) {
-  return `Dear ${member},
-
-✅ We have received your maintenance payment of ₹${Number(due.amount||0).toLocaleString('en-IN')} for *${due.month}*.
-
-Thank you for the timely payment!
-
-— ${society||'Society Management'}`;
-}
-
-function waMsgRent(tenant, rent, society) {
-  return `Dear ${tenant},
-
-Your rent of ₹${Number(rent.amount||0).toLocaleString('en-IN')} for *${rent.month}* is *pending*.
-
-Due Date: ${rent.due_date||'—'}
-
-Please pay at the earliest.
-
-— ${society||'Society Management'}`;
-}
-
-function waMsgNotice(member, notice, society) {
-  return `Dear ${member},
-
-📢 *${notice.title}*
-
-${notice.body}
-
-— ${society||'Society Management'}`;
-}
-
-function waMsgGeneral(member, society) {
-  return `Dear ${member},
-
-`;
+function waSendAll(phoneList, msg) {
+  const valid = phoneList.filter(Boolean);
+  if (!valid.length) { toast('No phone numbers found', false); return; }
+  valid.forEach((ph, i) => setTimeout(() => window.open(waLink(ph, msg), '_blank'), i * 400));
+  toast(`Opening WhatsApp for ${valid.length} member(s)…`);
 }
 
 // ── Universal CSV Download (works on all browsers including mobile) ──
-function downloadCSV(rows, filename) {
+function downloadCSV(rows, filename, rawCsv, rawFilename) {
   try {
     // Add BOM for Excel compatibility with UTF-8
     const BOM = '\uFEFF';
-    const csv = BOM + rows.map(r => r.map(x => {
+    // Accept either rows array or raw CSV string
+    const csv = rawCsv ? (BOM + rawCsv) : BOM + rows.map(r => r.map(x => {
       const val = String(x === null || x === undefined ? '' : x);
-      // Escape quotes and wrap in quotes
       return '"' + val.replace(/"/g, '""') + '"';
     }).join(',')).join('\r\n');
+    const fname = rawFilename || filename;
 
     // Method 1: Blob + anchor (modern browsers)
     try {
@@ -1196,7 +1407,7 @@ function downloadCSV(rows, filename) {
       const url  = URL.createObjectURL(blob);
       const a    = document.createElement('a');
       a.href     = url;
-      a.download = filename;
+      a.download = fname;
       a.style.display = 'none';
       document.body.appendChild(a);
       a.click();
@@ -1212,7 +1423,7 @@ function downloadCSV(rows, filename) {
       const dataUri = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csv);
       const a = document.createElement('a');
       a.href = dataUri;
-      a.download = filename;
+      a.download = fname;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
@@ -1257,11 +1468,26 @@ const PAGE_META = {
   pricing:   ()=> 'Choose the right plan for your society',
   payments:  ()=> 'Track all subscription payments from societies',
   'signup-requests': ()=> 'Review and approve society registration requests',
+  'referrals':       ()=> 'Manage referral codes and track salesperson performance',
+  'fy-overview':     ()=> 'Financial Year performance across all societies',
+  'db-monitor':      ()=> 'Database usage, storage & growth monitoring',
   accounts:  ()=> CS ? CS.name+' — Income & Expenses' : '',
   reports:   ()=> CS ? CS.name+' — Reports' : ''
 };
 
 function goPage(id) {
+  // ── FD intercept — routes to Accounts page with FD tab active ──
+  if (id==='fd') {
+    goPage('accounts');
+    setTimeout(()=>switchAccTab('fd'), 50);
+    document.querySelectorAll('.ni').forEach(n=>n.classList.remove('active'));
+    const niF = document.querySelector('.ni[data-page="fd"]');
+    if (niF) niF.classList.add('active');
+    $('pg-title').textContent = '🏦 Fixed Deposits';
+    $('pg-meta').textContent = CS ? CS.name+' — Fixed Deposit Register' : '';
+    if (window.innerWidth<768) { closeSidebar(); }
+    return;
+  }
   // ── Plan lock check (for society admins only) ──
   const lockedMods = ['services','amenities','tenants','rent','accounts','reports'];
   const checkId = id==='rent' ? 'tenants' : id;
@@ -1271,8 +1497,9 @@ function goPage(id) {
     const lockPg = $('page-'+id);
     if (lockPg) {
       lockPg.classList.add('show');
+      // Remove existing content so nothing is accessible underneath
       let ld = lockPg.querySelector('.lock-notice');
-      if (!ld) { ld=document.createElement('div'); ld.className='lock-notice'; lockPg.insertBefore(ld,lockPg.firstChild); }
+      if (!ld) { ld=document.createElement('div'); ld.className='lock-notice'; lockPg.innerHTML=''; lockPg.appendChild(ld); }
       ld.innerHTML = getLockedHTML(checkId);
     }
     const niL = document.querySelector('.ni[data-page="'+id+'"]');
@@ -1306,6 +1533,9 @@ function goPage(id) {
   if (id==='pricing')   renderPricing();
   if (id==='payments')        renderPayments();
   if (id==='signup-requests') renderSignupRequests();
+  if (id==='referrals')       renderReferrals();
+  if (id==='fy-overview')     { populateFYOverviewSelector(); renderFYOverview(); }
+  if (id==='db-monitor')      renderDBMonitor();
   if (id==='tenants')   renderTenants();
   if (id==='rent')      renderRent();
   if (id==='accounts')  renderAccounts();
@@ -1338,63 +1568,221 @@ document.addEventListener('DOMContentLoaded', function() {
   // Mobile menu shown via CSS media query
   // Enter key on login
   document.addEventListener('keydown', e => {
-    if (e.key==='Enter' && $('login-screen').style.display!=='none') doLogin();
+    if (e.key==='Enter' && $('login-screen').style.display!=='none') {
+      if ($('login-step2').style.display!=='none') verifyOTP();
+      else doLogin();
+    }
   });
 });
 
 // ═══════════════════════════════════════════════
 // AUTH
 // ═══════════════════════════════════════════════
+const OTP_API_KEY = '271e6f4b-6ad6-11f1-8f15-0200cd936042';
+let _otpSessionId = null;
+let _otpAdmin = null;
+let _otpTimerInterval = null;
+
 async function doLogin() {
   const email = fv('li-email').trim().toLowerCase();
   const pass  = fv('li-pass').trim();
-  $('li-err').textContent='';
+  $('li-err').textContent = '';
   if (!email||!pass) { $('li-err').textContent='Enter email and password'; return; }
-  $('li-btn').textContent='Signing in…'; $('li-btn').disabled=true;
+  $('li-btn').innerHTML='<i class="ti ti-loader"></i> Signing in…'; $('li-btn').disabled=true;
   try {
-    // Fetch all admins then match client-side — avoids any query encoding issues
     const all = await GET('admins','?order=email');
     const match = all.filter(a => a.email.toLowerCase()===email && a.password_hash===pass);
     if (!match.length) {
       $('li-err').textContent='Invalid email or password';
-      $('li-btn').textContent='Sign In'; $('li-btn').disabled=false;
+      $('li-btn').innerHTML='<i class="ti ti-login" style="margin-right:6px"></i> Sign In';
+      $('li-btn').disabled=false;
       return;
     }
-    CU = match[0];
-    // Show app
+    _otpAdmin = match[0];
+    // Check if admin has mobile number
+    if (!_otpAdmin.mobile) {
+      // No mobile — skip OTP, log in directly
+      await completeLogin(_otpAdmin);
+      return;
+    }
+    // Send OTP
+    await sendOTP(_otpAdmin.mobile);
+  } catch(e) {
+    $('li-err').textContent='Error: '+e.message;
+    $('li-btn').innerHTML='<i class="ti ti-login" style="margin-right:6px"></i> Sign In';
+    $('li-btn').disabled=false;
+  }
+}
+
+async function sendOTP(mobile) {
+  const phone = String(mobile).replace(/\D/g,'').slice(-10);
+  $('li-btn').innerHTML='<i class="ti ti-loader"></i> Sending OTP…';
+  $('li-err').textContent = '';
+
+  // Try multiple CORS proxies in sequence
+  async function callAPI(url) {
+    const proxies = [
+      `https://corsproxy.io/?${encodeURIComponent(url)}`,
+      `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`,
+      `https://thingproxy.freeboard.io/fetch/${url}`
+    ];
+    for (const proxy of proxies) {
+      try {
+        const res = await fetch(proxy, { signal: AbortSignal.timeout(8000) });
+        const text = await res.text();
+        // allorigins wraps in {contents:...}, others return raw
+        let jsonStr = text;
+        try { const wrapped = JSON.parse(text); if (wrapped.contents) jsonStr = wrapped.contents; } catch(e){}
+        return JSON.parse(jsonStr);
+      } catch(e) { console.warn('Proxy failed:', proxy, e.message); }
+    }
+    throw new Error('All proxies failed');
+  }
+
+  try {
+    // Try Voice first (account has Voice OTP active)
+    let data = await callAPI(`https://2factor.in/API/V1/${OTP_API_KEY}/VOICE/${phone}/AUTOGEN`);
+
+    // If Voice fails, try SMS
+    if (data.Status !== 'Success') {
+      console.warn('Voice OTP failed, trying SMS:', data.Details);
+      data = await callAPI(`https://2factor.in/API/V1/${OTP_API_KEY}/SMS/${phone}/AUTOGEN`);
+    }
+
+    if (data.Status === 'Success') {
+      _otpSessionId = data.Details;
+      $('login-step1').style.display = 'none';
+      $('login-step2').style.display = 'block';
+      $('otp-sent-msg').textContent = `OTP sent to +91 XXXXXX${phone.slice(-4)} (via SMS or Call)`;
+      $('li-otp').value = '';
+      $('li-otp').focus();
+      $('otp-err').textContent = '';
+      $('li-btn').innerHTML='<i class="ti ti-login" style="margin-right:6px"></i> Sign In';
+      $('li-btn').disabled=false;
+      startOTPTimer();
+    } else {
+      $('li-err').textContent = 'Failed to send OTP: ' + (data.Details||'Unknown error');
+      $('li-btn').innerHTML='<i class="ti ti-login" style="margin-right:6px"></i> Sign In';
+      $('li-btn').disabled=false;
+    }
+  } catch(e) {
+    $('li-err').textContent = 'OTP service error: ' + e.message;
+    console.error('OTP error:', e);
+    $('li-btn').innerHTML='<i class="ti ti-login" style="margin-right:6px"></i> Sign In';
+    $('li-btn').disabled=false;
+  }
+}
+
+async function verifyOTPCall(otp) {
+  async function callAPI(url) {
+    const proxies = [
+      `https://corsproxy.io/?${encodeURIComponent(url)}`,
+      `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`
+    ];
+    for (const proxy of proxies) {
+      try {
+        const res = await fetch(proxy, { signal: AbortSignal.timeout(8000) });
+        const text = await res.text();
+        let jsonStr = text;
+        try { const wrapped = JSON.parse(text); if (wrapped.contents) jsonStr = wrapped.contents; } catch(e){}
+        return JSON.parse(jsonStr);
+      } catch(e) { console.warn('Proxy failed:', proxy, e.message); }
+    }
+    throw new Error('Verification proxy failed');
+  }
+  return callAPI(`https://2factor.in/API/V1/${OTP_API_KEY}/SMS/VERIFY/${_otpSessionId}/${otp}`);
+}
+
+function startOTPTimer() {
+  let seconds = 30;
+  $('otp-resend-btn').style.display = 'none';
+  $('otp-timer').textContent = `Resend in ${seconds}s`;
+  clearInterval(_otpTimerInterval);
+  _otpTimerInterval = setInterval(() => {
+    seconds--;
+    if (seconds <= 0) {
+      clearInterval(_otpTimerInterval);
+      $('otp-timer').textContent = '';
+      $('otp-resend-btn').style.display = 'inline';
+    } else {
+      $('otp-timer').textContent = `Resend in ${seconds}s`;
+    }
+  }, 1000);
+}
+
+async function verifyOTP() {
+  const otp = fv('li-otp').trim();
+  $('otp-err').textContent = '';
+  if (!otp || otp.length < 4) { $('otp-err').textContent = 'Enter the OTP sent to your mobile'; return; }
+  $('otp-btn').innerHTML='<i class="ti ti-loader"></i> Verifying…'; $('otp-btn').disabled=true;
+  try {
+    const data = await verifyOTPCall(otp);
+    if (data.Status === 'Success' && data.Details === 'OTP Matched') {
+      clearInterval(_otpTimerInterval);
+      await completeLogin(_otpAdmin);
+    } else {
+      $('otp-err').textContent = 'Invalid OTP. Please try again.';
+      $('otp-btn').innerHTML='<i class="ti ti-shield-check" style="margin-right:6px"></i> Verify OTP';
+      $('otp-btn').disabled=false;
+    }
+  } catch(e) {
+    $('otp-err').textContent = 'Verification error: '+e.message;
+    $('otp-btn').innerHTML='<i class="ti ti-shield-check" style="margin-right:6px"></i> Verify OTP';
+    $('otp-btn').disabled=false;
+  }
+}
+
+async function resendOTP() {
+  $('otp-resend-btn').style.display = 'none';
+  $('otp-err').textContent = '';
+  await sendOTP(_otpAdmin.mobile);
+  toast('OTP resent!');
+}
+
+function backToLogin() {
+  clearInterval(_otpTimerInterval);
+  _otpSessionId = null; _otpAdmin = null;
+  $('login-step1').style.display = 'block';
+  $('login-step2').style.display = 'none';
+  $('li-otp').value = '';
+  $('otp-err').textContent = '';
+}
+
+async function completeLogin(admin) {
+  CU = admin;
+  try {
     $('login-screen').style.display='none';
     $('app-screen').classList.add('show');
     $('u-name').textContent=CU.name;
     $('sb-role').textContent=CU.role==='master'?'Master Admin':'Society Admin';
-
     if (CU.role==='master') {
-      // Inject master nav
       $('master-nav').innerHTML = `
         <div class="sb-sec">Master Admin</div>
         <div class="ni" data-page="societies"><i class="ti ti-building-skyscraper"></i> All Societies</div>
+        <div class="ni" data-page="fy-overview"><i class="ti ti-chart-bar"></i> FY Overview</div>
+        <div class="ni" data-page="db-monitor"><i class="ti ti-database"></i> DB Monitor</div>
         <div class="ni" data-page="admins"><i class="ti ti-shield-check"></i> Manage Admins</div>
         <div class="ni" data-page="signup-requests"><i class="ti ti-user-plus"></i> Sign Up Requests <span id="req-badge" style="background:#ef4444;color:#fff;font-size:9px;padding:1px 6px;border-radius:10px;margin-left:4px;display:none">0</span></div>
+        <div class="ni" data-page="referrals"><i class="ti ti-tag"></i> Referral Codes</div>
         <div class="ni" data-page="actlog"><i class="ti ti-history"></i> Activity Log</div>
         <div class="ni" data-page="plans"><i class="ti ti-packages"></i> Plans & Pricing</div>
         <div class="ni" data-page="payments"><i class="ti ti-cash"></i> Subscription Payments</div>`;
-      // Check pending requests count
       checkPendingRequests();
-      // Load all societies into switcher
       await loadAllSocs();
     } else {
-      // Society admin — hide switcher, load their society
       $('soc-switcher-wrap').style.display='none';
       if (CU.society_id) {
         const socs = await GET('societies',`?id=eq.${CU.society_id}`);
         CS = socs[0]||null;
-        if (CS) await loadSocData();
+        if (CS) { await loadSocData(); await initFY(); }
       }
     }
     goPage('dashboard');
   } catch(e) {
     $('li-err').textContent='Connection error: '+e.message;
+    $('login-screen').style.display='flex';
+    $('app-screen').classList.remove('show');
   }
-  $('li-btn').textContent='Sign In'; $('li-btn').disabled=false;
 }
 
 function doLogout() {
@@ -1429,7 +1817,9 @@ async function doResetPass() {
 // SOCIETIES
 // ═══════════════════════════════════════════════
 async function loadAllSocs() {
-  allSocs = await GET('societies','?order=name');
+  const all = await GET('societies','?order=name');
+  window._archivedSocs = all.filter(s => s.is_deleted);
+  allSocs = all.filter(s => !s.is_deleted);
   const sel=$('soc-switcher');
   sel.innerHTML='<option value="">— Select Society —</option>'+allSocs.map(s=>`<option value="${s.id}">${s.name}</option>`).join('');
   if (allSocs.length) { sel.value=allSocs[0].id; await switchSociety(allSocs[0].id); }
@@ -1438,7 +1828,10 @@ async function loadAllSocs() {
 async function switchSociety(id) {
   if (!id) return;
   CS = allSocs.find(s=>s.id===id)||null;
-  if (CS) await loadSocData();
+  if (CS) {
+    await loadSocData();
+    await initFY();
+  }
   refreshDashboard();
   // Show plan tag in topbar
   if (CS) {
@@ -1464,14 +1857,16 @@ async function loadSocData() {
 
 function renderSocieties() {
   const g=$('soc-grid');
-  if (!allSocs.length) { g.innerHTML='<p class="empty">No societies yet. Add your first one.</p>'; return; }
-  g.innerHTML=allSocs.map(s=>`
+  const archived = window._archivedSocs || [];
+  if (!allSocs.length && !archived.length) { g.innerHTML='<p class="empty">No societies yet. Add your first one.</p>'; return; }
+  g.innerHTML = allSocs.map(s=>`
     <div class="scard">
       <div style="display:flex;justify-content:space-between;align-items:flex-start">
         <div><h4>${s.name}</h4><p>${[s.city,s.state].filter(Boolean).join(' · ')||'—'}</p></div>
         <div style="display:flex;gap:4px">
+          <button class="ab" onclick="exportSocietyData('${s.id}','${s.name.replace(/'/g,"\\'")}') " title="Export Data"><i class="ti ti-download"></i></button>
           <button class="ab" onclick="editSociety('${s.id}')" title="Edit"><i class="ti ti-edit"></i></button>
-          <button class="ab" onclick="deleteSociety('${s.id}')" style="color:#ef4444" title="Delete"><i class="ti ti-trash"></i></button>
+          <button class="ab" onclick="deleteSociety('${s.id}')" style="color:#ef4444" title="Archive"><i class="ti ti-archive"></i></button>
         </div>
       </div>
       <div class="scard-stats">
@@ -1482,8 +1877,34 @@ function renderSocieties() {
         <span class="badge bb" style="font-size:9px">${s.registration_no||'No Reg No.'}</span>
         <span class="plan-tag ${PLAN_BG[s.plan||'basic']}">${(s.plan||'BASIC').toUpperCase()}</span>
         ${s.plan_expiry&&daysUntil(s.plan_expiry)<=30?`<span class="badge br" style="font-size:9px">Expires ${s.plan_expiry}</span>`:''}
+        ${s.referral_code?`<span class="badge" style="font-size:9px;background:#ede9fe;color:#6d28d9"><i class="ti ti-tag" style="font-size:9px"></i> ${s.referral_code}${s.referred_by?' · '+s.referred_by:''}</span>`:''}
       </div>
-    </div>`).join('');
+    </div>`).join('') +
+
+  (archived.length ? `
+    <div style="grid-column:1/-1;margin-top:20px">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
+        <span style="font-size:13px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:.5px">🗄️ Archived Societies (${archived.length})</span>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px">
+        ${archived.map(s=>`
+          <div class="scard" style="opacity:.6;border-style:dashed">
+            <div style="display:flex;justify-content:space-between;align-items:flex-start">
+              <div><h4 style="color:#94a3b8">${s.name}</h4>
+                <p style="font-size:10px;color:#ef4444">Archived on ${s.deleted_at?.substring(0,10)||'—'} by ${s.deleted_by||'—'}</p>
+              </div>
+              <div style="display:flex;gap:4px">
+                <button class="ab" onclick="exportSocietyData('${s.id}','${s.name.replace(/'/g,"\\'")}') " title="Export Data"><i class="ti ti-download"></i></button>
+                <button class="ab" onclick="restoreSociety('${s.id}')" style="color:#16a34a" title="Restore Society"><i class="ti ti-rotate-clockwise"></i></button>
+              </div>
+            </div>
+            <div style="margin-top:6px">
+              <span class="badge br" style="font-size:9px">ARCHIVED</span>
+              <span class="plan-tag ${PLAN_BG[s.plan||'basic']}" style="font-size:9px">${(s.plan||'BASIC').toUpperCase()}</span>
+            </div>
+          </div>`).join('')}
+      </div>
+    </div>` : '');
 }
 
 function openSocietyModal(id=null) {
@@ -1493,6 +1914,8 @@ function openSocietyModal(id=null) {
   sv('s-city',s?.city); sv('s-state',s?.state); sv('s-pin',s?.pincode);
   sv('s-units',s?.total_units); sv('s-wings',s?.wings); sv('s-sec',s?.secretary_name);
   sv('s-secph',s?.secretary_phone); sv('s-maint',s?.default_maintenance);
+  sv('s-ref-code',s?.referral_code); sv('s-ref-name',s?.referred_by);
+  sv('s-ref-commission',s?.commission_percent);
   $('soc-modal-title').textContent=id?'Edit Society':'Add Society';
   openModal('mo-society');
 }
@@ -1501,15 +1924,135 @@ function editSociety(id) { openSocietyModal(id); }
 async function saveSociety() {
   const name=fv('s-name').trim();
   if (!name) { toast('Society name required',false); return; }
-  const d={name,address:fv('s-addr'),registration_no:fv('s-reg'),city:fv('s-city'),state:fv('s-state'),pincode:fv('s-pin'),total_units:parseInt(fv('s-units'))||null,wings:fv('s-wings'),secretary_name:fv('s-sec'),secretary_phone:fv('s-secph'),default_maintenance:parseFloat(fv('s-maint'))||0};
+  const d={name,address:fv('s-addr'),registration_no:fv('s-reg'),city:fv('s-city'),state:fv('s-state'),pincode:fv('s-pin'),total_units:parseInt(fv('s-units'))||null,wings:fv('s-wings'),secretary_name:fv('s-sec'),secretary_phone:fv('s-secph'),default_maintenance:parseFloat(fv('s-maint'))||0,
+    referral_code:fv('s-ref-code').toUpperCase().trim()||null,
+    referred_by:fv('s-ref-name').trim()||null,
+    commission_percent:parseFloat(fv('s-ref-commission'))||null
+  };
   try {
     if (editSocId) await PATCH('societies',editSocId,d); else await POST('societies',d);
     await loadAllSocs(); closeModal('mo-society'); renderSocieties(); toast(editSocId?'Society updated':'Society added');
   } catch(e){toast('Error: '+e.message,false);}
 }
 async function deleteSociety(id) {
-  if (!confirm('Delete this society and ALL its data? This cannot be undone.')) return;
-  try { await DELETE('societies',id); await loadAllSocs(); renderSocieties(); toast('Society deleted'); } catch(e){toast('Error: '+e.message,false);}
+  const s = allSocs.find(x=>x.id===id);
+  if (!s) return;
+
+  // Step 1 — Custom confirmation modal
+  const confirmed = await showDeleteConfirm(s.name);
+  if (!confirmed) return;
+
+  // Step 2 — Export all data before archiving
+  toast('Exporting society data before archiving…');
+  await exportSocietyData(id, s.name);
+
+  // Step 3 — Soft delete (set is_deleted = true, deleted_at = now)
+  try {
+    await PATCH('societies', id, {
+      is_deleted: true,
+      deleted_at: new Date().toISOString(),
+      deleted_by: CU?.email || 'master'
+    });
+    await loadAllSocs();
+    renderSocieties();
+    toast(`"${s.name}" archived successfully. Data exported & recoverable.`);
+  } catch(e) { toast('Error: '+e.message, false); }
+}
+
+function showDeleteConfirm(name) {
+  return new Promise(resolve => {
+    const overlay = document.createElement('div');
+    overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:9999;display:flex;align-items:center;justify-content:center;padding:16px';
+    overlay.innerHTML = `
+      <div style="background:#fff;border-radius:16px;padding:28px;max-width:420px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,.3)">
+        <div style="text-align:center;margin-bottom:16px">
+          <div style="font-size:48px">⚠️</div>
+          <h3 style="font-size:18px;font-weight:700;color:#0f172a;margin:8px 0">Archive Society?</h3>
+          <p style="font-size:13px;color:#475569;line-height:1.6">You are about to archive <strong>"${name}"</strong>.<br>
+          The society will be hidden from the app but <strong>all data will be preserved</strong> and can be restored by Master Admin.<br><br>
+          A <strong>full CSV export</strong> of all data will be downloaded automatically.</p>
+        </div>
+        <div style="background:#fef3c7;border:1px solid #fbbf24;border-radius:8px;padding:10px 14px;font-size:12px;color:#92400e;margin-bottom:16px">
+          <strong>⚡ This will NOT permanently delete data.</strong> Society can be restored anytime from the Archived Societies section.
+        </div>
+        <div style="display:flex;gap:10px">
+          <button id="del-cancel" style="flex:1;padding:10px;border:1px solid #e2e8f0;background:#fff;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600">Cancel</button>
+          <button id="del-confirm" style="flex:1;padding:10px;background:#ef4444;color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600">Archive & Export</button>
+        </div>
+      </div>`;
+    document.body.appendChild(overlay);
+    overlay.querySelector('#del-cancel').onclick  = () => { overlay.remove(); resolve(false); };
+    overlay.querySelector('#del-confirm').onclick = () => { overlay.remove(); resolve(true); };
+  });
+}
+
+async function exportSocietyData(id, name) {
+  try {
+    const [mems, ds, tens, accs, nots, svcs, fds, noms] = await Promise.all([
+      GET('members',    `?society_id=eq.${id}`),
+      GET('dues',       `?society_id=eq.${id}`),
+      GET('tenants',    `?society_id=eq.${id}`),
+      GET('accounts',   `?society_id=eq.${id}`),
+      GET('notices',    `?society_id=eq.${id}`),
+      GET('services',   `?society_id=eq.${id}`),
+      GET('fixed_deposits', `?society_id=eq.${id}`).catch(()=>[]),
+      GET('nominees',   `?society_id=eq.${id}`).catch(()=>[])
+    ]);
+
+    // Build multi-sheet CSV (sections separated by blank lines)
+    let csv = `SOCIETY EXPORT — ${name}\nExported on: ${new Date().toLocaleString('en-IN')}\n\n`;
+
+    const section = (title, headers, rows) => {
+      csv += `=== ${title} ===\n`;
+      csv += headers.map(h=>`"${h}"`).join(',') + '\n';
+      rows.forEach(r => { csv += r.map(v=>`"${String(v??'').replace(/"/g,'""')}"`).join(',') + '\n'; });
+      csv += '\n';
+    };
+
+    section('MEMBERS', ['Wing','Flat','Name','Mobile','Email','Type','Status'],
+      mems.map(m=>[m.wing,m.flat,m.name,m.mobile||'',m.email||'',m.ownership||'',m.status||'']));
+
+    section('DUES', ['Flat','Month','Amount','Late Fee','Discount','Status'],
+      ds.map(d=>[d.flat,d.month,d.amount,d.late_fee||0,d.discount||0,d.status]));
+
+    section('TENANTS', ['Wing','Flat','Tenant Name','Mobile','Rent','Lease Start','Lease End'],
+      tens.map(t=>[t.wing,t.flat,t.tenant_name,t.tenant_mobile||'',t.monthly_rent||'',t.lease_start||'',t.lease_end||'']));
+
+    section('ACCOUNTS', ['Date','Type','Category','Description','Amount','Mode'],
+      accs.map(a=>[a.date,a.type,a.category,a.description||'',a.amount,a.payment_mode||'']));
+
+    section('NOTICES', ['Date','Type','Title','Body','Status'],
+      nots.map(n=>[n.created_at?.substring(0,10),n.type,n.title,n.body||'',n.status]));
+
+    section('SERVICES & AMC', ['Name','Vendor','Expiry Date','Amount','Status'],
+      svcs.map(s=>[s.name,s.vendor||'',s.expiry_date||'',s.amount||'',s.status||'']));
+
+    section('FIXED DEPOSITS', ['Bank','FD Number','Principal','Rate','Start','Maturity','Status'],
+      fds.map(f=>[f.bank_name,f.fd_number,f.principal_amount,f.interest_rate,f.start_date,f.maturity_date,f.status]));
+
+    section('NOMINEES', ['Member ID','Name','Relationship','Mobile','Aadhaar'],
+      noms.map(n=>[n.member_id,n.name,n.relationship||'',n.mobile||'',n.aadhaar||'']));
+
+    const blob = new Blob(['\uFEFF'+csv], {type:'text/csv;charset=utf-8'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${name.replace(/\s/g,'_')}_export_${new Date().toISOString().substring(0,10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  } catch(e) {
+    toast('Export failed: '+e.message, false);
+  }
+}
+
+async function restoreSociety(id) {
+  if (!confirm('Restore this society? It will become active again.')) return;
+  try {
+    await PATCH('societies', id, { is_deleted: false, deleted_at: null, deleted_by: null });
+    await loadAllSocs();
+    renderSocieties();
+    toast('Society restored successfully ✅');
+  } catch(e) { toast('Error: '+e.message, false); }
 }
 
 // ═══════════════════════════════════════════════
@@ -1573,6 +2116,44 @@ function refreshDashboard() {
   $('d-exp').innerHTML=exp.length?'<table style="width:100%;border-collapse:collapse;font-size:12px">'+exp.slice(0,5).map(s=>{const d=daysUntil(s.expiry_date);return`<tr><td style="padding:5px 0;font-weight:600">${s.name}</td><td><span class="badge ${d<=7?'br':'ba'}">${d}d left</span></td></tr>`;}).join('')+'</table>':'<p class="empty">No expirations</p>';
   const oc=notices.filter(n=>n.type==='complaint'&&n.status==='open');
   $('d-comp').innerHTML=oc.length?oc.slice(0,4).map(n=>`<div style="padding:6px 0;border-bottom:1px solid #f1f5f9;font-size:12px"><div style="font-weight:600">${n.title}</div><div style="font-size:10px;color:#94a3b8">${n.flat||'General'}</div></div>`).join(''):'<p class="empty" style="color:#16a34a">✓ No open complaints</p>';
+
+  // Plan banner — only for society admins
+  const banner = $('dash-plan-banner');
+  if (!banner) return;
+  if (CU?.role==='master' || !CS) { banner.style.display='none'; return; }
+
+  const plan = CS?.plan || 'basic';
+  const expiry = CS?.plan_expiry || '';
+  const daysLeft = expiry ? daysUntil(expiry) : null;
+
+  const PLAN_CONFIG = {
+    basic:    { color:'#475569', bg:'#f8fafc', border:'#cbd5e1', icon:'🔹', label:'Basic Plan',    locked:'Services & AMC, Tenant Registry, Accounts & Finance, Reports & Analytics' },
+    standard: { color:'#1e40af', bg:'#eff6ff', border:'#93c5fd', icon:'🔷', label:'Standard Plan', locked:'Accounts & Finance, Reports & Analytics' },
+    premium:  { color:'#5b21b6', bg:'#f5f3ff', border:'#c4b5fd', icon:'💎', label:'Premium Plan',  locked:'' }
+  };
+  const cfg = PLAN_CONFIG[plan] || PLAN_CONFIG.basic;
+
+  banner.style.display = '';
+  banner.innerHTML = `
+    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;
+      background:${cfg.bg};border:1.5px solid ${cfg.border};border-radius:12px;padding:12px 16px">
+      <div style="display:flex;align-items:center;gap:10px">
+        <span style="font-size:22px">${cfg.icon}</span>
+        <div>
+          <div style="font-size:13px;font-weight:700;color:${cfg.color}">${cfg.label}
+            ${expiry?`<span style="font-size:10px;font-weight:400;color:#64748b;margin-left:6px">· Expires ${expiry}${daysLeft!==null&&daysLeft<=30?` <span style="color:#ef4444;font-weight:600">(${daysLeft}d left!)</span>`:''}</span>`:''}
+          </div>
+          ${cfg.locked
+            ? `<div style="font-size:11px;color:#64748b;margin-top:2px">🔒 Locked modules: <strong>${cfg.locked}</strong></div>`
+            : `<div style="font-size:11px;color:#16a34a;margin-top:2px">✅ All modules unlocked — you're on the best plan!</div>`}
+        </div>
+      </div>
+      ${plan!=='premium'
+        ? `<button class="btn btn-p" onclick="goPage('pricing')" style="font-size:12px;white-space:nowrap">
+            <i class="ti ti-crown"></i> Upgrade Plan
+           </button>`
+        : ''}
+    </div>`;
 }
 
 // ═══════════════════════════════════════════════
@@ -1611,12 +2192,64 @@ function renderMembers() {
     <td><span class="badge ${m.status==='active'?'bgr':m.status==='notice_period'?'ba':'bg'}">${m.status||'active'}</span></td>
     <td style="font-size:11px">${[m.vehicle1_no,m.vehicle2_no].filter(Boolean).join(', ')||'—'}</td>
     <td>
+      ${m.mobile?`<button class="wa-btn" onclick="waSend('${m.mobile}','Dear ${m.name}, ')" title="WhatsApp"><svg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='#25D366'><path d='M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z'/></svg></button>`:''}
       <button class="ab" onclick="openMemberModal(${members.indexOf(m)})" title="Edit"><i class="ti ti-edit"></i></button>
-      <button class="ab" onclick="sendWhatsApp('${m.mobile}', waMsgGeneral('${m.name}', CS?.name))" style="color:#16a34a" title="Send WhatsApp"><i class="ti ti-brand-whatsapp"></i></button>
       <button class="ab" onclick="deleteMember('${m.id}')" style="color:#ef4444" title="Delete"><i class="ti ti-trash"></i></button>
     </td>
   </tr>`).join('');
 }
+// ═══════════════════════════════════════════════
+// NOMINEES
+// ═══════════════════════════════════════════════
+const RELATIONSHIPS = ['Spouse','Son','Daughter','Father','Mother','Brother','Sister','Grandson','Granddaughter','Other'];
+
+function renderNomineeRows(list=[]) {
+  const c = $('nominees-container');
+  c.innerHTML = '';
+  (list.length ? list : [{}]).forEach((_,i) => addNomineeRow(list[i]));
+}
+
+function addNomineeRow(data={}) {
+  const c = $('nominees-container');
+  if (c.children.length >= 4) { toast('Maximum 4 nominees allowed', false); return; }
+  const idx = c.children.length + 1;
+  const rel = RELATIONSHIPS.map(r => `<option${data.relationship===r?' selected':''}>${r}</option>`).join('');
+  const row = document.createElement('div');
+  row.className = 'nominee-row';
+  row.style.cssText = 'border:1px solid #e2e8f0;border-radius:8px;padding:10px 12px;background:#f8fafc;position:relative';
+  row.innerHTML = `
+    <div style="font-size:11px;font-weight:600;color:#64748b;margin-bottom:8px;text-transform:uppercase;letter-spacing:.5px">Nominee ${idx}</div>
+    <button type="button" onclick="this.closest('.nominee-row').remove();renumberNominees()" style="position:absolute;top:8px;right:8px;background:none;border:none;cursor:pointer;color:#ef4444;font-size:14px"><i class="ti ti-x"></i></button>
+    <div class="fg" style="gap:8px">
+      <div class="fi"><label style="font-size:11px">Full Name *</label><input class="nom-name" value="${data.name||''}" placeholder="Nominee name"></div>
+      <div class="fi"><label style="font-size:11px">Relationship *</label><select class="nom-rel">${rel}</select></div>
+      <div class="fi"><label style="font-size:11px">Mobile</label><input class="nom-mob" type="tel" value="${data.mobile||''}" placeholder="10-digit number"></div>
+      <div class="fi"><label style="font-size:11px">Aadhaar</label><input class="nom-aadh" value="${data.aadhaar||''}" maxlength="14" placeholder="XXXX XXXX XXXX"></div>
+      <div class="fi" style="grid-column:1/-1"><label style="font-size:11px">Share % (optional)</label><input class="nom-share" type="number" min="0" max="100" value="${data.share_percent||''}" placeholder="e.g. 50"></div>
+    </div>
+    <input type="hidden" class="nom-id" value="${data.id||''}">
+  `;
+  c.appendChild(row);
+  $('add-nominee-btn').style.display = c.children.length >= 4 ? 'none' : '';
+}
+
+function renumberNominees() {
+  const rows = $('nominees-container').querySelectorAll('.nominee-row');
+  rows.forEach((r, i) => { r.querySelector('div').textContent = `Nominee ${i+1}`; });
+  $('add-nominee-btn').style.display = rows.length >= 4 ? 'none' : '';
+}
+
+function getNomineeData() {
+  return [...$('nominees-container').querySelectorAll('.nominee-row')].map(r => ({
+    id: r.querySelector('.nom-id').value || null,
+    name: r.querySelector('.nom-name').value.trim(),
+    relationship: r.querySelector('.nom-rel').value,
+    mobile: r.querySelector('.nom-mob').value.trim(),
+    aadhaar: r.querySelector('.nom-aadh').value.trim(),
+    share_percent: parseFloat(r.querySelector('.nom-share').value) || null
+  })).filter(n => n.name);
+}
+
 function openMemberModal(idx=-1) {
   editMem=idx; populateWingSelect();
   const m=idx>=0?members[idx]:null;
@@ -1633,6 +2266,16 @@ function openMemberModal(idx=-1) {
   const existingPhotoM = idx>=0 ? members[idx].photo_url : null;
   loadExistingPhoto('m', existingPhotoM, 'm-photo-area', 'm-photo-preview-wrap');
   $('mem-modal-title').textContent=idx>=0?'Edit Member':'Add Member';
+  // Load nominees
+  $('nominees-container').innerHTML='';
+  $('add-nominee-btn').style.display='';
+  if(idx>=0 && members[idx]?.id) {
+    GET('nominees',`?member_id=eq.${members[idx].id}&order=created_at`).then(list=>{
+      renderNomineeRows(list||[]);
+    }).catch(()=>renderNomineeRows([]));
+  } else {
+    renderNomineeRows([]);
+  }
   openModal('mo-member');
 }
 async function saveMember() {
@@ -1668,8 +2311,27 @@ async function saveMember() {
     emergency_contact:fv('m-emerg'), notes:fv('m-notes')
   };
   try {
-    if(editMem>=0) await PATCH('members',members[editMem].id,d);
-    else await POST('members',d);
+    let memberId;
+    if(editMem>=0) { await PATCH('members',members[editMem].id,d); memberId=members[editMem].id; }
+    else { const r=await POST('members',d); memberId=r?.[0]?.id||null; }
+
+    // Save nominees
+    const nominees = getNomineeData();
+    if(memberId) {
+      // Delete removed nominees (get existing IDs and delete ones not in current list)
+      const existingIds = [...$('nominees-container').querySelectorAll('.nom-id')].map(i=>i.value).filter(Boolean);
+      const keepIds = nominees.map(n=>n.id).filter(Boolean);
+      for(const eid of existingIds) {
+        if(!keepIds.includes(eid)) await DELETE('nominees',eid).catch(()=>{});
+      }
+      // Upsert nominees
+      for(const n of nominees) {
+        const nd={member_id:memberId,society_id:CS.id,name:n.name,relationship:n.relationship,mobile:n.mobile||null,aadhaar:n.aadhaar||null,share_percent:n.share_percent};
+        if(n.id) await PATCH('nominees',n.id,nd).catch(()=>{});
+        else await POST('nominees',nd).catch(()=>{});
+      }
+    }
+
     members=await GET('members',`?society_id=eq.${CS.id}&order=name`);
     closeModal('mo-member'); renderMembers();
     toast(editMem>=0?'Member updated':'Member added');
@@ -1697,10 +2359,8 @@ function renderDues() {
     <td><span class="badge ${d.status==='paid'?'bgr':d.status==='overdue'?'br':'ba'}">${d.status}</span></td>
     <td style="font-size:11px">${d.payment_mode||'—'}</td>
     <td>
-      ${d.status!=='paid'?`
-        <button class="ab" onclick="markPaid('${d.id}')" style="color:#16a34a" title="Mark Paid"><i class="ti ti-check"></i></button>
-        <button class="ab" onclick="sendDueReminder('${d.id}')" style="color:#25D366" title="Send WhatsApp Reminder"><i class="ti ti-brand-whatsapp"></i></button>
-      `:`<button class="ab" onclick="sendPaidConfirmation('${d.id}')" style="color:#25D366" title="Send Payment Confirmation"><i class="ti ti-brand-whatsapp"></i></button>`}
+      ${d.status!=='paid'?`<button class="ab" onclick="markPaid('${d.id}')" style="color:#16a34a" title="Mark Paid"><i class="ti ti-check"></i></button>`:''}
+      ${(()=>{const mem=members.find(m=>`${m.wing}-${m.flat}`===d.flat);if(!mem?.mobile)return'';const amt=(Number(d.amount)+Number(d.late_fee||0)-Number(d.discount||0)).toLocaleString('en-IN');const msg=d.status==='paid'?`Dear ${mem.name}, we have received your maintenance payment of ₹${amt} for ${d.month}. Thank you! 🙏\n— ${CS?.name||'Society Management'}`:`Dear ${mem.name}, this is a reminder that your maintenance dues of ₹${amt} for ${d.month} are ${d.status==='overdue'?'overdue':'pending'}. Kindly make the payment at the earliest.\n— ${CS?.name||'Society Management'}`;return`<button class="wa-btn" onclick="waSend('${mem.mobile}',\`${msg.replace(/`/g,"'")}\`)" title="${d.status==='paid'?'Send Confirmation':'Send Reminder'}"><svg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='#25D366'><path d='M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z'/></svg></button>`})()}
       <button class="ab" onclick="deleteDues('${d.id}')" style="color:#ef4444"><i class="ti ti-trash"></i></button>
     </td>
   </tr>`).join('');
@@ -1708,8 +2368,8 @@ function renderDues() {
 function openDuesModal(){populateFlatSelects();openModal('mo-dues');}
 async function saveDues(){
   if(!fv('d-flat')||!fv('d-amt')){toast('Flat and amount required',false);return;}
-  const d={society_id:CS.id,flat:fv('d-flat'),month:fv('d-month'),amount:parseFloat(fv('d-amt')),due_date:fv('d-due')||null,status:fv('d-stat'),paid_date:fv('d-pdate')||null,payment_mode:fv('d-mode'),txn_ref:fv('d-txn'),late_fee:parseFloat(fv('d-late'))||0,discount:parseFloat(fv('d-disc'))||0,remarks:fv('d-rem')};
-  try{await POST('dues',d);dues=await GET('dues',`?society_id=eq.${CS.id}&order=created_at.desc`);closeModal('mo-dues');renderDues();toast('Record added');}catch(e){toast('Error: '+e.message,false);}
+  const d={society_id:CS.id,flat:fv('d-flat'),month:fv('d-month'),amount:parseFloat(fv('d-amt')),due_date:fv('d-due')||null,status:fv('d-stat'),paid_date:fv('d-pdate')||null,payment_mode:fv('d-mode'),txn_ref:fv('d-txn'),late_fee:parseFloat(fv('d-late'))||0,discount:parseFloat(fv('d-disc'))||0,remarks:fv('d-rem'),financial_year:CURRENT_FY||getCurrentFY()};
+  try{await POST('dues',d);dues=await GET('dues',`?society_id=eq.${CS.id}&financial_year=eq.${CURRENT_FY||getCurrentFY()}&order=created_at.desc`);closeModal('mo-dues');renderDues();toast('Record added');}catch(e){toast('Error: '+e.message,false);}
 }
 async function markPaid(id){try{await PATCH('dues',id,{status:'paid',paid_date:new Date().toISOString().split('T')[0]});const d=dues.find(x=>x.id===id);if(d){d.status='paid';}renderDues();toast('Marked as paid');}catch(e){toast('Error: '+e.message,false);}}
 async function deleteDues(id){if(!confirm('Delete?'))return;try{await DELETE('dues',id);dues=dues.filter(d=>d.id!==id);renderDues();toast('Deleted');}catch(e){toast('Error: '+e.message,false);}}
@@ -1839,20 +2499,37 @@ function renderNotices(){
           </div>
         </div>
         <div style="display:flex;gap:4px;flex-shrink:0">
+          ${n.type==='notice'?`<button class="wa-btn" onclick="sendNoticeWA('${n.id}')" title="Send via WhatsApp"><svg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='#25D366'><path d='M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z'/></svg></button>`:''}
           ${n.status!=='resolved'?`<button class="ab" onclick="resolveNotice('${n.id}')" style="color:#16a34a" title="Resolve"><i class="ti ti-check"></i></button>`:''}
-          <button class="ab" onclick="broadcastNotice('${n.id}')" style="color:#25D366" title="Send to All Members via WhatsApp"><i class="ti ti-brand-whatsapp"></i></button>
           <button class="ab" onclick="deleteNotice('${n.id}')" style="color:#ef4444"><i class="ti ti-trash"></i></button>
         </div>
       </div>
     </div>`;
   }).join('');
 }
+function sendNoticeWA(id){
+  const n=notices.find(x=>x.id===id);
+  if(!n)return;
+  const msg=`📢 *${n.title}*\n\n${n.body}\n\n— ${CS?.name||'Society Management'}`;
+  const phones=members.map(m=>m.mobile).filter(Boolean);
+  if(!phones.length){toast('No member phone numbers found',false);return;}
+  waSendAll(phones, msg);
+}
+function sendNoticeToAll(){
+  const latest=notices.filter(n=>n.type==='notice');
+  if(!latest.length){toast('No notices posted yet',false);return;}
+  const n=latest[0];
+  const msg=`📢 *${n.title}*\n\n${n.body}\n\n— ${CS?.name||'Society Management'}`;
+  const phones=members.map(m=>m.mobile).filter(Boolean);
+  if(!phones.length){toast('No member phone numbers found',false);return;}
+  waSendAll(phones, msg);
+}
 function openNoticeModal(){populateFlatSelects();openModal('mo-notice');}
 async function saveNotice(){
   const title=fv('n-title').trim(),body=fv('n-body').trim();
   if(!title||!body){toast('Title and description required',false);return;}
-  const d={society_id:CS.id,type:fv('n-type'),category:fv('n-cat'),title,body,posted_by:fv('n-by')||'Management',flat:fv('n-flat'),priority:fv('n-pri'),status:fv('n-stat')};
-  try{await POST('notices',d);notices=await GET('notices',`?society_id=eq.${CS.id}&order=created_at.desc`);closeModal('mo-notice');renderNotices();toast('Posted');}catch(e){toast('Error: '+e.message,false);}
+  const d={society_id:CS.id,type:fv('n-type'),category:fv('n-cat'),title,body,posted_by:fv('n-by')||'Management',flat:fv('n-flat'),priority:fv('n-pri'),status:fv('n-stat'),financial_year:CURRENT_FY||getCurrentFY()};
+  try{await POST('notices',d);notices=await GET('notices',`?society_id=eq.${CS.id}&financial_year=eq.${CURRENT_FY||getCurrentFY()}&order=created_at.desc`);closeModal('mo-notice');renderNotices();toast('Posted');}catch(e){toast('Error: '+e.message,false);}
 }
 async function resolveNotice(id){try{await PATCH('notices',id,{status:'resolved'});const n=notices.find(x=>x.id===id);if(n)n.status='resolved';renderNotices();toast('Marked resolved');}catch(e){toast('Error: '+e.message,false);}}
 async function deleteNotice(id){if(!confirm('Delete?'))return;try{await DELETE('notices',id);notices=notices.filter(n=>n.id!==id);renderNotices();toast('Deleted');}catch(e){toast('Error: '+e.message,false);}}
@@ -2000,16 +2677,18 @@ function openAccountModal(idx=-1) {
 async function saveAccount() {
   const desc = fv('ac-desc').trim(), amt = fv('ac-amt');
   if (!desc||!amt) { toast('Description and amount required', false); return; }
+  const date = fv('ac-date') || new Date().toISOString().substring(0,10);
   const d = {
     society_id: CS.id, type: fv('ac-type'), category: fv('ac-cat'),
-    description: desc, amount: parseFloat(amt), date: fv('ac-date')||null,
+    description: desc, amount: parseFloat(amt), date,
     payment_mode: fv('ac-mode'), reference: fv('ac-ref'),
-    vendor_or_from: fv('ac-from'), notes: fv('ac-notes')
+    vendor_or_from: fv('ac-from'), notes: fv('ac-notes'),
+    financial_year: CURRENT_FY || fyFromDate(date) || getCurrentFY()
   };
   try {
     if (editAccIdx>=0) await PATCH('accounts', accounts[editAccIdx].id, d);
     else await POST('accounts', d);
-    accounts = await GET('accounts', `?society_id=eq.${CS.id}&order=date.desc`);
+    accounts = await GET('accounts', `?society_id=eq.${CS.id}&financial_year=eq.${CURRENT_FY||getCurrentFY()}&order=date.desc`);
     closeModal('mo-account'); renderAccounts();
     toast(editAccIdx>=0 ? 'Entry updated' : 'Entry added');
   } catch(e) { toast('Error: '+e.message, false); }
@@ -2051,16 +2730,105 @@ let repFilter = 'pl';
 async function renderReports() {
   const rc = $('report-content');
   rc.innerHTML = '<p class="empty">Loading report…</p>';
-  if (!CS) { rc.innerHTML='<p class="empty">Please select a society first</p>'; return; }
+  // Show Sales Report tab only for master admin
+  document.querySelectorAll('.rep-master-only').forEach(el => {
+    el.style.display = (CU && CU.role==='master') ? '' : 'none';
+  });
+  if (!CS && repFilter!=='sales') { rc.innerHTML='<p class="empty">Please select a society first</p>'; return; }
   if (repFilter==='pl')       await reportPL(rc);
   if (repFilter==='dues')     await reportDues(rc);
   if (repFilter==='expiry')   await reportExpiry(rc);
   if (repFilter==='members')  await reportMembers(rc);
+  if (repFilter==='sales')    await reportSales(rc);
+}
+
+async function reportSales(rc) {
+  if (!CU || CU.role!=='master') { rc.innerHTML='<p class="empty">Access denied</p>'; return; }
+  const socs = allSocs || [];
+  // Group by referral code / referred_by
+  const byRef = {};
+  socs.forEach(s => {
+    const key = s.referral_code || '__none__';
+    if (!byRef[key]) byRef[key] = { code: s.referral_code||'—', name: s.referred_by||'Direct / Unknown', commission: s.commission_percent||0, societies: [] };
+    byRef[key].societies.push(s);
+  });
+  const rows = Object.values(byRef).sort((a,b)=>b.societies.length-a.societies.length);
+  const total = socs.length;
+  const referred = socs.filter(s=>s.referral_code).length;
+  const direct = total - referred;
+
+  rc.innerHTML = `
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:16px">
+      <div class="sc"><div class="lb">Total Societies</div><div class="vl" style="font-size:22px">${total}</div></div>
+      <div class="sc"><div class="lb">Via Referral</div><div class="vl" style="color:#6d28d9;font-size:22px">${referred}</div></div>
+      <div class="sc"><div class="lb">Direct / Walk-in</div><div class="vl" style="font-size:22px">${direct}</div></div>
+    </div>
+    <div class="card">
+      <div class="card-head"><h3>Sales by Referral Code</h3><button class="btn" onclick="exportSalesCSV()" style="font-size:12px"><i class="ti ti-download"></i> Export CSV</button></div>
+      <div class="tbl-wrap">
+        <table><thead><tr>
+          <th>Referral Code</th><th>Salesperson</th><th>Societies Sold</th><th>Commission %</th><th>Plans</th>
+        </tr></thead>
+        <tbody>
+          ${rows.map(r=>`<tr>
+            <td><span class="badge" style="background:#ede9fe;color:#6d28d9">${r.code}</span></td>
+            <td style="font-weight:500">${r.name}</td>
+            <td style="text-align:center;font-weight:600;color:#6d28d9">${r.societies.length}</td>
+            <td style="text-align:center">${r.commission?r.commission+'%':'—'}</td>
+            <td style="font-size:11px">${r.societies.map(s=>`<span class="plan-tag ${PLAN_BG[s.plan||'basic']}" style="font-size:9px">${(s.plan||'basic').toUpperCase()}</span>`).join(' ')}</td>
+          </tr>
+          <tr style="background:#fafafa;font-size:11px">
+            <td colspan="5" style="padding:4px 12px 10px;color:#64748b">
+              ${r.societies.map(s=>`${s.name}${s.city?' ('+s.city+')':''}`).join(' · ')}
+            </td>
+          </tr>`).join('')}
+        </tbody></table>
+      </div>
+    </div>`;
+}
+
+function exportSalesCSV() {
+  const socs = allSocs||[];
+  if (!socs.length) { toast('No society data to export', false); return; }
+  const rows = [['Society Name','City','Plan','Referral Code','Referred By','Commission %','Joined']];
+  socs.forEach(s=>rows.push([
+    s.name, s.city||'', s.plan||'basic',
+    s.referral_code||'', s.referred_by||'',
+    s.commission_percent||'', s.created_at?.substring(0,10)||''
+  ]));
+  downloadCSV(rows, 'sales_report.csv');
 }
 
 async function reportPL(rc) {
   if (!accounts.length) accounts = await GET('accounts', `?society_id=eq.${CS.id}&order=date.desc`);
-  const totalInc = accounts.filter(a=>a.type==='income').reduce((s,a)=>s+Number(a.amount),0);
+
+  // Fetch active FDs and calculate accrued/earned interest
+  let fds = [];
+  try { fds = await GET('fixed_deposits', `?society_id=eq.${CS.id}&status=eq.active`); } catch(e){}
+  const today = new Date();
+  let totalFDInterest = 0;
+  const fdBreakdown = [];
+  fds.forEach(f => {
+    const principal = Number(f.principal_amount||0);
+    const rate = Number(f.interest_rate||0);
+    const start = new Date(f.start_date);
+    const maturity = new Date(f.maturity_date);
+    const endDate = today < maturity ? today : maturity;
+    const days = Math.max(0, (endDate - start)/(1000*60*60*24));
+    const years = days/365;
+    let interest;
+    if (f.fd_type==='cumulative') {
+      interest = principal * (Math.pow(1+(rate/100)/4, 4*years) - 1);
+    } else {
+      interest = principal * rate * years / 100;
+    }
+    interest = Math.round(interest);
+    totalFDInterest += interest;
+    if (interest > 0) fdBreakdown.push({ bank: f.bank_name, fdNum: f.fd_number, interest });
+  });
+
+  const totalAccInc = accounts.filter(a=>a.type==='income').reduce((s,a)=>s+Number(a.amount),0);
+  const totalInc = totalAccInc + totalFDInterest;
   const totalExp = accounts.filter(a=>a.type==='expense').reduce((s,a)=>s+Number(a.amount),0);
   const net = totalInc - totalExp;
 
@@ -2070,6 +2838,10 @@ async function reportPL(rc) {
     if (a.type==='income')  incCats[a.category]  = (incCats[a.category]||0)  + Number(a.amount);
     if (a.type==='expense') expCats[a.category] = (expCats[a.category]||0) + Number(a.amount);
   });
+  // Add FD interest as Other Income line
+  if (totalFDInterest > 0) {
+    incCats['FD Interest Income (Accrued)'] = (incCats['FD Interest Income (Accrued)']||0) + totalFDInterest;
+  }
 
   // Monthly trend
   const monthly={};
@@ -2083,17 +2855,25 @@ async function reportPL(rc) {
 
   rc.innerHTML = `
     <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:16px">
-      <div class="sc"><div class="lb">Total Income</div><div class="vl" style="color:#16a34a;font-size:20px">₹${totalInc.toLocaleString('en-IN')}</div></div>
+      <div class="sc"><div class="lb">Total Income</div><div class="vl" style="color:#16a34a;font-size:20px">₹${totalInc.toLocaleString('en-IN')}</div>
+        ${totalFDInterest>0?`<div class="sb" style="color:#6d28d9">incl. ₹${totalFDInterest.toLocaleString('en-IN')} FD interest</div>`:''}</div>
       <div class="sc"><div class="lb">Total Expenses</div><div class="vl" style="color:#991b1b;font-size:20px">₹${totalExp.toLocaleString('en-IN')}</div></div>
       <div class="sc"><div class="lb">Net Balance</div><div class="vl" style="color:${net>=0?'#16a34a':'#991b1b'};font-size:20px">₹${Math.abs(net).toLocaleString('en-IN')}<span style="font-size:12px;margin-left:4px">${net>=0?'Surplus':'Deficit'}</span></div></div>
     </div>
+    ${totalFDInterest>0?`
+    <div style="background:#f5f3ff;border:1px solid #ddd6fe;border-radius:8px;padding:10px 14px;margin-bottom:14px;font-size:12.5px">
+      <strong style="color:#6d28d9">🏦 FD Interest (Other Income) — ₹${totalFDInterest.toLocaleString('en-IN')} accrued</strong>
+      <div style="margin-top:6px;display:flex;flex-wrap:wrap;gap:8px">
+        ${fdBreakdown.map(f=>`<span style="background:#ede9fe;color:#5b21b6;padding:2px 8px;border-radius:10px;font-size:11px">${f.bank} · ${f.fdNum} · ₹${f.interest.toLocaleString('en-IN')}</span>`).join('')}
+      </div>
+    </div>`:''}
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:16px">
       <div class="card">
         <div class="card-head"><h3>Income Breakdown</h3><button class="btn btn-sm" onclick="exportReportCSV('pl-income')"><i class="ti ti-download"></i> CSV</button></div>
         <div class="card-body">
           ${Object.keys(incCats).length ? Object.entries(incCats).sort((a,b)=>b[1]-a[1]).map(([k,v])=>`
             <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid #f1f5f9;font-size:12px">
-              <span>${k}</span>
+              <span${k.includes('FD Interest')?' style="color:#6d28d9;font-weight:600"':''}>${k.includes('FD Interest')?'🏦 ':''} ${k}</span>
               <span style="font-weight:600;color:#16a34a">₹${v.toLocaleString('en-IN')}</span>
             </div>`).join('') : '<p class="empty">No income records</p>'}
         </div>
@@ -2330,8 +3110,8 @@ function renderTenants() {
       <td><span class="badge ${pvBadge}">${pvLabel}</span></td>
       <td><span class="badge ${t.status==='active'?'bgr':t.status==='notice_period'?'ba':'bg'}">${t.status==='notice_period'?'Notice':t.status||'active'}</span></td>
       <td>
+        ${t.tenant_mobile?`<button class="wa-btn" onclick="waSend('${t.tenant_mobile}',\`Dear ${t.tenant_name}, this is a reminder that your rent of ₹${Number(t.monthly_rent||0).toLocaleString('en-IN')} for flat ${t.wing}-${t.flat} is due. Kindly make the payment at the earliest.\n— ${CS?.name||'Society Management'}\`)" title="Send Rent Reminder"><svg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='#25D366'><path d='M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z'/></svg></button>`:''}
         <button class="ab" onclick="openTenantModal(${tenants.indexOf(t)})" title="Edit"><i class="ti ti-edit"></i></button>
-        <button class="ab" onclick="sendWhatsApp('${t.tenant_mobile}', waMsgGeneral('${t.tenant_name}', CS?.name))" style="color:#25D366" title="Send WhatsApp"><i class="ti ti-brand-whatsapp"></i></button>
         <button class="ab" onclick="deleteTenant('${t.id}')" style="color:#ef4444" title="Delete"><i class="ti ti-trash"></i></button>
       </td>
     </tr>`;
@@ -2450,10 +3230,7 @@ function renderRent() {
     <td><span class="badge ${r.status==='paid'?'bgr':r.status==='overdue'?'br':'ba'}">${r.status}</span></td>
     <td style="font-size:11px">${r.payment_mode||'—'}</td>
     <td>
-      ${r.status!=='paid'?`
-        <button class="ab" onclick="markRentPaid('${r.id}')" style="color:#16a34a" title="Mark Paid"><i class="ti ti-check"></i></button>
-        <button class="ab" onclick="sendRentReminder('${r.id}')" style="color:#25D366" title="Send WhatsApp Reminder"><i class="ti ti-brand-whatsapp"></i></button>
-      `:`<button class="ab" onclick="sendRentPaidConfirmation('${r.id}')" style="color:#25D366" title="Send Confirmation"><i class="ti ti-brand-whatsapp"></i></button>`}
+      ${r.status!=='paid'?`<button class="ab" onclick="markRentPaid('${r.id}')" style="color:#16a34a" title="Mark Paid"><i class="ti ti-check"></i></button>`:''}
       <button class="ab" onclick="deleteRent('${r.id}')" style="color:#ef4444"><i class="ti ti-trash"></i></button>
     </td>
   </tr>`).join('');
@@ -2591,20 +3368,14 @@ async function renderPlans() {
     <div class="card" style="margin-bottom:16px">
       <div class="card-head"><h3>Plan Comparison</h3></div>
       <div class="tbl-wrap">
-        <table style="table-layout:fixed;width:100%">
-          <colgroup>
-            <col style="width:22%">
-            <col style="width:26%">
-            <col style="width:26%">
-            <col style="width:26%">
-          </colgroup>
+        <table>
           <thead>
             <tr>
-              <th style="font-size:13px">Feature</th>
+              <th style="min-width:200px;font-size:13px">Feature</th>
               ${allPlans.map(p=>{
                 const BG  = {basic:'#f8fafc',standard:'#eff6ff',premium:'#f5f3ff'};
                 const BDR = {basic:'#94a3b8',standard:'#2563eb',premium:'#7c3aed'};
-                return `<th style="text-align:center;background:${BG[p.id]};border-top:5px solid ${BDR[p.id]};border-left:1px solid ${BDR[p.id]}20">
+                return `<th style="text-align:center;min-width:280px;background:${BG[p.id]};border-top:5px solid ${BDR[p.id]};border-left:1px solid ${BDR[p.id]}20">
                   <div style="font-size:20px;font-weight:700;color:${PLAN_COLORS[p.id]};margin-bottom:6px">${p.name}</div>
                   <div style="font-size:28px;font-weight:800;color:${PLAN_COLORS[p.id]};margin:8px 0">
                     ₹${Number(p.price_monthly).toLocaleString('en-IN')}<span style="font-size:10px;font-weight:400;color:#64748b">/mo</span>
@@ -2740,7 +3511,7 @@ async function renderPricing() {
                 const BDR = {basic:'#94a3b8',  standard:'#2563eb', premium:'#7c3aed'};
                 const activeBG = isCurrent ? '#f0fdf4' : BG[p.id];
                 const topBdr   = isCurrent ? '#16a34a' : BDR[p.id];
-                return `<th style="text-align:center;background:${activeBG};border-top:4px solid ${topBdr};border-left:1px solid ${BDR[p.id]}20">
+                return `<th style="text-align:center;min-width:280px;background:${activeBG};border-top:4px solid ${topBdr};border-left:1px solid ${BDR[p.id]}20">
                   <div style="font-size:20px;font-weight:700;color:${PLAN_COLORS[p.id]};margin-bottom:6px">${p.name}</div>
                   ${isCurrent?'<div style="font-size:10px;background:#16a34a;color:#fff;padding:2px 8px;border-radius:10px;display:inline-block;margin:3px 0">✓ Current Plan</div>':''}
                   <div style="font-size:28px;font-weight:800;color:${PLAN_COLORS[p.id]};margin:8px 0">
@@ -3066,47 +3837,76 @@ async function openSignupModal() {
 
     const container = $('signup-plan-cards');
     if (!container) return;
-    container.innerHTML = plans.map(p => `
+    container.innerHTML = plans.map(p => {
+      const mo = Number(p.price_monthly);
+      const yr = Math.round(mo * 12 * 0.8); // 20% off yearly
+      const moGst = Math.round(mo * (1 + GST));
+      const yrGst = Math.round(yr * (1 + GST));
+      return `
       <div id="sp-${p.id}" onclick="selectSignupPlan('${p.id}')"
         style="cursor:pointer;padding:14px;border:2px solid ${BDR[p.id]};border-radius:10px;background:${BG[p.id]};text-align:center;transition:all .2s">
         ${POPULAR[p.id]?`<div style="font-size:9px;font-weight:700;color:${BDR[p.id]};margin-bottom:3px">${POPULAR[p.id]}</div>`:''}
         <h3 style="font-size:14px;color:${PLAN_COLORS[p.id]};font-weight:700">${p.name}</h3>
-        <div style="font-size:28px;font-weight:800;color:${PLAN_COLORS[p.id]};margin:8px 0">
-          ₹${Number(p.price_monthly).toLocaleString('en-IN')}<span style="font-size:11px;font-weight:400;color:#64748b">/mo</span>
+        <div class="sp-mo-price" style="font-size:24px;font-weight:800;color:${PLAN_COLORS[p.id]};margin:8px 0">
+          ₹${mo.toLocaleString('en-IN')}<span style="font-size:11px;font-weight:400;color:#64748b">/mo</span>
         </div>
-        <div style="font-size:12px;color:#64748b;margin-top:2px">+GST 18% = ₹${Math.round(Number(p.price_monthly)*(1+GST)).toLocaleString('en-IN')}/mo</div>
+        <div class="sp-mo-gst" style="font-size:11px;color:#64748b">+18% GST = ₹${moGst.toLocaleString('en-IN')}/mo</div>
+        <div class="sp-yr-price" style="display:none;font-size:24px;font-weight:800;color:${PLAN_COLORS[p.id]};margin:8px 0">
+          ₹${Math.round(yr/12).toLocaleString('en-IN')}<span style="font-size:11px;font-weight:400;color:#64748b">/mo</span>
+        </div>
+        <div class="sp-yr-gst" style="display:none;font-size:11px;color:#64748b">₹${yr.toLocaleString('en-IN')}/yr billed annually (+18% GST = ₹${yrGst.toLocaleString('en-IN')})</div>
+        <div class="sp-yr-save" style="display:none;font-size:10px;color:#16a34a;font-weight:700;margin-top:3px">Save ₹${(mo*12 - yr).toLocaleString('en-IN')}/year!</div>
         <div style="font-size:10px;color:#64748b;margin-top:3px">${DESC[p.id]||''}</div>
         <div style="font-size:10px;color:#16a34a;margin-top:5px;font-weight:600">🎉 7 days FREE trial</div>
-      </div>`).join('');
+      </div>`;
+    }).join('');
 
     // Select basic by default
     selectSignupPlan('basic');
+    // Apply current billing selection (user may have changed it before cards loaded)
+    toggleSignupBilling($('su-billing')?.value || 'monthly');
   } catch(e) {
     // Fallback to static if DB not available
     const container = $('signup-plan-cards');
     if (container) container.innerHTML = `
       <div id="sp-basic" onclick="selectSignupPlan('basic')" style="cursor:pointer;padding:14px;border:2px solid #94a3b8;border-radius:10px;background:#f8fafc;text-align:center">
         <h3 style="font-size:14px;color:#475569">Basic</h3>
-        <div style="font-size:18px;font-weight:700;color:#475569;margin:4px 0">₹999<span style="font-size:11px">/mo</span></div>
-        <div style="font-size:10px;color:#64748b">+GST 18% = ₹1,179/mo</div>
+        <div class="sp-mo-price" style="font-size:20px;font-weight:700;color:#475569;margin:4px 0">₹999<span style="font-size:11px">/mo</span></div>
+        <div class="sp-mo-gst" style="font-size:10px;color:#64748b">+18% GST = ₹1,179/mo</div>
+        <div class="sp-yr-price" style="display:none;font-size:20px;font-weight:700;color:#475569;margin:4px 0">₹799<span style="font-size:11px">/mo</span></div>
+        <div class="sp-yr-gst" style="display:none;font-size:10px;color:#64748b">₹9,590/yr billed annually (+18% GST = ₹11,316)</div>
+        <div class="sp-yr-save" style="display:none;font-size:10px;color:#16a34a;font-weight:700;margin-top:3px">Save ₹2,398/year!</div>
         <div style="font-size:10px;color:#16a34a;margin-top:4px;font-weight:600">🎉 7 days FREE trial</div>
       </div>
       <div id="sp-standard" onclick="selectSignupPlan('standard')" style="cursor:pointer;padding:14px;border:2px solid #2563eb;border-radius:10px;background:#eff6ff;text-align:center">
         <div style="font-size:9px;font-weight:700;color:#2563eb">POPULAR</div>
         <h3 style="font-size:14px;color:#1e40af">Standard</h3>
-        <div style="font-size:18px;font-weight:700;color:#1e40af;margin:4px 0">₹1,999<span style="font-size:11px">/mo</span></div>
-        <div style="font-size:10px;color:#64748b">+GST 18% = ₹2,359/mo</div>
+        <div class="sp-mo-price" style="font-size:20px;font-weight:700;color:#1e40af;margin:4px 0">₹1,999<span style="font-size:11px">/mo</span></div>
+        <div class="sp-mo-gst" style="font-size:10px;color:#64748b">+18% GST = ₹2,359/mo</div>
+        <div class="sp-yr-price" style="display:none;font-size:20px;font-weight:700;color:#1e40af;margin:4px 0">₹1,599<span style="font-size:11px">/mo</span></div>
+        <div class="sp-yr-gst" style="display:none;font-size:10px;color:#64748b">₹19,190/yr billed annually (+18% GST = ₹22,644)</div>
+        <div class="sp-yr-save" style="display:none;font-size:10px;color:#16a34a;font-weight:700;margin-top:3px">Save ₹4,798/year!</div>
         <div style="font-size:10px;color:#16a34a;margin-top:4px;font-weight:600">🎉 7 days FREE trial</div>
       </div>
       <div id="sp-premium" onclick="selectSignupPlan('premium')" style="cursor:pointer;padding:14px;border:2px solid #7c3aed;border-radius:10px;background:#f5f3ff;text-align:center">
         <div style="font-size:9px;font-weight:700;color:#7c3aed">ALL FEATURES</div>
         <h3 style="font-size:14px;color:#5b21b6">Premium</h3>
-        <div style="font-size:18px;font-weight:700;color:#5b21b6;margin:4px 0">₹2,999<span style="font-size:11px">/mo</span></div>
-        <div style="font-size:10px;color:#64748b">+GST 18% = ₹3,539/mo</div>
+        <div class="sp-mo-price" style="font-size:20px;font-weight:700;color:#5b21b6;margin:4px 0">₹2,999<span style="font-size:11px">/mo</span></div>
+        <div class="sp-mo-gst" style="font-size:10px;color:#64748b">+18% GST = ₹3,539/mo</div>
+        <div class="sp-yr-price" style="display:none;font-size:20px;font-weight:700;color:#5b21b6;margin:4px 0">₹2,399<span style="font-size:11px">/mo</span></div>
+        <div class="sp-yr-gst" style="display:none;font-size:10px;color:#64748b">₹28,790/yr billed annually (+18% GST = ₹33,972)</div>
+        <div class="sp-yr-save" style="display:none;font-size:10px;color:#16a34a;font-weight:700;margin-top:3px">Save ₹7,198/year!</div>
         <div style="font-size:10px;color:#16a34a;margin-top:4px;font-weight:600">🎉 7 days FREE trial</div>
       </div>`;
     selectSignupPlan('basic');
+    toggleSignupBilling($('su-billing')?.value || 'monthly');
   }
+}
+
+function toggleSignupBilling(val) {
+  const isYearly = val === 'yearly';
+  document.querySelectorAll('.sp-mo-price,.sp-mo-gst').forEach(el => el.style.display = isYearly ? 'none' : '');
+  document.querySelectorAll('.sp-yr-price,.sp-yr-gst,.sp-yr-save').forEach(el => el.style.display = isYearly ? '' : 'none');
 }
 
 function selectSignupPlan(plan) {
@@ -3124,6 +3924,14 @@ function selectSignupPlan(plan) {
 }
 
 async function submitSignupRequest() {
+  // Rate limiting
+  _signupAttempts++;
+  if (_signupAttempts > MAX_SIGNUP_ATTEMPTS) {
+    const msg = $('su-msg');
+    msg.style.display='block'; msg.style.background='#fee2e2'; msg.style.color='#991b1b';
+    msg.textContent='Too many attempts. Please refresh the page and try again.';
+    return;
+  }
   const socName  = fv('su-soc-name').trim();
   const name     = fv('su-name').trim();
   const email    = fv('su-email').trim().toLowerCase();
@@ -3136,6 +3944,11 @@ async function submitSignupRequest() {
   if (!socName||!name||!email||!mobile||!city) {
     msg.style.display='block'; msg.style.background='#fee2e2'; msg.style.color='#991b1b';
     msg.textContent='Please fill in all required fields (Society Name, City, Your Name, Email, Mobile)';
+    return;
+  }
+  if (!$('su-consent')?.checked) {
+    msg.style.display='block'; msg.style.background='#fee2e2'; msg.style.color='#991b1b';
+    msg.textContent='Please read and accept the Terms of Service & Privacy Policy to proceed.';
     return;
   }
 
@@ -3166,6 +3979,8 @@ async function submitSignupRequest() {
       admin_name: name, admin_email: email, admin_mobile: mobile,
       admin_designation: fv('su-desig'), requested_plan: plan,
       billing_preference: fv('su-billing'), notes: fv('su-notes'),
+      referral_code: fv('su-ref-code').toUpperCase().trim()||null,
+      referred_by: fv('su-ref-name').trim()||null,
       status: 'pending'
     });
 
@@ -3442,16 +4257,76 @@ function previewPhoto(prefix, areaId, previewWrapperId) {
   const input = $(prefix + '-photo-input');
   const file  = input.files[0];
   if (!file) return;
-  if (file.size > 5 * 1024 * 1024) { toast('File too large. Max 5MB', false); input.value=''; return; }
+
+  // Reject non-images
+  if (!file.type.startsWith('image/')) { toast('Please select an image file', false); input.value=''; return; }
+
+  const MAX_KB = 100;
+  const MAX_BYTES = MAX_KB * 1024;
+  const area = $(areaId);
+  const wrap = $(previewWrapperId);
+
+  // Show compressing indicator
+  wrap.innerHTML = `<div style="font-size:12px;color:#64748b;padding:10px">⏳ Compressing photo…</div>`;
+
   const reader = new FileReader();
   reader.onload = (e) => {
-    const area = $(areaId);
-    const wrap = $(previewWrapperId);
-    wrap.innerHTML = `<img src="${e.target.result}" class="photo-preview" alt="Preview">
-      <div style="font-size:11px;color:#2563eb;font-weight:500">Photo selected ✓</div>`;
-    area.classList.add('has-photo');
-    $(prefix + '-photo-actions').style.display = 'block';
-    $(prefix + '-photo-url').value = ''; // clear old URL — new file will be uploaded on save
+    const img = new Image();
+    img.onload = () => {
+      // Start with quality 0.85, reduce until under 100KB
+      const canvas = document.createElement('canvas');
+      let quality = 0.85;
+      let dataUrl = '';
+      let attempts = 0;
+
+      // Scale down if image is very large (max 400x400 for avatar)
+      let w = img.width, h = img.height;
+      const MAX_DIM = 400;
+      if (w > MAX_DIM || h > MAX_DIM) {
+        const ratio = Math.min(MAX_DIM/w, MAX_DIM/h);
+        w = Math.round(w * ratio);
+        h = Math.round(h * ratio);
+      }
+      canvas.width = w;
+      canvas.height = h;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0, w, h);
+
+      // Compress until under 100KB
+      do {
+        dataUrl = canvas.toDataURL('image/jpeg', quality);
+        const sizeBytes = Math.round((dataUrl.length - 'data:image/jpeg;base64,'.length) * 3/4);
+        if (sizeBytes <= MAX_BYTES) break;
+        quality -= 0.1;
+        attempts++;
+      } while (quality > 0.1 && attempts < 10);
+
+      // Final size check
+      const finalBytes = Math.round((dataUrl.length - 'data:image/jpeg;base64,'.length) * 3/4);
+      const finalKB = Math.round(finalBytes / 1024);
+
+      if (finalKB > MAX_KB) {
+        toast(`Photo too large even after compression (${finalKB}KB). Please use a smaller image.`, false);
+        input.value = '';
+        wrap.innerHTML = `
+          <i class="ti ti-user-circle" style="font-size:40px;color:#cbd5e1;display:block;margin-bottom:8px"></i>
+          <div style="font-size:12px;font-weight:500;color:#64748b">Click to upload photo</div>
+          <div style="font-size:11px;color:#94a3b8;margin-top:3px">JPG, PNG · Max 100KB · Auto-compressed</div>`;
+        return;
+      }
+
+      // Success — show preview
+      wrap.innerHTML = `
+        <img src="${dataUrl}" class="photo-preview" alt="Preview"
+          style="width:100px;height:100px;border-radius:50%;object-fit:cover;border:3px solid #2563eb;margin:0 auto 6px;display:block">
+        <div style="font-size:11px;color:#16a34a;font-weight:600">✅ Photo ready (${finalKB}KB)</div>`;
+      area.classList.add('has-photo');
+      $(prefix + '-photo-actions').style.display = 'block';
+      // Store compressed base64 in hidden input
+      $(prefix + '-photo-url').value = dataUrl;
+      toast(`Photo compressed to ${finalKB}KB ✓`);
+    };
+    img.src = e.target.result;
   };
   reader.readAsDataURL(file);
 }
@@ -3463,7 +4338,7 @@ function removePhoto(prefix, areaId, previewWrapperId) {
   $(previewWrapperId).innerHTML = `
     <i class="ti ti-user-circle" style="font-size:40px;color:#cbd5e1;display:block;margin-bottom:8px"></i>
     <div style="font-size:12px;font-weight:500;color:#64748b">Click to upload photo</div>
-    <div style="font-size:11px;color:#94a3b8;margin-top:3px">JPG, PNG • Max 2MB</div>`;
+    <div style="font-size:11px;color:#94a3b8;margin-top:3px">JPG, PNG · Max 100KB · Auto-compressed</div>`;
   $(prefix + '-photo-actions').style.display = 'none';
 }
 
@@ -3485,98 +4360,10 @@ function loadExistingPhoto(prefix, photoUrl, areaId, previewWrapperId) {
     wrap.innerHTML = `
       <i class="ti ti-user-circle" style="font-size:40px;color:#cbd5e1;display:block;margin-bottom:8px"></i>
       <div style="font-size:12px;font-weight:500;color:#64748b">Click to upload photo</div>
-      <div style="font-size:11px;color:#94a3b8;margin-top:3px">JPG, PNG • Max 2MB • Camera supported on mobile</div>`;
+      <div style="font-size:11px;color:#94a3b8;margin-top:3px">JPG, PNG · Max 100KB · Auto-compressed · Camera supported on mobile</div>`;
     area.classList.remove('has-photo');
     if(actions) actions.style.display = 'none';
   }
-}
-
-// ═══════════════════════════════════════════════
-// WHATSAPP NOTIFICATION FUNCTIONS
-// ═══════════════════════════════════════════════
-function sendDueReminder(dueId) {
-  const due = duesData.find(d=>d.id===dueId);
-  if (!due) return;
-  // Find member mobile
-  const member = members.find(m=>`${m.wing}-${m.flat}` === due.flat.split('—')[0].trim());
-  const mobile = member?.mobile;
-  const name   = member?.name || due.flat;
-  if (!mobile) { toast('No mobile number found for this flat', false); return; }
-  sendWhatsApp(mobile, waMsgDue(name, due, CS?.name));
-}
-
-function sendPaidConfirmation(dueId) {
-  const due = duesData.find(d=>d.id===dueId);
-  if (!due) return;
-  const member = members.find(m=>`${m.wing}-${m.flat}` === due.flat.split('—')[0].trim());
-  const mobile = member?.mobile;
-  const name   = member?.name || due.flat;
-  if (!mobile) { toast('No mobile number found for this flat', false); return; }
-  sendWhatsApp(mobile, waMsgPaid(name, due, CS?.name));
-}
-
-function sendRentReminder(rentId) {
-  const rent = rentRecords.find(r=>r.id===rentId);
-  if (!rent) return;
-  const tenant = tenants.find(t=>t.id===rent.tenant_id);
-  const mobile = tenant?.tenant_mobile;
-  const name   = rent.tenant_name;
-  if (!mobile) { toast('No mobile number found for this tenant', false); return; }
-  sendWhatsApp(mobile, waMsgRent(name, rent, CS?.name));
-}
-
-function sendRentPaidConfirmation(rentId) {
-  const rent = rentRecords.find(r=>r.id===rentId);
-  if (!rent) return;
-  const tenant = tenants.find(t=>t.id===rent.tenant_id);
-  const mobile = tenant?.tenant_mobile;
-  const name   = rent.tenant_name;
-  if (!mobile) { toast('No mobile number found for this tenant', false); return; }
-  const msg = `Dear ${name},
-
-✅ We have received your rent payment of ₹${Number(rent.amount||0).toLocaleString('en-IN')} for *${rent.month}*.
-
-Thank you!
-
-— ${CS?.name||'Society Management'}`;
-  sendWhatsApp(mobile, msg);
-}
-
-function broadcastNotice(noticeId) {
-  const notice = notices.find(n=>n.id===noticeId);
-  if (!notice) return;
-  if (!members.length) { toast('No members found to notify', false); return; }
-
-  // Show broadcast modal
-  const count = members.filter(m=>m.mobile).length;
-  if (!confirm(`Send this notice to ${count} members via WhatsApp?
-
-Note: WhatsApp will open ${count} times — once per member.`)) return;
-
-  // Open WhatsApp for each member with mobile number
-  let sent = 0;
-  members.filter(m=>m.mobile).forEach((m, i) => {
-    setTimeout(() => {
-      sendWhatsApp(m.mobile, waMsgNotice(m.name, notice, CS?.name));
-      sent++;
-      if (sent === count) toast(`WhatsApp opened for ${count} members ✓`);
-    }, i * 1500); // 1.5 second delay between each
-  });
-  toast(`Sending to ${count} members — please wait…`);
-}
-
-// Bulk due reminders — send to all pending
-function sendBulkDueReminders() {
-  const pending = duesData.filter(d=>d.status==='pending'||d.status==='overdue');
-  if (!pending.length) { toast('No pending dues found', false); return; }
-  if (!confirm(`Send WhatsApp reminders to ${pending.length} members with pending dues?`)) return;
-  pending.forEach((due, i) => {
-    setTimeout(() => {
-      const member = members.find(m=>`${m.wing}-${m.flat}` === due.flat.split('—')[0].trim());
-      if (member?.mobile) sendWhatsApp(member.mobile, waMsgDue(member.name, due, CS?.name));
-    }, i * 1500);
-  });
-  toast(`Sending reminders to ${pending.length} members…`);
 }
 
 // ── MOBILE SIDEBAR ────────────────────────────────────────
@@ -3604,6 +4391,947 @@ function closeSidebar() {
 }
 
 // Close sidebar after nav on mobile
+
+// ═══════════════════════════════════════════════
+// REFERRAL CODES
+// ═══════════════════════════════════════════════
+let referralCodes = [];
+let editRefId = null;
+
+async function renderReferrals() {
+  const list = $('ref-list');
+  list.innerHTML = '<p class="empty">Loading…</p>';
+  try {
+    referralCodes = await GET('referral_codes', '?order=created_at.desc');
+    const socs = allSocs || [];
+
+    // Stats
+    const withRef = socs.filter(s => s.referral_code);
+    const people = new Set(referralCodes.map(r => r.code)).size;
+    $('ref-total').textContent = referralCodes.length;
+    $('ref-soc-count').textContent = withRef.length;
+    $('ref-people').textContent = people;
+
+    if (!referralCodes.length) {
+      list.innerHTML = '<p class="empty">No referral codes yet. Click "Add Referral Code" to create one.</p>';
+      return;
+    }
+
+    list.innerHTML = `
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr>
+            <th>Code</th><th>Salesperson</th><th>Mobile</th><th>Commission %</th>
+            <th>Societies</th><th>Status</th><th>Actions</th>
+          </tr></thead>
+          <tbody>
+            ${referralCodes.map(r => {
+              const count = socs.filter(s => s.referral_code === r.code).length;
+              const socNames = socs.filter(s => s.referral_code === r.code).map(s => s.name).join(', ');
+              return `<tr>
+                <td><span class="badge" style="background:#ede9fe;color:#6d28d9;font-size:12px;font-weight:700;letter-spacing:.5px">${r.code}</span></td>
+                <td style="font-weight:500">${r.name}</td>
+                <td>${r.mobile ? `<button class="wa-btn" onclick="waSend('${r.mobile}','Hi ${r.name}, ')" title="WhatsApp"><svg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='#25D366'><path d='M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z'/></svg></button> ${r.mobile}` : '—'}</td>
+                <td style="text-align:center">${r.commission_percent ? r.commission_percent + '%' : '—'}</td>
+                <td style="text-align:center">
+                  <span style="font-weight:700;color:${count>0?'#6d28d9':'#94a3b8'};font-size:16px">${count}</span>
+                  ${socNames ? `<div style="font-size:10px;color:#64748b;margin-top:2px;max-width:160px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="${socNames}">${socNames}</div>` : ''}
+                </td>
+                <td><span class="badge ${r.status==='active'?'bg':'br'}" style="font-size:10px">${r.status==='active'?'Active':'Inactive'}</span></td>
+                <td>
+                  <button class="ab" onclick="copyRefCode('${r.code}')" title="Copy Code"><i class="ti ti-copy"></i></button>
+                  <button class="ab" onclick="openRefModal('${r.id}')" title="Edit"><i class="ti ti-edit"></i></button>
+                  <button class="ab" onclick="deleteRefCode('${r.id}')" style="color:#ef4444" title="Delete"><i class="ti ti-trash"></i></button>
+                </td>
+              </tr>`;
+            }).join('')}
+          </tbody>
+        </table>
+      </div>`;
+  } catch(e) {
+    list.innerHTML = `<p class="empty">Error: ${e.message}</p>`;
+  }
+}
+
+function copyRefCode(code) {
+  navigator.clipboard.writeText(code).then(() => toast(`Copied: ${code}`)).catch(() => toast('Copy failed', false));
+}
+
+function openRefModal(id=null) {
+  editRefId = id;
+  const r = id ? referralCodes.find(x => x.id === id) : null;
+  sv('ref-code', r?.code || '');
+  sv('ref-name', r?.name || '');
+  sv('ref-mobile', r?.mobile || '');
+  sv('ref-email', r?.email || '');
+  sv('ref-commission', r?.commission_percent || '');
+  sv('ref-notes', r?.notes || '');
+  if ($('ref-status')) $('ref-status').value = r?.status || 'active';
+  $('ref-modal-title').textContent = id ? 'Edit Referral Code' : 'Add Referral Code';
+  if (!id) $('ref-code').removeAttribute('readonly');
+  else $('ref-code').setAttribute('readonly', true);
+  openModal('mo-referral');
+}
+
+async function saveReferral() {
+  const code = fv('ref-code').toUpperCase().trim();
+  const name = fv('ref-name').trim();
+  if (!code || !name) { toast('Code and Salesperson Name are required', false); return; }
+
+  // Check duplicate code on new
+  if (!editRefId) {
+    const existing = referralCodes.find(r => r.code === code);
+    if (existing) { toast(`Code "${code}" already exists`, false); return; }
+  }
+
+  const d = {
+    code, name,
+    mobile: fv('ref-mobile').trim() || null,
+    email: fv('ref-email').trim() || null,
+    commission_percent: parseFloat(fv('ref-commission')) || null,
+    status: $('ref-status').value,
+    notes: fv('ref-notes').trim() || null
+  };
+
+  try {
+    if (editRefId) await PATCH('referral_codes', editRefId, d);
+    else await POST('referral_codes', { ...d });
+    closeModal('mo-referral');
+    await renderReferrals();
+    toast(editRefId ? 'Referral code updated' : `Code "${code}" created!`);
+  } catch(e) { toast('Error: ' + e.message, false); }
+}
+
+async function deleteRefCode(id) {
+  if (!confirm('Delete this referral code?')) return;
+  try {
+    await DELETE('referral_codes', id);
+    await renderReferrals();
+    toast('Deleted');
+  } catch(e) { toast('Error: ' + e.message, false); }
+}
+
+// ═══════════════════════════════════════════════
+// FIXED DEPOSITS
+// ═══════════════════════════════════════════════
+let fixedDeposits = [];
+let editFDId = null;
+
+function switchAccTab(tab) {
+  $('acc-section').style.display  = tab==='accounts' ? '' : 'none';
+  $('fd-section').style.display   = tab==='fd'       ? '' : 'none';
+  document.querySelectorAll('#acc-tab-bar .fc').forEach(f => {
+    f.classList.toggle('active', f.dataset.filter === 'acc-tab-'+tab);
+  });
+  if (tab==='fd') renderFDs();
+}
+
+function calcFDMaturity() {
+  const p = parseFloat($('fd-principal-amt')?.value) || 0;
+  const r = parseFloat($('fd-rate')?.value) || 0;
+  const start = $('fd-start')?.value;
+  const maturity = $('fd-maturity')?.value;
+  if (!p || !r || !start || !maturity) return;
+  const days = (new Date(maturity) - new Date(start)) / (1000*60*60*24);
+  const years = days / 365;
+  const type = $('fd-type')?.value;
+  let matAmt;
+  if (type === 'cumulative') {
+    // Compound quarterly
+    matAmt = p * Math.pow(1 + (r/100)/4, 4*years);
+  } else {
+    // Simple interest
+    matAmt = p + (p * r * years / 100);
+  }
+  if ($('fd-maturity-amt')) $('fd-maturity-amt').value = Math.round(matAmt);
+}
+
+async function renderFDs() {
+  const list = $('fd-list');
+  if (!CS) { list.innerHTML='<p class="empty">Select a society first</p>'; return; }
+  list.innerHTML = '<p class="empty">Loading…</p>';
+  try {
+    fixedDeposits = await GET('fixed_deposits', `?society_id=eq.${CS.id}&order=maturity_date`);
+    const today = new Date();
+    const soon = fixedDeposits.filter(f => {
+      const d = new Date(f.maturity_date);
+      const diff = (d - today) / (1000*60*60*24);
+      return diff >= 0 && diff <= 30 && f.status === 'active';
+    });
+
+    // Stats
+    const active = fixedDeposits.filter(f=>f.status==='active');
+    const totalPrincipal = active.reduce((s,f)=>s+Number(f.principal_amount||0),0);
+    const totalMaturity = active.reduce((s,f)=>s+Number(f.maturity_amount||0),0);
+    $('fd-total').textContent = active.length;
+    $('fd-principal').textContent = '₹'+totalPrincipal.toLocaleString('en-IN');
+    $('fd-maturity-val').textContent = '₹'+totalMaturity.toLocaleString('en-IN');
+    $('fd-alert').textContent = soon.length;
+
+    if (!fixedDeposits.length) {
+      list.innerHTML='<p class="empty">No Fixed Deposits added yet. Click "Add FD" to get started.</p>';
+      return;
+    }
+
+    list.innerHTML = `
+      ${soon.length ? `<div style="background:#fef3c7;border:1px solid #fbbf24;border-radius:8px;padding:10px 14px;margin-bottom:12px;font-size:12.5px;color:#92400e">
+        <strong>⚠️ ${soon.length} FD${soon.length>1?'s':''} maturing within 30 days:</strong>
+        ${soon.map(f=>`<strong>${f.fd_number}</strong> — ${f.bank_name} (${f.maturity_date})`).join(', ')}
+      </div>` : ''}
+      <div class="tbl-wrap">
+        <table><thead><tr>
+          <th>Bank</th><th>FD Number</th><th>Type</th><th>Principal (₹)</th>
+          <th>Rate</th><th>Start</th><th>Maturity</th><th>Maturity Amt (₹)</th>
+          <th>Auto-Renew</th><th>Status</th><th></th>
+        </tr></thead>
+        <tbody>
+          ${fixedDeposits.map(f => {
+            const today = new Date();
+            const matDate = new Date(f.maturity_date);
+            const daysLeft = Math.ceil((matDate - today)/(1000*60*60*24));
+            const isSoon = daysLeft >= 0 && daysLeft <= 30 && f.status==='active';
+            const statusColor = f.status==='active'?'#16a34a':f.status==='matured'?'#d97706':'#64748b';
+            return `<tr style="${isSoon?'background:#fffbeb':''}">
+              <td><strong>${f.bank_name}</strong>${f.branch?`<div style="font-size:10px;color:#64748b">${f.branch}</div>`:''}</td>
+              <td style="font-family:monospace;font-size:12px">${f.fd_number}</td>
+              <td style="font-size:11px">${f.fd_type==='cumulative'?'Cumulative':'Non-Cumul.'}</td>
+              <td style="font-weight:600">₹${Number(f.principal_amount).toLocaleString('en-IN')}</td>
+              <td style="text-align:center">${f.interest_rate}%</td>
+              <td style="font-size:11px">${f.start_date}</td>
+              <td style="font-size:11px;font-weight:${isSoon?'700':'400'};color:${isSoon?'#ef4444':'inherit'}">
+                ${f.maturity_date}
+                ${isSoon?`<div style="font-size:10px;color:#ef4444">⚠️ ${daysLeft}d left</div>`:''}
+                ${daysLeft<0&&f.status==='active'?`<div style="font-size:10px;color:#d97706">Overdue</div>`:''}
+              </td>
+              <td style="font-weight:600;color:#16a34a">${f.maturity_amount?'₹'+Number(f.maturity_amount).toLocaleString('en-IN'):'—'}</td>
+              <td style="text-align:center">${f.auto_renewal==='yes'?'✅':'❌'}</td>
+              <td><span style="font-size:10px;font-weight:600;color:${statusColor};text-transform:capitalize">${f.status}</span></td>
+              <td>
+                <button class="ab" onclick="openFDModal('${f.id}')" title="Edit"><i class="ti ti-edit"></i></button>
+                <button class="ab" onclick="deleteFD('${f.id}')" style="color:#ef4444" title="Delete"><i class="ti ti-trash"></i></button>
+              </td>
+            </tr>`;
+          }).join('')}
+        </tbody></table>
+      </div>
+      <div style="margin-top:10px;display:flex;justify-content:flex-end">
+        <button class="btn" onclick="exportFDCSV()"><i class="ti ti-download"></i> Export CSV</button>
+      </div>`;
+  } catch(e) {
+    list.innerHTML = `<p class="empty">Error: ${e.message}</p>`;
+  }
+}
+
+function openFDModal(id=null) {
+  editFDId = id;
+  const f = id ? fixedDeposits.find(x=>x.id===id) : null;
+  sv('fd-bank', f?.bank_name||'');
+  sv('fd-branch', f?.branch||'');
+  sv('fd-number', f?.fd_number||'');
+  sv('fd-principal-amt', f?.principal_amount||'');
+  sv('fd-rate', f?.interest_rate||'');
+  sv('fd-start', f?.start_date||'');
+  sv('fd-maturity', f?.maturity_date||'');
+  sv('fd-maturity-amt', f?.maturity_amount||'');
+  sv('fd-notes', f?.notes||'');
+  if ($('fd-type'))    $('fd-type').value    = f?.fd_type    || 'cumulative';
+  if ($('fd-renewal')) $('fd-renewal').value = f?.auto_renewal || 'no';
+  if ($('fd-status'))  $('fd-status').value  = f?.status     || 'active';
+  $('fd-modal-title').textContent = id ? 'Edit Fixed Deposit' : 'Add Fixed Deposit';
+  openModal('mo-fd');
+}
+
+async function saveFD() {
+  const bank    = fv('fd-bank').trim();
+  const fdNum   = fv('fd-number').trim();
+  const principal = parseFloat(fv('fd-principal-amt'));
+  const rate    = parseFloat(fv('fd-rate'));
+  const start   = fv('fd-start');
+  const maturity = fv('fd-maturity');
+  if (!bank||!fdNum||!principal||!rate||!start||!maturity) {
+    toast('Please fill all required fields', false); return;
+  }
+  const d = {
+    society_id: CS.id,
+    bank_name: bank,
+    branch: fv('fd-branch').trim()||null,
+    fd_number: fdNum,
+    fd_type: $('fd-type').value,
+    principal_amount: principal,
+    interest_rate: rate,
+    start_date: start,
+    maturity_date: maturity,
+    maturity_amount: parseFloat(fv('fd-maturity-amt'))||null,
+    auto_renewal: $('fd-renewal').value,
+    status: $('fd-status').value,
+    notes: fv('fd-notes').trim()||null
+  };
+  try {
+    if (editFDId) await PATCH('fixed_deposits', editFDId, d);
+    else await POST('fixed_deposits', d);
+    closeModal('mo-fd');
+    await renderFDs();
+    toast(editFDId ? 'FD updated' : 'FD added successfully');
+  } catch(e) { toast('Error: '+e.message, false); }
+}
+
+async function deleteFD(id) {
+  if (!confirm('Delete this Fixed Deposit record?')) return;
+  try {
+    await DELETE('fixed_deposits', id);
+    await renderFDs();
+    toast('FD deleted');
+  } catch(e) { toast('Error: '+e.message, false); }
+}
+
+function exportFDCSV() {
+  if (!fixedDeposits.length) { toast('No FDs to export', false); return; }
+  const rows = [['Bank','Branch','FD Number','Type','Principal (₹)','Rate (%)','Start Date','Maturity Date','Maturity Amount (₹)','Auto-Renewal','Status','Notes']];
+  fixedDeposits.forEach(f=>rows.push([
+    f.bank_name, f.branch||'', f.fd_number, f.fd_type,
+    f.principal_amount, f.interest_rate, f.start_date, f.maturity_date,
+    f.maturity_amount||'', f.auto_renewal, f.status, f.notes||''
+  ]));
+  downloadCSV(rows, `fixed_deposits_${CS.name.replace(/\s/g,'_')}.csv`);
+}
+
+// ═══════════════════════════════════════════════
+// FINANCIAL YEAR SYSTEM
+// ═══════════════════════════════════════════════
+let CURRENT_FY = null; // e.g. "2026-27"
+let ALL_FYS = [];      // e.g. ["2025-26","2026-27"]
+
+function getFYLabel(fy) { return `FY ${fy}`; }
+
+function getCurrentFY() {
+  const now = new Date();
+  const year = now.getMonth() >= 3 ? now.getFullYear() : now.getFullYear() - 1;
+  return `${year}-${String(year+1).slice(2)}`;
+}
+
+function getFYRange(fy) {
+  const startYear = parseInt(fy.split('-')[0]);
+  return {
+    start: `${startYear}-04-01`,
+    end:   `${startYear+1}-03-31`
+  };
+}
+
+function getMonthsInFY(fy) {
+  const startYear = parseInt(fy.split('-')[0]);
+  const months = [];
+  for (let m = 3; m < 15; m++) {
+    const yr = m < 12 ? startYear : startYear + 1;
+    const mo = (m % 12) + 1;
+    months.push(`${yr}-${String(mo).padStart(2,'0')}`);
+  }
+  return months; // Apr to Mar
+}
+
+function fyFromDate(dateStr) {
+  if (!dateStr) return null;
+  const d = new Date(dateStr);
+  const yr = d.getMonth() >= 3 ? d.getFullYear() : d.getFullYear() - 1;
+  return `${yr}-${String(yr+1).slice(2)}`;
+}
+
+async function initFY() {
+  if (!CS) return;
+  let fys = [];
+  try { fys = await GET('financial_years', `?society_id=eq.${CS.id}&order=fy_label`); } catch(e){}
+  if (!fys.length) {
+    const label = getCurrentFY();
+    try {
+      await POST('financial_years', { society_id: CS.id, fy_label: label, is_active: true });
+      fys = await GET('financial_years', `?society_id=eq.${CS.id}&order=fy_label`);
+    } catch(e) {}
+  }
+  ALL_FYS = fys.map(f => f.fy_label);
+  CURRENT_FY = ALL_FYS[ALL_FYS.length - 1] || getCurrentFY();
+  const sel = $('fy-selector');
+  const wrap = $('fy-selector-wrap');
+  if (sel && ALL_FYS.length) {
+    sel.innerHTML = ALL_FYS.map(fy => `<option value="${fy}"${fy===CURRENT_FY?' selected':''}>${getFYLabel(fy)}</option>`).join('');
+    wrap.style.display = 'flex'; // Show for ALL roles
+  }
+  refreshFYBanner();
+  await reloadDataForFY();
+}
+
+function refreshFYBanner() {
+  const banner = $('dash-fy-banner');
+  if (!banner || !CS) { if(banner) banner.style.display='none'; return; }
+  const nextFYStart = parseInt(CURRENT_FY.split('-')[0]) + 1;
+  const nextFY = `${nextFYStart}-${String(nextFYStart+1).slice(2)}`;
+  const alreadyExists = ALL_FYS.includes(nextFY);
+  // Count outstanding arrears from previous FY
+  const prevFY = ALL_FYS.length > 1 ? ALL_FYS[ALL_FYS.length - 2] : null;
+  banner.style.display = '';
+  banner.innerHTML = `
+    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;
+      background:#f0fdf4;border:1.5px solid #86efac;border-radius:12px;padding:12px 16px">
+      <div style="display:flex;align-items:center;gap:10px">
+        <span style="font-size:22px">📅</span>
+        <div>
+          <div style="font-size:13px;font-weight:700;color:#15803d">Financial Year: ${getFYLabel(CURRENT_FY)}</div>
+          <div style="font-size:11px;color:#64748b">Apr ${CURRENT_FY.split('-')[0]} – Mar 20${CURRENT_FY.split('-')[1]} · All data scoped to this year</div>
+        </div>
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        ${!alreadyExists ? `<button class="btn" onclick="startNewFY('${nextFY}')" style="background:#15803d;color:#fff;border-color:#15803d;font-size:12px;white-space:nowrap">
+          <i class="ti ti-calendar-plus"></i> Start FY ${nextFY}
+        </button>` : ''}
+        ${prevFY ? `<button class="btn" onclick="carryForwardArrears('${prevFY}','${CURRENT_FY}')" style="font-size:12px;color:#d97706;border-color:#d97706;white-space:nowrap">
+          <i class="ti ti-transfer"></i> Carry Forward Arrears from ${prevFY}
+        </button>` : ''}
+      </div>
+    </div>`;
+}
+
+async function switchFY(fy) {
+  CURRENT_FY = fy;
+  refreshFYBanner();
+  await reloadDataForFY();
+  refreshDashboard();
+  const activePage = document.querySelector('.page.show');
+  if (activePage) {
+    const id = activePage.id.replace('page-','');
+    if (id==='members')  renderMembers();
+    if (id==='dues')     renderDues();
+    if (id==='accounts') renderAccounts();
+    if (id==='notices')  renderNotices();
+    if (id==='tenants')  renderTenants();
+    if (id==='services') renderSvc();
+    if (id==='reports')  renderReports();
+  }
+  toast(`Switched to ${getFYLabel(fy)}`);
+}
+
+async function reloadDataForFY() {
+  if (!CS) return;
+  const id = CS.id;
+  [members, dues, services, amenities, notices, accounts, tenants, rentRecords] = await Promise.all([
+    GET('members',      `?society_id=eq.${id}&order=name`),
+    GET('dues',         `?society_id=eq.${id}&financial_year=eq.${CURRENT_FY}&order=created_at.desc`),
+    GET('services',     `?society_id=eq.${id}&order=name`),
+    GET('amenities',    `?society_id=eq.${id}&order=name`),
+    GET('notices',      `?society_id=eq.${id}&financial_year=eq.${CURRENT_FY}&order=created_at.desc`),
+    GET('accounts',     `?society_id=eq.${id}&financial_year=eq.${CURRENT_FY}&order=date.desc`),
+    GET('tenants',      `?society_id=eq.${id}&order=tenant_name`),
+    GET('rent_records', `?society_id=eq.${id}&financial_year=eq.${CURRENT_FY}&order=created_at.desc`)
+  ]);
+}
+
+async function startNewFY(nextFY) {
+  if (!confirm(`Start Financial Year ${nextFY}?\n\nThis will:\n✅ Create FY ${nextFY}\n✅ Auto-generate dues for all ${members.length} members (Apr–Mar)\n✅ Carry forward outstanding arrears from ${CURRENT_FY}\n✅ Switch the app to the new FY`)) return;
+
+  toast(`Starting FY ${nextFY}…`);
+  try {
+    // 1 — Create FY record
+    await POST('financial_years', { society_id: CS.id, fy_label: nextFY, is_active: true });
+
+    // 2 — Deactivate old FY
+    const fyRec = await GET('financial_years', `?society_id=eq.${CS.id}&fy_label=eq.${CURRENT_FY}`);
+    if (fyRec?.[0]?.id) await PATCH('financial_years', fyRec[0].id, { is_active: false });
+
+    // 3 — Auto-generate dues for all 12 months
+    const months = getMonthsInFY(nextFY);
+    const defaultMaint = CS.default_maintenance || 0;
+    const duesPayload = [];
+    members.forEach(m => {
+      months.forEach(mo => {
+        duesPayload.push({
+          society_id: CS.id, flat: `${m.wing}-${m.flat}`,
+          month: mo, amount: defaultMaint,
+          status: 'pending', financial_year: nextFY
+        });
+      });
+    });
+    for (let i = 0; i < duesPayload.length; i += 50) {
+      await POST('dues', duesPayload.slice(i, i+50));
+    }
+
+    // 4 — Carry forward outstanding arrears automatically
+    const prevDues = await GET('dues', `?society_id=eq.${CS.id}&financial_year=eq.${CURRENT_FY}&status=in.(pending,overdue)`);
+    if (prevDues.length) {
+      const arrearPayload = prevDues.map(d => ({
+        society_id: CS.id, flat: d.flat,
+        month: `Arrears-${CURRENT_FY}`,
+        amount: (Number(d.amount) + Number(d.late_fee||0) - Number(d.discount||0)),
+        status: 'pending', financial_year: nextFY,
+        remarks: `Carried forward from FY ${CURRENT_FY} — ${d.month}`
+      }));
+      for (let i = 0; i < arrearPayload.length; i += 50) {
+        await POST('dues', arrearPayload.slice(i, i+50));
+      }
+      toast(`${arrearPayload.length} arrear records carried forward from FY ${CURRENT_FY}`);
+    }
+
+    // 5 — Switch to new FY
+    ALL_FYS.push(nextFY);
+    const sel = $('fy-selector');
+    if (sel) sel.innerHTML = ALL_FYS.map(fy => `<option value="${fy}"${fy===nextFY?' selected':''}>${getFYLabel(fy)}</option>`).join('');
+    CURRENT_FY = nextFY;
+    await reloadDataForFY();
+    refreshDashboard();
+    refreshFYBanner();
+    renderDues();
+    toast(`FY ${nextFY} started! ${duesPayload.length} dues + ${prevDues.length} arrears carried forward ✅`);
+  } catch(e) { toast('Error: '+e.message, false); }
+}
+
+async function carryForwardArrears(fromFY, toFY) {
+  const prevDues = await GET('dues', `?society_id=eq.${CS.id}&financial_year=eq.${fromFY}&status=in.(pending,overdue)`);
+  if (!prevDues.length) { toast(`No outstanding dues in FY ${fromFY}`, false); return; }
+  // Check if already carried forward
+  const existing = await GET('dues', `?society_id=eq.${CS.id}&financial_year=eq.${toFY}&month=like.Arrears-${fromFY}*`).catch(()=>[]);
+  if (existing.length) { toast(`Arrears from FY ${fromFY} already carried forward`, false); return; }
+  if (!confirm(`Carry forward ${prevDues.length} outstanding dues from FY ${fromFY} to FY ${toFY}?`)) return;
+  const arrearPayload = prevDues.map(d => ({
+    society_id: CS.id, flat: d.flat,
+    month: `Arrears-${fromFY}`,
+    amount: (Number(d.amount) + Number(d.late_fee||0) - Number(d.discount||0)),
+    status: 'pending', financial_year: toFY,
+    remarks: `Carried forward from FY ${fromFY} — ${d.month}`
+  }));
+  for (let i = 0; i < arrearPayload.length; i += 50) {
+    await POST('dues', arrearPayload.slice(i, i+50));
+  }
+  await reloadDataForFY();
+  renderDues();
+  toast(`${arrearPayload.length} arrears carried forward from FY ${fromFY} ✅`);
+}
+
+function populateFYOverviewSelector() {
+  const sel = $('fy-overview-selector');
+  if (!sel) return;
+  // Collect all unique FYs across all societies — use ALL_FYS or generate a range
+  const thisYear = new Date().getFullYear();
+  const fys = [];
+  for (let y = thisYear - 2; y <= thisYear + 1; y++) {
+    fys.push(`${y}-${String(y+1).slice(2)}`);
+  }
+  // Also include any from ALL_FYS
+  ALL_FYS.forEach(f => { if (!fys.includes(f)) fys.push(f); });
+  fys.sort();
+  const cur = CURRENT_FY || getCurrentFY();
+  sel.innerHTML = fys.map(fy => `<option value="${fy}"${fy===cur?' selected':''}>${getFYLabel(fy)}</option>`).join('');
+}
+
+// ═══════════════════════════════════════════════
+// MASTER ADMIN — FY OVERVIEW ACROSS ALL SOCIETIES
+// ═══════════════════════════════════════════════
+async function renderFYOverview() {
+  const el = $('fy-overview-content');
+  if (!el) return;
+  el.innerHTML = '<p class="empty">Loading FY overview…</p>';
+  try {
+    const socs = allSocs || [];
+    if (!socs.length) { el.innerHTML='<p class="empty">No societies yet</p>'; return; }
+    const fy = CURRENT_FY || getCurrentFY();
+
+    // Load dues summary for all societies for current FY
+    const results = await Promise.all(socs.map(async s => {
+      const [allDues, allAcc] = await Promise.all([
+        GET('dues',     `?society_id=eq.${s.id}&financial_year=eq.${fy}`).catch(()=>[]),
+        GET('accounts', `?society_id=eq.${s.id}&financial_year=eq.${fy}`).catch(()=>[])
+      ]);
+      const totalDues     = allDues.reduce((sum,d)=>sum+Number(d.amount||0)+Number(d.late_fee||0)-Number(d.discount||0),0);
+      const collected     = allDues.filter(d=>d.status==='paid').reduce((sum,d)=>sum+Number(d.amount||0),0);
+      const outstanding   = allDues.filter(d=>d.status!=='paid').reduce((sum,d)=>sum+Number(d.amount||0)+Number(d.late_fee||0)-Number(d.discount||0),0);
+      const arrears       = allDues.filter(d=>d.month?.startsWith('Arrears')).reduce((sum,d)=>sum+Number(d.amount||0),0);
+      const income        = allAcc.filter(a=>a.type==='income').reduce((sum,a)=>sum+Number(a.amount||0),0);
+      const expense       = allAcc.filter(a=>a.type==='expense').reduce((sum,a)=>sum+Number(a.amount||0),0);
+      return { s, totalDues, collected, outstanding, arrears, income, expense, net: income-expense };
+    }));
+
+    const totals = results.reduce((t,r)=>({
+      totalDues: t.totalDues+r.totalDues, collected: t.collected+r.collected,
+      outstanding: t.outstanding+r.outstanding, arrears: t.arrears+r.arrears,
+      income: t.income+r.income, expense: t.expense+r.expense, net: t.net+r.net
+    }), {totalDues:0,collected:0,outstanding:0,arrears:0,income:0,expense:0,net:0});
+
+    el.innerHTML = `
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px">
+        <div class="sc"><div class="lb">Total Dues Billed</div><div class="vl" style="font-size:18px">₹${totals.totalDues.toLocaleString('en-IN')}</div><div class="sb">All societies · ${getFYLabel(fy)}</div></div>
+        <div class="sc"><div class="lb">Total Collected</div><div class="vl" style="color:#16a34a;font-size:18px">₹${totals.collected.toLocaleString('en-IN')}</div><div class="sb">Paid dues</div></div>
+        <div class="sc"><div class="lb">Outstanding</div><div class="vl" style="color:#ef4444;font-size:18px">₹${totals.outstanding.toLocaleString('en-IN')}</div><div class="sb">Pending + Overdue</div></div>
+        <div class="sc"><div class="lb">Net Balance (Accounts)</div><div class="vl" style="color:${totals.net>=0?'#16a34a':'#ef4444'};font-size:18px">₹${Math.abs(totals.net).toLocaleString('en-IN')}</div><div class="sb">${totals.net>=0?'Surplus':'Deficit'}</div></div>
+      </div>
+      <div class="tbl-wrap">
+        <table><thead><tr>
+          <th>Society</th><th>Plan</th><th>Dues Billed</th><th>Collected</th>
+          <th>Outstanding</th><th>Arrears</th><th>Income</th><th>Expense</th><th>Net</th>
+        </tr></thead>
+        <tbody>
+          ${results.map(r=>`<tr>
+            <td style="font-weight:600">${r.s.name}<div style="font-size:10px;color:#94a3b8">${r.s.city||''}</div></td>
+            <td><span class="plan-tag ${PLAN_BG[r.s.plan||'basic']}" style="font-size:9px">${(r.s.plan||'basic').toUpperCase()}</span></td>
+            <td>₹${r.totalDues.toLocaleString('en-IN')}</td>
+            <td style="color:#16a34a;font-weight:600">₹${r.collected.toLocaleString('en-IN')}</td>
+            <td style="color:${r.outstanding>0?'#ef4444':'#16a34a'};font-weight:600">₹${r.outstanding.toLocaleString('en-IN')}</td>
+            <td style="color:#d97706">${r.arrears>0?'₹'+r.arrears.toLocaleString('en-IN'):'—'}</td>
+            <td style="color:#16a34a">₹${r.income.toLocaleString('en-IN')}</td>
+            <td style="color:#991b1b">₹${r.expense.toLocaleString('en-IN')}</td>
+            <td style="font-weight:700;color:${r.net>=0?'#16a34a':'#ef4444'}">₹${Math.abs(r.net).toLocaleString('en-IN')} ${r.net>=0?'▲':'▼'}</td>
+          </tr>`).join('')}
+          <tr style="background:#f8fafc;font-weight:700;border-top:2px solid #e2e8f0">
+            <td colspan="2">TOTAL</td>
+            <td>₹${totals.totalDues.toLocaleString('en-IN')}</td>
+            <td style="color:#16a34a">₹${totals.collected.toLocaleString('en-IN')}</td>
+            <td style="color:#ef4444">₹${totals.outstanding.toLocaleString('en-IN')}</td>
+            <td style="color:#d97706">₹${totals.arrears.toLocaleString('en-IN')}</td>
+            <td style="color:#16a34a">₹${totals.income.toLocaleString('en-IN')}</td>
+            <td style="color:#991b1b">₹${totals.expense.toLocaleString('en-IN')}</td>
+            <td style="color:${totals.net>=0?'#16a34a':'#ef4444'}">₹${Math.abs(totals.net).toLocaleString('en-IN')} ${totals.net>=0?'▲':'▼'}</td>
+          </tr>
+        </tbody></table>
+      </div>`;
+  } catch(e) { el.innerHTML=`<p class="empty">Error: ${e.message}</p>`; }
+}
+
+// ═══════════════════════════════════════════════
+// DATABASE MONITOR
+// ═══════════════════════════════════════════════
+async function renderDBMonitor() {
+  const el = $('db-monitor-content');
+  el.innerHTML = '<p class="empty">⏳ Fetching database stats…</p>';
+
+  try {
+    // Count rows in each table
+    const tables = ['societies','members','dues','accounts','notices','tenants','rent_records',
+                    'services','amenities','nominees','financial_years','referral_codes',
+                    'fixed_deposits','signup_requests'];
+
+    const counts = await Promise.all(tables.map(t =>
+      fetch(`${URL}/rest/v1/${t}?select=id`, {
+        headers: { 'apikey': KEY, 'Authorization': 'Bearer '+KEY, 'Prefer': 'count=exact', 'Range': '0-0' }
+      }).then(r => ({ table: t, count: parseInt(r.headers.get('content-range')?.split('/')[1]||'0') }))
+        .catch(() => ({ table: t, count: 0 }))
+    ));
+
+    const totalRows = counts.reduce((s,c)=>s+c.count, 0);
+
+    // Estimate storage — avg bytes per row varies by table
+    const ROW_SIZES = {
+      societies: 800, members: 1200, dues: 400, accounts: 500,
+      notices: 600, tenants: 800, rent_records: 300, services: 400,
+      amenities: 300, nominees: 400, financial_years: 150,
+      referral_codes: 300, fixed_deposits: 600, signup_requests: 1000
+    };
+    let estimatedBytes = 0;
+    counts.forEach(c => { estimatedBytes += c.count * (ROW_SIZES[c.table]||400); });
+    const estimatedMB = estimatedBytes / (1024*1024);
+    const FREE_LIMIT_MB = 500;
+    const usedPct = Math.min((estimatedMB / FREE_LIMIT_MB) * 100, 100);
+
+    // Growth projection
+    const activeSocs = allSocs.length;
+    const avgPerSoc = activeSocs > 0 ? estimatedMB / activeSocs : 0;
+    const projAt500 = 500 * avgPerSoc;
+    const projAt1000 = 1000 * avgPerSoc;
+    const recSocsBeforeUpgrade = avgPerSoc > 0 ? Math.floor((FREE_LIMIT_MB * 0.8) / avgPerSoc) : '—';
+
+    // Color for usage bar
+    const barColor = usedPct < 50 ? '#16a34a' : usedPct < 80 ? '#d97706' : '#ef4444';
+    const statusLabel = usedPct < 50 ? '🟢 Healthy' : usedPct < 80 ? '🟡 Monitor Closely' : '🔴 Upgrade Soon';
+
+    el.innerHTML = `
+      <!-- Summary Cards -->
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px">
+        <div class="sc">
+          <div class="lb">Est. Storage Used</div>
+          <div class="vl" style="color:${barColor};font-size:22px">${estimatedMB.toFixed(1)} MB</div>
+          <div class="sb">of 500 MB free limit</div>
+        </div>
+        <div class="sc">
+          <div class="lb">Storage Status</div>
+          <div class="vl" style="font-size:16px;margin-top:4px">${statusLabel}</div>
+          <div class="sb">${usedPct.toFixed(1)}% used</div>
+        </div>
+        <div class="sc">
+          <div class="lb">Total Rows</div>
+          <div class="vl" style="font-size:22px">${totalRows.toLocaleString('en-IN')}</div>
+          <div class="sb">Across all tables</div>
+        </div>
+        <div class="sc">
+          <div class="lb">Active Societies</div>
+          <div class="vl" style="font-size:22px">${activeSocs}</div>
+          <div class="sb">~${avgPerSoc.toFixed(2)} MB per society</div>
+        </div>
+      </div>
+
+      <!-- Usage Bar -->
+      <div class="card" style="margin-bottom:16px">
+        <div class="card-head"><h3>📊 Storage Usage</h3></div>
+        <div class="card-body">
+          <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:6px">
+            <span style="font-weight:600;color:${barColor}">${estimatedMB.toFixed(1)} MB used</span>
+            <span style="color:#64748b">500 MB free limit</span>
+          </div>
+          <div style="background:#f1f5f9;border-radius:20px;height:18px;overflow:hidden">
+            <div style="width:${usedPct}%;background:${barColor};height:100%;border-radius:20px;transition:width .5s;display:flex;align-items:center;justify-content:center">
+              ${usedPct>15?`<span style="font-size:10px;color:#fff;font-weight:700">${usedPct.toFixed(1)}%</span>`:''}
+            </div>
+          </div>
+          <div style="display:flex;justify-content:space-between;font-size:10px;color:#94a3b8;margin-top:4px">
+            <span>0 MB</span><span style="color:#d97706">⚠️ 400 MB (Upgrade zone)</span><span>500 MB</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Growth Projection -->
+      <div class="card" style="margin-bottom:16px">
+        <div class="card-head"><h3>📈 Growth Projection</h3></div>
+        <div class="card-body">
+          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;text-align:center">
+            <div style="padding:12px;background:#f0fdf4;border-radius:8px;border:1px solid #86efac">
+              <div style="font-size:11px;color:#64748b;margin-bottom:4px">Current (${activeSocs} societies)</div>
+              <div style="font-size:20px;font-weight:700;color:#16a34a">${estimatedMB.toFixed(1)} MB</div>
+              <div style="font-size:10px;color:#16a34a">✅ Well within free limit</div>
+            </div>
+            <div style="padding:12px;background:#fffbeb;border-radius:8px;border:1px solid #fbbf24">
+              <div style="font-size:11px;color:#64748b;margin-bottom:4px">At 500 Societies</div>
+              <div style="font-size:20px;font-weight:700;color:#d97706">${projAt500.toFixed(0)} MB</div>
+              <div style="font-size:10px;color:#d97706">${projAt500>400?'⚠️ Upgrade recommended':'✅ Still manageable'}</div>
+            </div>
+            <div style="padding:12px;background:#fef2f2;border-radius:8px;border:1px solid #fca5a5">
+              <div style="font-size:11px;color:#64748b;margin-bottom:4px">At 1,000 Societies</div>
+              <div style="font-size:20px;font-weight:700;color:#ef4444">${projAt1000.toFixed(0)} MB</div>
+              <div style="font-size:10px;color:#ef4444">⚡ Upgrade to Pro required</div>
+            </div>
+          </div>
+          <div style="margin-top:12px;padding:10px 14px;background:#eff6ff;border-radius:8px;font-size:12.5px;color:#1e40af">
+            <strong>💡 Recommendation:</strong> Upgrade to Supabase Pro ($25/month, 8GB) when you reach 
+            <strong>${recSocsBeforeUpgrade} societies</strong>. At ₹999/society/month, that's 
+            <strong>₹${typeof recSocsBeforeUpgrade==='number'?(recSocsBeforeUpgrade*999).toLocaleString('en-IN'):'—'}/month revenue</strong> — 
+            well worth the upgrade cost!
+          </div>
+        </div>
+      </div>
+
+      <!-- Table Breakdown -->
+      <div class="card">
+        <div class="card-head"><h3>🗄️ Table Breakdown</h3></div>
+        <div class="tbl-wrap">
+          <table><thead><tr>
+            <th>Table</th><th>Rows</th><th>Est. Size</th><th>% of Total</th><th></th>
+          </tr></thead>
+          <tbody>
+            ${counts.sort((a,b)=>b.count-a.count).map(c => {
+              const sz = (c.count * (ROW_SIZES[c.table]||400)) / (1024*1024);
+              const pct = totalRows>0 ? (c.count/totalRows*100) : 0;
+              return `<tr>
+                <td style="font-family:monospace;font-size:12px;font-weight:600">${c.table}</td>
+                <td style="text-align:center;font-weight:600">${c.count.toLocaleString('en-IN')}</td>
+                <td style="text-align:center">${sz.toFixed(3)} MB</td>
+                <td style="min-width:120px">
+                  <div style="display:flex;align-items:center;gap:6px">
+                    <div style="flex:1;background:#f1f5f9;border-radius:10px;height:6px">
+                      <div style="width:${pct}%;background:#2563eb;height:100%;border-radius:10px"></div>
+                    </div>
+                    <span style="font-size:10px;color:#64748b;white-space:nowrap">${pct.toFixed(1)}%</span>
+                  </div>
+                </td>
+                <td style="font-size:10px;color:#94a3b8">${c.count===0?'Empty':c.count<100?'Low':'Normal'}</td>
+              </tr>`;
+            }).join('')}
+          </tbody></table>
+        </div>
+        <div style="padding:10px 14px;font-size:11px;color:#94a3b8;border-top:1px solid #f1f5f9">
+          ⚠️ Storage estimates are approximate. Actual usage may vary based on photo sizes and text length. Check exact usage at 
+          <a href="https://supabase.com/dashboard/project/mbmrzyhcjivrbiaayiah/settings/billing" target="_blank" style="color:#2563eb">Supabase Dashboard → Settings → Billing</a>
+        </div>
+      </div>
+
+      <!-- BACKUP SECTION -->
+      <div class="card" style="margin-top:16px">
+        <div class="card-head"><h3>💾 Backup & Export</h3></div>
+        <div class="card-body">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+
+            <!-- Manual Backup -->
+            <div style="padding:16px;background:#f0fdf4;border:1.5px solid #86efac;border-radius:10px">
+              <div style="font-size:14px;font-weight:700;color:#15803d;margin-bottom:6px">📥 Manual Full Backup</div>
+              <div style="font-size:12px;color:#64748b;margin-bottom:12px;line-height:1.6">
+                Downloads a complete CSV backup of <strong>all societies</strong> and <strong>all data</strong> — members, dues, accounts, notices, tenants, FDs, nominees and more.
+              </div>
+              <div id="last-backup-info" style="font-size:11px;color:#94a3b8;margin-bottom:10px"></div>
+              <button class="btn" onclick="runFullBackup()" id="backup-btn"
+                style="background:#15803d;color:#fff;border-color:#15803d;width:100%;justify-content:center;font-size:13px;padding:10px">
+                <i class="ti ti-download"></i> Download Full Backup Now
+              </button>
+            </div>
+
+            <!-- Google Sheets -->
+            <div style="padding:16px;background:#eff6ff;border:1.5px solid #93c5fd;border-radius:10px">
+              <div style="font-size:14px;font-weight:700;color:#1e40af;margin-bottom:6px">📊 Google Sheets Backup</div>
+              <div style="font-size:12px;color:#64748b;margin-bottom:12px;line-height:1.6">
+                Set up automatic weekly backup to Google Sheets using Apps Script. Your data stays in a readable spreadsheet — accessible from anywhere.
+              </div>
+              <div style="font-size:11px;color:#64748b;margin-bottom:10px">
+                <strong>Step 1:</strong> Click below to open Google Sheets<br>
+                <strong>Step 2:</strong> Go to Extensions → Apps Script<br>
+                <strong>Step 3:</strong> Paste the script → Set trigger → Done!
+              </div>
+              <div style="display:flex;gap:8px;flex-wrap:wrap">
+                <button class="btn" onclick="copyAppsScript()"
+                  style="background:#1e40af;color:#fff;border-color:#1e40af;flex:1;justify-content:center;font-size:12px;padding:8px">
+                  <i class="ti ti-copy"></i> Copy Apps Script
+                </button>
+                <a href="https://sheets.new" target="_blank" class="btn"
+                  style="background:#fff;color:#1e40af;border-color:#1e40af;flex:1;justify-content:center;font-size:12px;padding:8px;text-decoration:none">
+                  <i class="ti ti-external-link"></i> Open Google Sheets
+                </a>
+              </div>
+            </div>
+          </div>
+
+          <!-- Backup Log -->
+          <div style="margin-top:14px;padding:12px 14px;background:#f8fafc;border-radius:8px;border:1px solid #e2e8f0">
+            <div style="font-size:12px;font-weight:600;color:#475569;margin-bottom:8px">📋 Backup Log (This Session)</div>
+            <div id="backup-log" style="font-size:11px;color:#94a3b8">No backups taken yet in this session.</div>
+          </div>
+        </div>
+      </div>`;
+
+  } catch(e) {
+    el.innerHTML = `<p class="empty">Error loading DB stats: ${e.message}</p>`;
+  }
+
+  // Update last backup info
+  const lastBackup = localStorage.getItem('sos_last_backup');
+  const lbi = $('last-backup-info');
+  if (lbi) {
+    lbi.innerHTML = lastBackup
+      ? `🕐 Last backup: <strong>${lastBackup}</strong>`
+      : '⚠️ No backup taken yet — we recommend weekly backups.';
+    // Warn if overdue
+    if (lastBackup) {
+      const daysSince = Math.floor((Date.now() - new Date(lastBackup).getTime()) / (1000*60*60*24));
+      if (daysSince >= 7) {
+        lbi.innerHTML += `<br><span style="color:#ef4444;font-weight:600">⚠️ ${daysSince} days since last backup! Please backup now.</span>`;
+      }
+    }
+  }
+}
+
+async function runFullBackup() {
+  const btn = $('backup-btn');
+  if (btn) { btn.disabled=true; btn.innerHTML='<i class="ti ti-loader"></i> Backing up…'; }
+
+  try {
+    // Fetch societies without heavy columns (photos etc.)
+    const socs = await GET('societies', '?select=id,name,city,state,plan,registration_no,total_units,is_deleted&order=name');
+    const activeSocs = socs.filter(s=>!s.is_deleted);
+
+    const tables = [
+      { name:'members',          cols:'id,wing,flat,name,mobile,email,ownership,status' },
+      { name:'dues',             cols:'id,flat,month,amount,late_fee,discount,status,paid_date,payment_mode,financial_year' },
+      { name:'accounts',         cols:'id,date,type,category,description,amount,payment_mode,financial_year' },
+      { name:'notices',          cols:'id,type,title,body,status,created_at,financial_year' },
+      { name:'tenants',          cols:'id,wing,flat,tenant_name,tenant_mobile,monthly_rent,lease_start,lease_end' },
+      { name:'services',         cols:'id,name,vendor,amount,expiry_date,status' },
+      { name:'amenities',        cols:'id,name,capacity,status' },
+      { name:'nominees',         cols:'id,member_id,name,relationship,mobile,aadhaar,share_percent' },
+      { name:'fixed_deposits',   cols:'id,bank_name,fd_number,principal_amount,interest_rate,start_date,maturity_date,status' },
+      { name:'financial_years',  cols:'id,fy_label,is_active,created_at' },
+    ];
+
+    let csv = `SOCIETYOS FULL BACKUP\nGenerated: ${new Date().toLocaleString('en-IN')}\nTotal Societies: ${activeSocs.length}\n\n`;
+
+    for (const soc of activeSocs) {
+      csv += `${'='.repeat(60)}\nSOCIETY: ${soc.name} (${soc.city||''})\nPlan: ${(soc.plan||'basic').toUpperCase()} | Reg: ${soc.registration_no||'—'}\n${'='.repeat(60)}\n\n`;
+
+      for (const t of tables) {
+        try {
+          const rows = await GET(t.name, `?society_id=eq.${soc.id}&select=${t.cols}`);
+          if (!rows.length) continue;
+          const headers = Object.keys(rows[0]);
+          csv += `--- ${t.name.toUpperCase()} (${rows.length} records) ---\n`;
+          csv += headers.map(h=>`"${h}"`).join(',') + '\n';
+          rows.forEach(r => {
+            csv += headers.map(h=>`"${String(r[h]??'').replace(/"/g,'""')}"`).join(',') + '\n';
+          });
+          csv += '\n';
+        } catch(e) {
+          csv += `--- ${t.name.toUpperCase()} — Error: ${e.message} ---\n\n`;
+        }
+      }
+    }
+
+    // Download using universal method
+    downloadCSV(null, null, csv, `SocietyOS_FullBackup_${new Date().toISOString().substring(0,10)}.csv`);
+
+    // Log
+    const now = new Date().toLocaleString('en-IN');
+    localStorage.setItem('sos_last_backup', now);
+    const log = $('backup-log');
+    if (log) log.innerHTML = `✅ <strong>${now}</strong> — Full backup of ${activeSocs.length} societies downloaded.`;
+    const lbi = $('last-backup-info');
+    if (lbi) lbi.innerHTML = `🕐 Last backup: <strong>${now}</strong>`;
+    toast(`✅ Full backup downloaded — ${activeSocs.length} societies`);
+
+  } catch(e) {
+    toast('Backup failed: '+e.message, false);
+    console.error('Backup error:', e);
+  } finally {
+    if (btn) { btn.disabled=false; btn.innerHTML='<i class="ti ti-download"></i> Download Full Backup Now'; }
+  }
+}
+
+function copyAppsScript() {
+  var lines = [
+    'var SUPABASE_URL = "' + URL + '";',
+    'var SUPABASE_KEY = "' + KEY + '";',
+    'var TABLES = ["societies","members","dues","accounts","notices","tenants","services","amenities","nominees","fixed_deposits"];',
+    '',
+    'function backupToSheets() {',
+    '  var ss = SpreadsheetApp.getActiveSpreadsheet();',
+    '  var date = new Date().toISOString().substring(0, 10);',
+    '  for (var i = 0; i < TABLES.length; i++) {',
+    '    var table = TABLES[i];',
+    '    try {',
+    '      var options = { headers: { "apikey": SUPABASE_KEY, "Authorization": "Bearer " + SUPABASE_KEY } };',
+    '      var res = UrlFetchApp.fetch(SUPABASE_URL + "/rest/v1/" + table + "?limit=10000", options);',
+    '      var rows = JSON.parse(res.getContentText());',
+    '      if (!rows || rows.length === 0) { continue; }',
+    '      var sheet = ss.getSheetByName(table);',
+    '      if (sheet === null) { sheet = ss.insertSheet(table); }',
+    '      sheet.clearContents();',
+    '      var headers = Object.keys(rows[0]);',
+    '      sheet.getRange(1, 1, 1, headers.length).setValues([headers]);',
+    '      sheet.getRange(1, 1, 1, headers.length).setFontWeight("bold").setBackground("#1a3c6e").setFontColor("#ffffff");',
+    '      var data = [];',
+    '      for (var j = 0; j < rows.length; j++) {',
+    '        var row = [];',
+    '        for (var k = 0; k < headers.length; k++) {',
+    '          var val = rows[j][headers[k]];',
+    '          if (val === null || val === undefined) {',
+    '            row.push("");',
+    '          } else {',
+    '            row.push(String(val));',
+    '          }',
+    '        }',
+    '        data.push(row);',
+    '      }',
+    '      sheet.getRange(2, 1, data.length, headers.length).setValues(data);',
+    '      Logger.log("Backed up " + rows.length + " rows from " + table);',
+    '    } catch (e) {',
+    '      Logger.log("Error: " + table + " - " + e.message);',
+    '    }',
+    '  }',
+    '  var logSheet = ss.getSheetByName("Backup Log");',
+    '  if (logSheet === null) { logSheet = ss.insertSheet("Backup Log"); }',
+    '  logSheet.appendRow([new Date(), "Backup done", date]);',
+    '  Logger.log("Done: " + date);',
+    '}'
+  ];
+  var script = lines.join('\n');
+  navigator.clipboard.writeText(script)
+    .then(function() { toast('Apps Script copied! Clear old code in Apps Script then paste this.'); })
+    .catch(function() { toast('Copy failed — please try again', false); });
+}
 
 </script>
 </body>
