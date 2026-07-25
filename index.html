@@ -2707,7 +2707,7 @@ async function renderPlans() {
                   <div style="font-size:28px;font-weight:800;color:${PLAN_COLORS[p.id]};margin:8px 0">
                     ₹${Number(p.price_monthly).toLocaleString('en-IN')}<span style="font-size:10px;font-weight:400;color:#64748b">/mo</span>
                   </div>
-                  <div style="font-size:12px;color:#64748b;margin-top:2px">+GST 18% = ₹${Math.round(Number(p.price_monthly)*(1+GST_RATE)).toLocaleString('en-IN')}/mo</div>
+                  <div style="font-size:12px;color:#64748b;margin-top:2px">+GST 18% = ₹${Math.round(Number(p.price_monthly)*(1.18)).toLocaleString('en-IN')}/mo</div>
                   <div style="font-size:12px;color:#16a34a;margin-top:4px;font-weight:600">₹${Number(p.price_yearly).toLocaleString('en-IN')}/yr +GST</div>
                   <button onclick="editPlanPricing('${p.id}')" class="btn" style="margin-top:10px;padding:6px 14px;font-size:12px;border-color:${BDR[p.id]};color:${BDR[p.id]};font-weight:600"><i class="ti ti-edit"></i> Edit Pricing</button>
                 </th>`;
@@ -2844,21 +2844,15 @@ async function renderPricing() {
                   <div style="font-size:28px;font-weight:800;color:${PLAN_COLORS[p.id]};margin:8px 0">
                     ₹${Number(p.price_monthly).toLocaleString('en-IN')}<span style="font-size:10px;font-weight:400;color:#64748b">/mo</span>
                   </div>
-                  <div style="font-size:12px;color:#64748b;margin-top:2px">+GST 18% = ₹${Math.round(Number(p.price_monthly)*(1+GST_RATE)).toLocaleString('en-IN')}/mo</div>
+                  <div style="font-size:12px;color:#64748b;margin-top:2px">+GST 18% = ₹${Math.round(Number(p.price_monthly)*(1.18)).toLocaleString('en-IN')}/mo</div>
                   <div style="font-size:10px;color:#16a34a;margin-top:2px;font-weight:500">
                     ₹${Number(p.price_yearly).toLocaleString('en-IN')}/yr &nbsp;•&nbsp; Save ${Math.round((1-p.price_yearly/(p.price_monthly*12))*100)}%
                   </div>
                   ${!isCurrent
-                    ? `<div style="display:flex;flex-direction:column;gap:6px;margin-top:8px">
-                        <button onclick="openRazorpay('${p.id}','monthly')" class="btn btn-p"
-                          style="padding:6px 12px;font-size:11px;width:100%;justify-content:center;background:${BDR[p.id]};border-color:${BDR[p.id]}">
-                          <i class="ti ti-credit-card"></i> Pay Monthly ₹${Math.round(Number(p.price_monthly)*(1+GST_RATE)).toLocaleString('en-IN')}
-                        </button>
-                        <button onclick="openRazorpay('${p.id}','yearly')" class="btn"
-                          style="padding:6px 12px;font-size:11px;width:100%;justify-content:center;border-color:${BDR[p.id]};color:${BDR[p.id]}">
-                          <i class="ti ti-calendar"></i> Pay Yearly ₹${Math.round(Number(p.price_yearly)*(1+GST_RATE)).toLocaleString('en-IN')}
-                        </button>
-                      </div>`
+                    ? `<button onclick="requestUpgrade('${p.id}')" class="btn btn-p"
+                        style="margin-top:8px;padding:4px 12px;font-size:11px;width:100%;justify-content:center;background:${BDR[p.id]};border-color:${BDR[p.id]}">
+                        <i class="ti ti-crown"></i> Request Upgrade
+                      </button>`
                     : '<div style="margin-top:8px;padding:4px 12px;background:#dcfce7;border-radius:6px;font-size:11px;color:#166534;font-weight:600">✓ Active</div>'
                   }
                 </th>`;
@@ -2955,9 +2949,7 @@ function showTrialBanner(days, isTrial, urgent) {
       <button class="btn btn-p" style="font-size:11px;padding:4px 10px" onclick="goPage('pricing')">
         <i class="ti ti-crown"></i> View Plans
       </button>
-      <button class="btn btn-p" style="font-size:11px;padding:4px 10px;background:#16a34a;border-color:#16a34a" onclick="openRazorpay(CS?.plan||'basic','monthly')">
-        <i class="ti ti-credit-card"></i> Pay Now
-      </button>
+
       <button onclick="this.parentElement.parentElement.remove()" style="background:none;border:none;cursor:pointer;font-size:16px;color:inherit">×</button>
     </div>`;
   // Insert before content
@@ -3181,7 +3173,7 @@ async function openSignupModal() {
         <div style="font-size:28px;font-weight:800;color:${PLAN_COLORS[p.id]};margin:8px 0">
           ₹${Number(p.price_monthly).toLocaleString('en-IN')}<span style="font-size:11px;font-weight:400;color:#64748b">/mo</span>
         </div>
-        <div style="font-size:12px;color:#64748b;margin-top:2px">+GST 18% = ₹${Math.round(Number(p.price_monthly)*(1+GST_RATE)).toLocaleString('en-IN')}/mo</div>
+        <div style="font-size:12px;color:#64748b;margin-top:2px">+GST 18% = ₹${Math.round(Number(p.price_monthly)*(1.18)).toLocaleString('en-IN')}/mo</div>
         <div style="font-size:10px;color:#64748b;margin-top:3px">${DESC[p.id]||''}</div>
         <div style="font-size:10px;color:#16a34a;margin-top:5px;font-weight:600">🎉 7 days FREE trial</div>
       </div>`).join('');
@@ -3854,146 +3846,6 @@ function exportFDCSV() {
   downloadCSV(rows, `fixed_deposits_${CS?.name||'society'}_${new Date().toISOString().split('T')[0]}.csv`);
 }
 
-// ═══════════════════════════════════════════════
-// RAZORPAY PAYMENT INTEGRATION
-// ═══════════════════════════════════════════════
-const RZP_KEY_ID = 'rzp_test_TGx6bDDcQujOZ4';
-const GST_RATE   = 0.18;
-
-async function openRazorpay(planId, period='monthly') {
-  if (!CS || !CU) { toast('Please login first', false); return; }
-
-  // Get plan details
-  const plan = allPlans.find(p=>p.id===planId);
-  if (!plan) {
-    // Load plans if not loaded yet
-    const plans = await GET('plans','?order=price_monthly');
-    allPlans = plans;
-  }
-  const planObj = allPlans.find(p=>p.id===planId) || {};
-  const baseAmt  = period==='yearly' ? Number(planObj.price_yearly||0) : Number(planObj.price_monthly||0);
-  const gstAmt   = Math.round(baseAmt * GST_RATE);
-  const totalAmt = baseAmt + gstAmt;
-
-  if (!totalAmt) { toast('Invalid plan amount', false); return; }
-
-  // Razorpay options
-  const options = {
-    key: RZP_KEY_ID,
-    amount: totalAmt * 100, // Razorpay expects paise
-    currency: 'INR',
-    name: 'SocietyOS',
-    description: `${planObj.name||planId} Plan — ${period==='yearly'?'Yearly':'Monthly'}`,
-    image: 'https://felevareglobal-hub.github.io/societyos/logo.png',
-    prefill: {
-      name:  CU.name  || '',
-      email: CU.email || '',
-      contact: CS.secretary_phone || ''
-    },
-    notes: {
-      society_id:   CS.id,
-      society_name: CS.name,
-      plan_id:      planId,
-      period:       period,
-      admin_email:  CU.email
-    },
-    theme: { color: '#2563eb' },
-    handler: async function(response) {
-      // Payment successful!
-      await handleRazorpaySuccess(response, planId, period, totalAmt, baseAmt, gstAmt, planObj);
-    },
-    modal: {
-      ondismiss: function() {
-        toast('Payment cancelled', false);
-      }
-    }
-  };
-
-  try {
-    if (typeof Razorpay === 'undefined') {
-      toast('Payment gateway not loaded. Please check your internet connection.', false);
-      return;
-    }
-    const rzp = new Razorpay(options);
-    rzp.on('payment.failed', function(response) {
-      toast('Payment failed: ' + response.error.description, false);
-      console.error('Razorpay error:', response.error);
-    });
-    rzp.open();
-  } catch(e) {
-    toast('Error opening payment: ' + e.message, false);
-    console.error('Razorpay open error:', e);
-  }
-}
-
-async function handleRazorpaySuccess(response, planId, period, totalAmt, baseAmt, gstAmt, planObj) {
-  try {
-    toast('Payment successful! Activating plan…');
-
-    // Calculate new expiry date
-    const today    = new Date();
-    const expiry   = new Date(today);
-    if (period==='yearly') expiry.setFullYear(expiry.getFullYear()+1);
-    else expiry.setMonth(expiry.getMonth()+1);
-    const expiryStr = expiry.toISOString().split('T')[0];
-
-    // 1. Update society plan
-    await PATCH('societies', CS.id, {
-      plan:             planId,
-      plan_expiry:      expiryStr,
-      plan_assigned_by: 'Razorpay — '+CU.name,
-      plan_assigned_at: new Date().toISOString()
-    });
-
-    // 2. Record payment in activity log
-    await logActivity(CU.id, CU.name, CU.email, 'Payment Recorded', JSON.stringify({
-      society:     CS.name,
-      society_id:  CS.id,
-      plan:        planId,
-      period:      period,
-      amount:      baseAmt,
-      gst:         gstAmt,
-      total:       totalAmt,
-      mode:        'Razorpay',
-      ref:         response.razorpay_payment_id,
-      plan_start:  today.toISOString().split('T')[0],
-      plan_end:    expiryStr,
-      status:      'paid',
-      rzp_order_id:   response.razorpay_order_id||'',
-      rzp_signature:  response.razorpay_signature||''
-    }));
-
-    // 3. Update local CS object
-    CS.plan        = planId;
-    CS.plan_expiry = expiryStr;
-
-    // 4. Remove trial banner
-    const banner = $('trial-banner');
-    if (banner) banner.remove();
-
-    // 5. Apply new plan to UI
-    applyPlanToUI();
-
-    // 6. Show success message
-    toast('🎉 Plan activated successfully!');
-    setTimeout(() => {
-      alert(`✅ Payment Successful!\n\n💳 Payment ID: ${response.razorpay_payment_id}\n📋 Plan: ${planObj.name||planId} (${period})\n💰 Amount Paid: ₹${totalAmt.toLocaleString('en-IN')} (incl. GST)\n📅 Valid Till: ${expiryStr}\n\nThank you for subscribing to SocietyOS!`);
-      goPage('dashboard');
-    }, 500);
-
-    // 7. Send WhatsApp confirmation if mobile available
-    const mobile = CS.secretary_phone || CU.mobile;
-    if (mobile) {
-      const msg = `✅ *SocietyOS Payment Confirmed!*\n\nSociety: ${CS.name}\nPlan: ${planObj.name||planId} (${period})\nAmount: ₹${totalAmt.toLocaleString('en-IN')} (incl. GST)\nPayment ID: ${response.razorpay_payment_id}\nValid Till: ${expiryStr}\n\nThank you! 🙏`;
-      setTimeout(() => sendWhatsApp(mobile, msg), 2000);
-    }
-
-  } catch(e) {
-    console.error('Post-payment error:', e);
-    toast('Payment done but plan update failed. Contact support with Payment ID: '+response.razorpay_payment_id, false);
-  }
-}
-
 // ── MOBILE SIDEBAR ────────────────────────────────────────
 function toggleSidebar() {
   const sb = $('sidebar');
@@ -4021,6 +3873,5 @@ function closeSidebar() {
 // Close sidebar after nav on mobile
 
 </script>
-  <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
 </body>
 </html>
