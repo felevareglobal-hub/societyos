@@ -210,20 +210,21 @@ tr:hover td{background:#fafafa}
     </div>
     <div class="sb-sec">Main</div>
     <div class="ni active" data-page="dashboard"><i class="ti ti-layout-dashboard"></i> Dashboard</div>
-    <div class="ni" data-page="members"><i class="ti ti-users"></i> Members</div>
-    <div class="ni" data-page="dues"><i class="ti ti-receipt"></i> Maintenance Dues</div>
+    <div class="ni" id="nav-members" data-page="members"><i class="ti ti-users"></i> Members</div>
+    <div class="ni" id="nav-dues" data-page="dues"><i class="ti ti-receipt"></i> Maintenance Dues</div>
     <div class="sb-sec">Facilities</div>
-    <div class="ni" data-page="services"><i class="ti ti-tool"></i> Services &amp; AMC</div>
-    <div class="ni" data-page="amenities"><i class="ti ti-building"></i> Amenities</div>
+    <div class="ni" id="nav-services" data-page="services"><i class="ti ti-tool"></i> Services &amp; AMC</div>
+    <div class="ni" id="nav-amenities" data-page="amenities"><i class="ti ti-building"></i> Amenities</div>
     <div class="sb-sec">Communication</div>
-    <div class="ni" data-page="notices"><i class="ti ti-speakerphone"></i> Notices &amp; Complaints</div>
+    <div class="ni" id="nav-notices" data-page="notices"><i class="ti ti-speakerphone"></i> Notices &amp; Complaints</div>
     <div class="sb-sec">Tenants</div>
-    <div class="ni" data-page="tenants"><i class="ti ti-home-2"></i> Tenant Registry</div>
-    <div class="ni" data-page="rent"><i class="ti ti-coin"></i> Rent Tracking</div>
+    <div class="ni" id="nav-tenants" data-page="tenants"><i class="ti ti-home-2"></i> Tenant Registry</div>
+    <div class="ni" id="nav-rent" data-page="rent"><i class="ti ti-coin"></i> Rent Tracking</div>
     <div class="sb-sec">Finance</div>
-    <div class="ni" data-page="accounts"><i class="ti ti-cash"></i> Accounts</div>
+    <div class="ni" id="nav-accounts" data-page="accounts"><i class="ti ti-cash"></i> Accounts</div>
+    <div class="ni" id="nav-fd" data-page="fd"><i class="ti ti-building-bank"></i> Fixed Deposits</div>
     <div class="sb-sec">Reports</div>
-    <div class="ni" data-page="reports"><i class="ti ti-chart-bar"></i> Reports & Analytics</div>
+    <div class="ni" id="nav-reports" data-page="reports"><i class="ti ti-chart-bar"></i> Reports & Analytics</div>
     <div class="ni" id="nav-pricing" style="display:none" data-page="pricing"><i class="ti ti-crown"></i> Upgrade Plan</div>
     <!-- Master Admin nav — injected by JS after login -->
     <div id="master-nav"></div>
@@ -2647,6 +2648,10 @@ function applyPlanToUI() {
     'nav-tenants': 'tenants', 'nav-rent': 'rent',
     'nav-accounts': 'accounts', 'nav-reports': 'reports'
   };
+
+  // Always show FD for all plans
+  const fdNav = $('nav-fd');
+  if (fdNav) fdNav.style.display = 'flex';
 
   // Show pricing nav for society admins
   if (CU?.role !== 'master') {
