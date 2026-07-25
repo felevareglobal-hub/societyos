@@ -2853,11 +2853,11 @@ async function renderPricing() {
                     ? `<div style="display:flex;flex-direction:column;gap:6px;margin-top:8px">
                         <button onclick="openRazorpay('${p.id}','monthly')" class="btn btn-p"
                           style="padding:6px 12px;font-size:11px;width:100%;justify-content:center;background:${BDR[p.id]};border-color:${BDR[p.id]}">
-                          <i class="ti ti-credit-card"></i> Pay Monthly ₹${Math.round(Number(p.price_monthly)*(1+${GST})).toLocaleString('en-IN')}
+                          <i class="ti ti-credit-card"></i> Pay Monthly ₹${Math.round(Number(p.price_monthly)*(1+GST_RATE))).toLocaleString('en-IN')}
                         </button>
                         <button onclick="openRazorpay('${p.id}','yearly')" class="btn"
                           style="padding:6px 12px;font-size:11px;width:100%;justify-content:center;border-color:${BDR[p.id]};color:${BDR[p.id]}">
-                          <i class="ti ti-calendar"></i> Pay Yearly ₹${Math.round(Number(p.price_yearly)*(1+${GST})).toLocaleString('en-IN')}
+                          <i class="ti ti-calendar"></i> Pay Yearly ₹${Math.round(Number(p.price_yearly)*(1+GST_RATE))).toLocaleString('en-IN')}
                         </button>
                       </div>`
                     : '<div style="margin-top:8px;padding:4px 12px;background:#dcfce7;border-radius:6px;font-size:11px;color:#166534;font-weight:600">✓ Active</div>'
@@ -3911,6 +3911,10 @@ async function openRazorpay(planId, period='monthly') {
   };
 
   try {
+    if (typeof Razorpay === 'undefined') {
+      toast('Payment gateway not loaded. Please check your internet connection.', false);
+      return;
+    }
     const rzp = new Razorpay(options);
     rzp.on('payment.failed', function(response) {
       toast('Payment failed: ' + response.error.description, false);
