@@ -2622,12 +2622,19 @@ const PLAN_COLORS = { basic:'#475569', standard:'#1e40af', premium:'#5b21b6' };
 const PLAN_BG = { basic:'plan-basic', standard:'plan-standard', premium:'plan-premium' };
 
 function getSocietyPlan() {
-  return CS?.plan || 'basic';
+  if (!CS) return 'basic';
+  // Only return valid plans — anything else defaults to basic
+  const validPlans = ['basic', 'standard', 'premium'];
+  return validPlans.includes(CS.plan) ? CS.plan : 'basic';
 }
 
 function hasModule(module) {
+  if (CU?.role === 'master') return true; // Master admin always has access
   const plan = getSocietyPlan();
-  return PLAN_MODULES[plan]?.includes(module) || false;
+  const allowed = PLAN_MODULES[plan] || [];
+  const result = allowed.includes(module);
+  console.log('hasModule check:', module, '| Plan:', plan, '| Allowed:', allowed, '| Result:', result);
+  return result;
 }
 
 function getLockedHTML(module) {
