@@ -2849,10 +2849,16 @@ async function renderPricing() {
                     ₹${Number(p.price_yearly).toLocaleString('en-IN')}/yr &nbsp;•&nbsp; Save ${Math.round((1-p.price_yearly/(p.price_monthly*12))*100)}%
                   </div>
                   ${!isCurrent
-                    ? `<button onclick="requestUpgrade('${p.id}')" class="btn btn-p"
-                        style="margin-top:8px;padding:4px 12px;font-size:11px;width:100%;justify-content:center;background:${BDR[p.id]};border-color:${BDR[p.id]}">
-                        <i class="ti ti-crown"></i> Request Upgrade
-                      </button>`
+                    ? `<div style="display:flex;flex-direction:column;gap:6px;margin-top:10px">
+                        <button onclick="openRazorpay('${p.id}','monthly',${p.price_monthly},${p.price_yearly})" class="btn btn-p"
+                          style="padding:6px 12px;font-size:11px;width:100%;justify-content:center;background:${BDR[p.id]};border-color:${BDR[p.id]}">
+                          <i class="ti ti-credit-card"></i> Pay Monthly
+                        </button>
+                        <button onclick="openRazorpay('${p.id}','yearly',${p.price_monthly},${p.price_yearly})" class="btn"
+                          style="padding:6px 12px;font-size:11px;width:100%;justify-content:center;border-color:${BDR[p.id]};color:${BDR[p.id]}">
+                          <i class="ti ti-calendar"></i> Pay Yearly (Save 17%)
+                        </button>
+                      </div>`
                     : '<div style="margin-top:8px;padding:4px 12px;background:#dcfce7;border-radius:6px;font-size:11px;color:#166534;font-weight:600">✓ Active</div>'
                   }
                 </th>`;
@@ -2948,6 +2954,9 @@ function showTrialBanner(days, isTrial, urgent) {
     <div style="display:flex;gap:8px;flex-shrink:0">
       <button class="btn btn-p" style="font-size:11px;padding:4px 10px" onclick="goPage('pricing')">
         <i class="ti ti-crown"></i> View Plans
+      </button>
+      <button class="btn btn-p" style="font-size:11px;padding:4px 10px;background:#16a34a;border-color:#16a34a" onclick="goPage('pricing')">
+        <i class="ti ti-credit-card"></i> Pay Now
       </button>
 
       <button onclick="this.parentElement.parentElement.remove()" style="background:none;border:none;cursor:pointer;font-size:16px;color:inherit">×</button>
@@ -3846,6 +3855,133 @@ function exportFDCSV() {
   downloadCSV(rows, `fixed_deposits_${CS?.name||'society'}_${new Date().toISOString().split('T')[0]}.csv`);
 }
 
+
+// ═══════════════════════════════════════════════
+// RAZORPAY PAYMENT INTEGRATION
+// ═══════════════════════════════════════════════
+var RZP_KEY_ID  = 'rzp_test_TGx6bDDcQujOZ4';
+var RZP_GST     = 0.18;
+
+function openRazorpay(planId, period, priceMonthly, priceYearly) {
+  if (!CS || !CU) { toast('Please login first', false); return; }
+  if (typeof Razorpay === 'undefined') {
+    toast('Payment gateway not loaded. Check internet connection.', false);
+    return;
+  }
+
+  var baseAmt  = period === 'yearly' ? Number(priceYearly) : Number(priceMonthly);
+  var gstAmt   = Math.round(baseAmt * RZP_GST);
+  var totalAmt = baseAmt + gstAmt;
+
+  if (!totalAmt) { toast('Invalid plan amount', false); return; }
+
+  var planName = planId.charAt(0).toUpperCase() + planId.slice(1);
+  var periodLabel = period === 'yearly' ? 'Yearly' : 'Monthly';
+
+  var options = {
+    key:         RZP_KEY_ID,
+    amount:      totalAmt * 100,
+    currency:    'INR',
+    name:        'SocietyOS',
+    description: planName + ' Plan - ' + periodLabel,
+    prefill: {
+      name:    CU.name  || '',
+      email:   CU.email || ''
+    },
+    notes: {
+      society_id:   CS.id,
+      society_name: CS.name,
+      plan_id:      planId,
+      period:       period
+    },
+    theme: { color: '#2563eb' },
+    handler: function(response) {
+      handleRazorpaySuccess(response, planId, period, totalAmt, baseAmt, gstAmt, planName);
+    },
+    modal: {
+      ondismiss: function() {
+        toast('Payment cancelled', false);
+      }
+    }
+  };
+
+  var rzp = new Razorpay(options);
+  rzp.on('payment.failed', function(response) {
+    toast('Payment failed: ' + response.error.description, false);
+  });
+  rzp.open();
+}
+
+async function handleRazorpaySuccess(response, planId, period, totalAmt, baseAmt, gstAmt, planName) {
+  try {
+    toast('Payment successful! Activating plan...');
+
+    var today    = new Date();
+    var expiry   = new Date(today);
+    if (period === 'yearly') {
+      expiry.setFullYear(expiry.getFullYear() + 1);
+    } else {
+      expiry.setMonth(expiry.getMonth() + 1);
+    }
+    var expiryStr = expiry.toISOString().split('T')[0];
+    var todayStr  = today.toISOString().split('T')[0];
+
+    // Update society plan
+    await PATCH('societies', CS.id, {
+      plan:             planId,
+      plan_expiry:      expiryStr,
+      plan_assigned_by: 'Razorpay - ' + CU.name,
+      plan_assigned_at: new Date().toISOString()
+    });
+
+    // Record payment
+    await logActivity(CU.id, CU.name, CU.email, 'Payment Recorded',
+      JSON.stringify({
+        society:    CS.name,
+        society_id: CS.id,
+        plan:       planId,
+        period:     period,
+        amount:     baseAmt,
+        gst:        gstAmt,
+        total:      totalAmt,
+        mode:       'Razorpay',
+        ref:        response.razorpay_payment_id,
+        plan_start: todayStr,
+        plan_end:   expiryStr,
+        status:     'paid'
+      })
+    );
+
+    // Update local state
+    CS.plan        = planId;
+    CS.plan_expiry = expiryStr;
+
+    // Remove trial banner
+    var banner = document.getElementById('trial-banner');
+    if (banner) banner.remove();
+
+    // Refresh UI
+    applyPlanToUI();
+    toast('Plan activated successfully!');
+
+    setTimeout(function() {
+      alert(
+        'Payment Successful!\n\n' +
+        'Payment ID: ' + response.razorpay_payment_id + '\n' +
+        'Plan: ' + planName + ' (' + period + ')\n' +
+        'Amount: Rs.' + totalAmt.toLocaleString('en-IN') + ' (incl. GST)\n' +
+        'Valid Till: ' + expiryStr + '\n\n' +
+        'Thank you for subscribing to SocietyOS!'
+      );
+      goPage('dashboard');
+    }, 500);
+
+  } catch(e) {
+    console.error('Post-payment error:', e);
+    toast('Payment done but activation failed. Contact support. Payment ID: ' + response.razorpay_payment_id, false);
+  }
+}
+
 // ── MOBILE SIDEBAR ────────────────────────────────────────
 function toggleSidebar() {
   const sb = $('sidebar');
@@ -3873,5 +4009,6 @@ function closeSidebar() {
 // Close sidebar after nav on mobile
 
 </script>
+  <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
 </body>
 </html>
