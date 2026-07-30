@@ -1838,6 +1838,7 @@ function renderSvc(){
   }).join('');
 }
 function openSvcModal(idx=-1){
+  if (CU?.role !== 'master' && !hasModule('services')) { goPage('pricing'); toast('Upgrade your plan to access Services & AMC', false); return; }
   editSvc=idx; const s=idx>=0?services[idx]:null;
   sv('sv-name',s?.name||'Fire Fighting'); $('sv-custom-wrap').style.display='none';
   sv('sv-cat',s?.category); sv('sv-type',s?.service_type); sv('sv-vend',s?.vendor);
@@ -1882,6 +1883,7 @@ function renderAmen(){
   </tr>`).join('');
 }
 function openAmenModal(idx=-1){
+  if (CU?.role !== 'master' && !hasModule('amenities')) { goPage('pricing'); toast('Upgrade your plan to access Amenities', false); return; }
   editAmen=idx; const a=idx>=0?amenities[idx]:null;
   sv('an-name',a?.name); $('an-cw').style.display='none';
   sv('an-type',a?.type); sv('an-loc',a?.location); sv('an-cap',a?.capacity);
@@ -2076,6 +2078,7 @@ function renderAccounts() {
 }
 
 function openAccountModal(idx=-1) {
+  if (CU?.role !== 'master' && !hasModule('accounts')) { goPage('pricing'); toast('Upgrade your plan to access Accounts', false); return; }
   editAccIdx=idx;
   const a = idx>=0 ? accounts[idx] : null;
   sv('ac-type', a?.type||'income');
@@ -2433,6 +2436,7 @@ function renderTenants() {
 }
 
 function openTenantModal(idx=-1) {
+  if (CU?.role !== 'master' && !hasModule('tenants')) { goPage('pricing'); toast('Upgrade your plan to access Tenant Registry', false); return; }
   editTenIdx=idx; populateTenantWings();
   const t=idx>=0?tenants[idx]:null;
   sv('t-wing',t?.wing); sv('t-flat',t?.flat); sv('t-floor',t?.floor);
@@ -2554,6 +2558,7 @@ function renderRent() {
 }
 
 function openRentModal() {
+  if (CU?.role !== 'master' && !hasModule('tenants')) { goPage('pricing'); toast('Upgrade your plan to access Rent Tracking', false); return; }
   populateTenantSelect();
   // Auto-fill rent amount from tenant
   $('r-tenant').onchange = function() {
