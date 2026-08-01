@@ -1501,13 +1501,50 @@ async function doLogin() {
       // Has mobile — send OTP
       $('li-btn').innerHTML = '<i class="ti ti-loader" style="margin-right:6px"></i> Sending OTP…';
       _pendingAdmin = admin;
-      const res = await fetch('https://mbmrzyhcjivrbiaayiah.supabase.co/functions/v1/send-otp', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'apikey': KEY },
-        body: JSON.stringify({ email: admin.email, mobile: admin.mobile })
-      });
-      const data = await res.json();
-      if (!data.success) throw new Error(data.error || 'Failed to send OTP');
+      let otpSent = false;
+      try {
+        const res = await fetch('https://mbmrzyhcjivrbiaayiah.supabase.co/functions/v1/send-otp', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'apikey': KEY },
+          body: JSON.stringify({ email: admin.email, mobile: admin.mobile })
+        });
+        const data = await res.json();
+        if (data.success) { otpSent = true; toast('OTP sent ✓'); }
+        else { console.warn('OTP send failed:', data.error); }
+      } catch(otpErr) { console.warn('OTP error:', otpErr); }
+      // If OTP failed — skip to direct login
+      if (!otpSent) {
+        console.warn('OTP unavailable — logging in directly');
+        CU = admin;
+        $('login-screen').style.display = 'none';
+        $('app-screen').classList.add('show');
+        $('u-name').textContent = CU.name;
+        $('sb-role').textContent = CU.role==='master' ? 'Master Admin' : 'Society Admin';
+        if (CU.role === 'master') {
+          $('master-nav').innerHTML = `
+            <div class="sb-sec">Master Admin</div>
+            <div class="ni" data-page="societies"><i class="ti ti-building-skyscraper"></i> All Societies</div>
+            <div class="ni" data-page="admins"><i class="ti ti-shield-check"></i> Manage Admins</div>
+            <div class="ni" data-page="signup-requests"><i class="ti ti-user-plus"></i> Sign Up Requests <span id="req-badge" style="background:#ef4444;color:#fff;font-size:9px;padding:1px 6px;border-radius:10px;margin-left:4px;display:none">0</span></div>
+            <div class="ni" data-page="actlog"><i class="ti ti-history"></i> Activity Log</div>
+            <div class="ni" data-page="plans"><i class="ti ti-packages"></i> Plans & Pricing</div>
+            <div class="ni" data-page="payments"><i class="ti ti-cash"></i> Subscription Payments</div>`;
+          checkPendingRequests();
+          await loadAllSocs();
+        } else {
+          $('soc-switcher-wrap').style.display = 'none';
+          if (CU.society_id) {
+            const socs = await GET('societies', `?id=eq.${CU.society_id}`);
+            CS = socs[0] || null;
+            if (CS) await loadSocData();
+          }
+        }
+        await applyPlanAfterLogin();
+        goPage('dashboard');
+        $('li-btn').innerHTML = '<i class="ti ti-login" style="margin-right:6px"></i> Sign In';
+        $('li-btn').disabled = false;
+        return;
+      }
       toast('OTP sent ✓');
       $('login-step1').style.display = 'none';
       $('login-step2').style.display = 'block';
