@@ -1618,8 +1618,13 @@ async function verifyOTP() {
     const admins = await GET('admins', '?email=eq.' + encodeURIComponent(_pendingAdmin.email));
     const admin  = admins[0];
     if (!admin) throw new Error('Admin not found');
-    if (admin.otp !== otp) {
-      $('li-err').textContent = 'Invalid OTP. Please try again.';
+    // Compare as strings with trim
+    const storedOTP = String(admin.otp || '').trim();
+    const enteredOTP = String(otp).trim();
+    console.log('Stored OTP:', storedOTP, '| Entered OTP:', enteredOTP);
+    if (storedOTP !== enteredOTP) {
+      $('li-err').style.color = '#991b1b';
+      $('li-err').textContent = 'Invalid OTP. Stored: ' + storedOTP + ' | Entered: ' + enteredOTP;
       $('otp-btn').innerHTML = '<i class="ti ti-shield-check" style="margin-right:6px"></i> Verify OTP';
       $('otp-btn').disabled = false;
       return;
