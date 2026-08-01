@@ -1513,7 +1513,16 @@ async function doLogin() {
         });
         const data = await res.json();
         console.log('OTP response:', data);
-        if (data.success) { otpSent = true; }
+        if (data.success) { 
+          otpSent = true;
+          // TEMP: Show OTP on screen for testing (remove after DLT registration)
+          if (data.otp) {
+            toast('TEST MODE — Your OTP is: ' + data.otp, true);
+            // Also show in error div so it stays visible
+            $('li-err').style.color = '#16a34a';
+            $('li-err').textContent = '🔐 TEST MODE — OTP: ' + data.otp + ' (valid 5 mins)';
+          }
+        }
         else { otpError = data.error || 'Unknown error'; }
       } catch(otpErr) { otpError = otpErr.message; }
       // Show error if OTP failed
