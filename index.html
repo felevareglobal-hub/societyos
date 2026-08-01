@@ -242,6 +242,7 @@ tr:hover td{background:#fafafa}
         <p id="pg-meta"></p>
       </div>
       <div class="topbar-right">
+        <div id="plan-badge-top" style="display:none;padding:3px 10px;border-radius:20px;font-size:10px;font-weight:700;letter-spacing:.5px"></div>
         <div class="user-pill"><i class="ti ti-user-circle"></i><span id="u-name">Admin</span></div>
         <button id="mob-menu" style="display:none;background:none;border:none;cursor:pointer;padding:6px;border-radius:6px" onclick="toggleSidebar()"><i class="ti ti-menu-2" style="font-size:22px;color:#475569"></i></button>
       </div>
@@ -603,6 +604,12 @@ tr:hover td{background:#fafafa}
         <div id="report-content"></div>
       </div>
 
+    </div>
+    <!-- FOOTER -->
+    <div style="text-align:center;padding:10px 20px;font-size:11px;color:#94a3b8;border-top:1px solid #f1f5f9;background:#fff">
+      © 2025 <strong style="color:#475569">Felevare Global Ventures LLP</strong> — All rights reserved &nbsp;•&nbsp;
+      <span style="color:#2563eb;font-weight:600">SocietyOS</span> v2.0 &nbsp;•&nbsp;
+      Powered by <a href="https://frvs.in" target="_blank" style="color:#2563eb;text-decoration:none">Falconrise Ventures</a>
     </div>
   </div>
 </div>
@@ -2664,6 +2671,32 @@ function applyPlanToUI() {
   // Always show FD for all plans
   const fdNav = $('nav-fd');
   if (fdNav) fdNav.style.display = 'flex';
+
+  // Show plan badge in topbar for society admins
+  const badge = $('plan-badge-top');
+  if (badge) {
+    if (CU?.role === 'master') {
+      badge.style.display = 'none';
+    } else {
+      const planColors = { basic:'#475569', standard:'#1e40af', premium:'#5b21b6' };
+      const planBGs    = { basic:'#f1f5f9', standard:'#dbeafe', premium:'#ede9fe' };
+      const planLabel  = { basic:'BASIC PLAN', standard:'STANDARD PLAN', premium:'PREMIUM PLAN' };
+      const p = getSocietyPlan();
+      badge.style.display    = 'inline-block';
+      badge.style.background = planBGs[p]    || '#f1f5f9';
+      badge.style.color      = planColors[p] || '#475569';
+      badge.style.border     = '1px solid ' + (planColors[p]||'#475569') + '40';
+      // Add expiry info if available
+  const exp = CS?.plan_expiry;
+  const d   = exp ? daysUntil(exp) : 9999;
+  let badgeText = planLabel[p] || p.toUpperCase() + ' PLAN';
+  if (exp && d <= 30 && d >= 0) badgeText += ' · ' + d + 'd left';
+  else if (exp && d < 0) badgeText += ' · EXPIRED';
+  badge.textContent = badgeText;
+  if (d <= 7)  { badge.style.background = '#fee2e2'; badge.style.color = '#991b1b'; badge.style.border = '1px solid #fecaca'; }
+  if (d <= 30 && d > 7) { badge.style.background = '#fef3c7'; badge.style.color = '#92400e'; badge.style.border = '1px solid #fde68a'; }
+    }
+  }
 
   // Show pricing nav for society admins
   if (CU?.role !== 'master') {
