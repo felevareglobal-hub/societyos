@@ -1506,28 +1506,20 @@ async function doLogin() {
       let otpSent = false;
       let otpError = '';
       try {
-        const res = await fetch('https://mbmrzyhcjivrbiaayiah.supabase.co/functions/v1/send-otp', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'apikey': KEY },
-          body: JSON.stringify({ email: admin.email, mobile: admin.mobile })
-        });
-        const data = await res.json();
-        console.log('OTP response:', data);
-        if (data.success) { 
-          otpSent = true;
-          // TEMP: Show OTP on screen for testing (remove after DLT registration)
-          if (data.otp) {
-            toast('TEST MODE — Your OTP is: ' + data.otp, true);
-            // Also show in error div so it stays visible
-            $('li-err').style.color = '#16a34a';
-            $('li-err').textContent = '🔐 TEST MODE — OTP: ' + data.otp + ' (valid 5 mins)';
-          }
-        }
-        else { otpError = data.error || 'Unknown error'; }
+        // Generate OTP client-side and save directly to DB
+        const otp = String(Math.floor(1000 + Math.random() * 9000));
+        const expiry = new Date(Date.now() + 5 * 60 * 1000).toISOString();
+        // Save OTP to admins table
+        await PATCH('admins', admin.id, { otp: otp, otp_expiry: expiry });
+        otpSent = true;
+        // Show OTP on screen (TEST MODE — remove after DLT registration)
+        $('li-err').style.color = '#16a34a';
+        $('li-err').textContent = '🔐 TEST MODE — OTP: ' + otp + ' (valid 5 mins)';
+        toast('OTP: ' + otp, true);
+        console.log('OTP generated:', otp);
       } catch(otpErr) { otpError = otpErr.message; }
-      // Show error if OTP failed
       if (!otpSent) {
-        toast('OTP failed: ' + otpError, false);
+        toast('OTP error: ' + otpError, false);
         console.error('OTP failed:', otpError);
         console.warn('OTP unavailable — logging in directly');
         CU = admin;
@@ -1676,14 +1668,12 @@ async function resendOTP() {
   if (!_pendingAdmin) { backToLogin(); return; }
   $('li-err').textContent = '';
   try {
-    const res = await fetch('https://mbmrzyhcjivrbiaayiah.supabase.co/functions/v1/send-otp', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'apikey': KEY },
-      body: JSON.stringify({ email: _pendingAdmin.email, mobile: _pendingAdmin.mobile })
-    });
-    const data = await res.json();
-    if (!data.success) throw new Error(data.error || 'Failed to resend');
-    toast('OTP resent ✓');
+    const otp = String(Math.floor(1000 + Math.random() * 9000));
+    const expiry = new Date(Date.now() + 5 * 60 * 1000).toISOString();
+    await PATCH('admins', _pendingAdmin.id, { otp: otp, otp_expiry: expiry });
+    $('li-err').style.color = '#16a34a';
+    $('li-err').textContent = '🔐 TEST MODE — OTP: ' + otp + ' (valid 5 mins)';
+    toast('New OTP: ' + otp, true);
     $('li-otp').value = '';
     $('li-otp').focus();
   } catch(e) {
