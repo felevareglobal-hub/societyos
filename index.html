@@ -1811,10 +1811,12 @@ async function renderAdmins() {
     tb.innerHTML=admins.map(a=>`<tr>
       <td style="font-weight:600">${a.name}</td>
       <td style="font-size:11px">${a.email}</td>
+      <td style="font-size:11px">${a.mobile||'<span style="color:#ef4444">Not set</span>'}</td>
       <td><span class="badge ${a.role==='master'?'bp':'bb'}">${a.role==='master'?'Master':'Society Admin'}</span></td>
       <td style="font-size:11px">${a.society_id?sm[a.society_id]||'—':'—'}</td>
       <td style="font-size:11px">${a.password_hash||'—'}</td>
       <td>
+        <button class="ab" onclick="openAdminModal('${a.id}')" title="Edit"><i class="ti ti-edit"></i></button>
         <button class="ab" onclick="masterResetPassword('${a.id}','${a.name}','${a.email}')" style="color:#2563eb" title="Reset Password"><i class="ti ti-key"></i></button>
         <button class="ab" onclick="deleteAdmin('${a.id}')" style="color:#ef4444" title="Delete"><i class="ti ti-trash"></i></button>
       </td>
@@ -1822,11 +1824,22 @@ async function renderAdmins() {
   } catch(e){toast('Error loading admins: '+e.message,false);}
 }
 
-async function openAdminModal() {
-  const socs=await GET('societies','?order=name');
+async function openAdminModal(adminId=null) {
+  const [socs, admins] = await Promise.all([
+    GET('societies','?order=name'),
+    adminId ? GET('admins', '?id=eq.'+adminId) : Promise.resolve([])
+  ]);
+  const a = admins[0] || null;
   $('a-soc').innerHTML='<option value="">— None (Master) —</option>'+socs.map(s=>`<option value="${s.id}">${s.name}</option>`).join('');
-  sv('a-name',''); sv('a-email',''); sv('a-pass','');
-  $('a-role').selectedIndex=0;
+  sv('a-name',  a?.name  || '');
+  sv('a-email', a?.email || '');
+  sv('a-pass',  a?.password_hash || '');
+  sv('a-mobile',a?.mobile || '');
+  sv('a-role',  a?.role  || 'society_admin');
+  sv('a-soc',   a?.society_id || '');
+  $('mo-admin').querySelector('h3').textContent = adminId ? 'Edit Admin' : 'Add Admin';
+  // Store editing ID
+  $('mo-admin').dataset.editId = adminId || '';
   openModal('mo-admin');
 }
 
