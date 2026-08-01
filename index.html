@@ -182,16 +182,44 @@ tr:hover td{background:#fafafa}
       <h1><i class="ti ti-building-community"></i> SocietyOS</h1>
       <p>Multi-Society Management Platform</p>
     </div>
-    <div class="lf"><label>Email</label><input type="email" id="li-email" placeholder="admin@societyos.com"></div>
-    <div class="lf"><label>Password</label><input type="password" id="li-pass" placeholder="••••••••"></div>
-    <button class="login-btn" id="li-btn" onclick="doLogin()"><i class="ti ti-login" style="margin-right:6px"></i> Sign In</button>
     <div class="login-err" id="li-err"></div>
-    <div class="forgot-link" onclick="openModal('mo-forgot')">Forgot Password?</div>
-    <div style="margin-top:14px;border-top:1px solid #f1f5f9;padding-top:14px">
-      <p style="font-size:11px;color:#94a3b8;text-align:center;margin-bottom:10px">New to SocietyOS? Register your society</p>
-      <button onclick="openSignupModal()" style="width:100%;padding:10px;background:#f0fdf4;color:#16a34a;border:1.5px solid #bbf7d0;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px">
-        <i class="ti ti-user-plus"></i> Request Access — Register Your Society
+
+    <!-- Step 1: Email + Password -->
+    <div id="login-step1">
+      <div class="lf"><label>Email</label><input type="email" id="li-email" placeholder="admin@societyos.com" onkeydown="if(event.key==='Enter')doLogin()"></div>
+      <div class="lf"><label>Password</label><input type="password" id="li-pass" placeholder="••••••••" onkeydown="if(event.key==='Enter')doLogin()"></div>
+      <button class="login-btn" id="li-btn" onclick="doLogin()"><i class="ti ti-login" style="margin-right:6px"></i> Sign In</button>
+      <div class="forgot-link" onclick="openModal('mo-forgot')">Forgot Password?</div>
+      <div style="margin-top:14px;border-top:1px solid #f1f5f9;padding-top:14px">
+        <p style="font-size:11px;color:#94a3b8;text-align:center;margin-bottom:10px">New to SocietyOS? Register your society</p>
+        <button onclick="openSignupModal()" style="width:100%;padding:10px;background:#f0fdf4;color:#16a34a;border:1.5px solid #bbf7d0;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px">
+          <i class="ti ti-user-plus"></i> Request Access — Register Your Society
+        </button>
+      </div>
+    </div>
+
+    <!-- Step 2: OTP Verification -->
+    <div id="login-step2" style="display:none">
+      <div style="text-align:center;margin-bottom:20px">
+        <div style="font-size:40px;margin-bottom:8px">📱</div>
+        <p style="font-size:14px;font-weight:600;color:#0f172a">OTP Sent!</p>
+        <p id="otp-hint" style="font-size:12px;color:#64748b;margin-top:6px">Enter the 4-digit OTP sent to your mobile</p>
+      </div>
+      <div class="lf">
+        <label>Enter 4-digit OTP</label>
+        <input id="li-otp" type="tel" maxlength="4" placeholder="0000"
+          style="font-size:32px;letter-spacing:16px;text-align:center;font-weight:700;padding:12px"
+          onkeydown="if(event.key==='Enter')verifyOTP()">
+      </div>
+      <button class="login-btn" id="otp-btn" onclick="verifyOTP()">
+        <i class="ti ti-shield-check" style="margin-right:6px"></i> Verify OTP
       </button>
+      <div style="text-align:center;margin-top:14px;font-size:12px;color:#64748b">
+        Didn't receive OTP?
+        <span onclick="resendOTP()" style="color:#2563eb;cursor:pointer;font-weight:600"> Resend</span>
+        &nbsp;|&nbsp;
+        <span onclick="backToLogin()" style="color:#64748b;cursor:pointer"> Back</span>
+      </div>
     </div>
   </div>
 </div>
@@ -607,9 +635,8 @@ tr:hover td{background:#fafafa}
     </div>
     <!-- FOOTER -->
     <div style="text-align:center;padding:10px 20px;font-size:11px;color:#94a3b8;border-top:1px solid #f1f5f9;background:#fff">
-      © 2025 <strong style="color:#475569">Felevare Global Ventures LLP</strong> — All rights reserved &nbsp;•&nbsp;
-      <span style="color:#2563eb;font-weight:600">SocietyOS</span> v2.0 &nbsp;•&nbsp;
-      Powered by <a href="https://frvs.in" target="_blank" style="color:#2563eb;text-decoration:none">Falconrise Ventures</a>
+      © 2026 <strong style="color:#475569">Felevare Global Ventures LLP</strong> — All rights reserved &nbsp;•&nbsp;
+      <span style="color:#2563eb;font-weight:600">SocietyOS</span> v2.0
     </div>
   </div>
 </div>
@@ -739,6 +766,7 @@ tr:hover td{background:#fafafa}
       <div class="fi full"><label>Full Name *</label><input id="a-name"></div>
       <div class="fi full"><label>Email *</label><input id="a-email" type="email"></div>
       <div class="fi full"><label>Password *</label><input id="a-pass" type="password" placeholder="Min 6 characters"></div>
+      <div class="fi full"><label>Mobile (for OTP) *</label><input id="a-mobile" type="tel" placeholder="+91XXXXXXXXXX"></div>
       <div class="fi"><label>Role</label><select id="a-role"><option value="society_admin">Society Admin</option><option value="master">Master Admin</option></select></div>
       <div class="fi"><label>Assign Society</label><select id="a-soc"><option value="">— None —</option></select></div>
     </div></div>
@@ -1446,22 +1474,51 @@ document.addEventListener('DOMContentLoaded', function() {
 // ═══════════════════════════════════════════════
 // AUTH
 // ═══════════════════════════════════════════════
+var _pendingAdmin = null;
+
 async function doLogin() {
   const email = fv('li-email').trim().toLowerCase();
   const pass  = fv('li-pass').trim();
-  $('li-err').textContent='';
+  $('li-err').textContent = '';
   if (!email||!pass) { $('li-err').textContent='Enter email and password'; return; }
-  $('li-btn').textContent='Signing in…'; $('li-btn').disabled=true;
+  $('li-btn').innerHTML = '<i class="ti ti-loader" style="margin-right:6px"></i> Verifying…';
+  $('li-btn').disabled = true;
   try {
-    // Fetch all admins then match client-side — avoids any query encoding issues
-    const all = await GET('admins','?order=email');
+    const all   = await GET('admins','?order=email');
     const match = all.filter(a => a.email.toLowerCase()===email && a.password_hash===pass);
     if (!match.length) {
-      $('li-err').textContent='Invalid email or password';
-      $('li-btn').textContent='Sign In'; $('li-btn').disabled=false;
+      $('li-err').textContent = 'Invalid email or password';
+      $('li-btn').innerHTML = '<i class="ti ti-login" style="margin-right:6px"></i> Sign In';
+      $('li-btn').disabled = false;
       return;
     }
-    CU = match[0];
+    const admin = match[0];
+    if (!admin.mobile) {
+      // No mobile — skip OTP
+        CU = admin;
+      // Fall through to show app below
+    } else {
+      // Has mobile — send OTP
+      $('li-btn').innerHTML = '<i class="ti ti-loader" style="margin-right:6px"></i> Sending OTP…';
+      _pendingAdmin = admin;
+      const res = await fetch('https://mbmrzyhcjivrbiaayiah.supabase.co/functions/v1/send-otp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'apikey': KEY },
+        body: JSON.stringify({ email: admin.email, mobile: admin.mobile })
+      });
+      const data = await res.json();
+      if (!data.success) throw new Error(data.error || 'Failed to send OTP');
+      toast('OTP sent ✓');
+      $('login-step1').style.display = 'none';
+      $('login-step2').style.display = 'block';
+      const masked = admin.mobile.slice(0,-4).replace(/./g,'*') + admin.mobile.slice(-4);
+      $('otp-hint').textContent = 'Enter the 4-digit OTP sent to ' + masked;
+      $('li-otp').value = '';
+      setTimeout(function(){ $('li-otp').focus(); }, 300);
+      $('li-btn').innerHTML = '<i class="ti ti-login" style="margin-right:6px"></i> Sign In';
+      $('li-btn').disabled = false;
+      return;
+    }
     // Show app
     $('login-screen').style.display='none';
     $('app-screen').classList.add('show');
@@ -1493,18 +1550,109 @@ async function doLogin() {
     }
     goPage('dashboard');
   } catch(e) {
-    $('li-err').textContent='Connection error: '+e.message;
+    $('li-err').textContent = 'Error: ' + e.message;
+    $('li-btn').innerHTML = '<i class="ti ti-login" style="margin-right:6px"></i> Sign In';
+    $('li-btn').disabled = false;
   }
-  $('li-btn').textContent='Sign In'; $('li-btn').disabled=false;
+}
+
+async function verifyOTP() {
+  const otp = fv('li-otp').trim();
+  if (!otp || otp.length < 4) { $('li-err').textContent = 'Enter 4-digit OTP'; return; }
+  if (!_pendingAdmin) { backToLogin(); return; }
+  $('otp-btn').innerHTML = '<i class="ti ti-loader" style="margin-right:6px"></i> Verifying…';
+  $('otp-btn').disabled = true;
+  try {
+    const admins = await GET('admins', '?email=eq.' + encodeURIComponent(_pendingAdmin.email));
+    const admin  = admins[0];
+    if (!admin) throw new Error('Admin not found');
+    if (admin.otp !== otp) {
+      $('li-err').textContent = 'Invalid OTP. Please try again.';
+      $('otp-btn').innerHTML = '<i class="ti ti-shield-check" style="margin-right:6px"></i> Verify OTP';
+      $('otp-btn').disabled = false;
+      return;
+    }
+    if (admin.otp_expiry && new Date(admin.otp_expiry) < new Date()) {
+      $('li-err').textContent = 'OTP expired. Please request a new one.';
+      $('otp-btn').innerHTML = '<i class="ti ti-shield-check" style="margin-right:6px"></i> Verify OTP';
+      $('otp-btn').disabled = false;
+      return;
+    }
+    // Clear OTP
+    await PATCH('admins', admin.id, { otp: null, otp_expiry: null });
+    CU = admin;
+    _pendingAdmin = null;
+    // Show app
+    $('login-screen').style.display = 'none';
+    $('app-screen').classList.add('show');
+    $('u-name').textContent = CU.name;
+    $('sb-role').textContent = CU.role==='master' ? 'Master Admin' : 'Society Admin';
+    if (CU.role === 'master') {
+      $('master-nav').innerHTML = `
+        <div class="sb-sec">Master Admin</div>
+        <div class="ni" data-page="societies"><i class="ti ti-building-skyscraper"></i> All Societies</div>
+        <div class="ni" data-page="admins"><i class="ti ti-shield-check"></i> Manage Admins</div>
+        <div class="ni" data-page="signup-requests"><i class="ti ti-user-plus"></i> Sign Up Requests <span id="req-badge" style="background:#ef4444;color:#fff;font-size:9px;padding:1px 6px;border-radius:10px;margin-left:4px;display:none">0</span></div>
+        <div class="ni" data-page="actlog"><i class="ti ti-history"></i> Activity Log</div>
+        <div class="ni" data-page="plans"><i class="ti ti-packages"></i> Plans & Pricing</div>
+        <div class="ni" data-page="payments"><i class="ti ti-cash"></i> Subscription Payments</div>`;
+      checkPendingRequests();
+      await loadAllSocs();
+    } else {
+      $('soc-switcher-wrap').style.display = 'none';
+      if (CU.society_id) {
+        const socs = await GET('societies', `?id=eq.${CU.society_id}`);
+        CS = socs[0] || null;
+        if (CS) await loadSocData();
+      }
+    }
+    await applyPlanAfterLogin();
+    goPage('dashboard');
+  } catch(e) {
+    $('li-err').textContent = 'Error: ' + e.message;
+    $('otp-btn').innerHTML = '<i class="ti ti-shield-check" style="margin-right:6px"></i> Verify OTP';
+    $('otp-btn').disabled = false;
+  }
+}
+
+async function resendOTP() {
+  if (!_pendingAdmin) { backToLogin(); return; }
+  $('li-err').textContent = '';
+  try {
+    const res = await fetch('https://mbmrzyhcjivrbiaayiah.supabase.co/functions/v1/send-otp', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'apikey': KEY },
+      body: JSON.stringify({ email: _pendingAdmin.email, mobile: _pendingAdmin.mobile })
+    });
+    const data = await res.json();
+    if (!data.success) throw new Error(data.error || 'Failed to resend');
+    toast('OTP resent ✓');
+    $('li-otp').value = '';
+    $('li-otp').focus();
+  } catch(e) {
+    $('li-err').textContent = 'Failed to resend: ' + e.message;
+  }
+}
+
+function backToLogin() {
+  _pendingAdmin = null;
+  $('login-step1').style.display = 'block';
+  $('login-step2').style.display = 'none';
+  $('li-err').textContent = '';
+  $('li-otp').value = '';
 }
 
 function doLogout() {
-  CU=null; CS=null; allSocs=[];
+  CU=null; CS=null; allSocs=[]; _pendingAdmin=null;
   $('app-screen').classList.remove('show');
   $('login-screen').style.display='flex';
   $('master-nav').innerHTML='';
   $('soc-switcher-wrap').style.display='block';
   $('li-pass').value='';
+  $('li-otp').value='';
+  $('login-step1').style.display='block';
+  $('login-step2').style.display='none';
+  $('li-err').textContent='';
 }
 
 async function doResetPass() {
