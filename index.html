@@ -1493,9 +1493,11 @@ async function doLogin() {
       return;
     }
     const admin = match[0];
+    console.log('Login admin:', admin.name, '| Mobile:', admin.mobile);
+    toast('Mobile: ' + (admin.mobile || 'NOT SET — OTP skipped'));
     if (!admin.mobile) {
       // No mobile — skip OTP
-        CU = admin;
+      CU = admin;
       // Fall through to show app below
     } else {
       // Has mobile — send OTP
