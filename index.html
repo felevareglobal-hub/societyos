@@ -1475,6 +1475,8 @@ document.addEventListener('DOMContentLoaded', function() {
 // AUTH
 // ═══════════════════════════════════════════════
 var _pendingAdmin = null;
+var _pendingAdminOTP = null;
+var _pendingAdminOTPExpiry = null;
 
 async function doLogin() {
   const email = fv('li-email').trim().toLowerCase();
@@ -1506,11 +1508,12 @@ async function doLogin() {
       let otpSent = false;
       let otpError = '';
       try {
-        // Generate OTP client-side and save directly to DB
+        // Generate OTP client-side
         const otp = String(Math.floor(1000 + Math.random() * 9000));
         const expiry = new Date(Date.now() + 5 * 60 * 1000).toISOString();
-        // Save OTP to admins table
-        await PATCH('admins', admin.id, { otp: otp, otp_expiry: expiry });
+        // Store in memory for verification (no DB call needed)
+        _pendingAdminOTP = otp;
+        _pendingAdminOTPExpiry = expiry;
         otpSent = true;
         // Show OTP on screen (TEST MODE — remove after DLT registration)
         $('li-err').style.color = '#16a34a';
@@ -1607,30 +1610,31 @@ async function verifyOTP() {
   $('otp-btn').innerHTML = '<i class="ti ti-loader" style="margin-right:6px"></i> Verifying…';
   $('otp-btn').disabled = true;
   try {
-    const admins = await GET('admins', '?email=eq.' + encodeURIComponent(_pendingAdmin.email));
-    const admin  = admins[0];
-    if (!admin) throw new Error('Admin not found');
-    // Compare as strings with trim
-    const storedOTP = String(admin.otp || '').trim();
+    // Compare against stored OTP in _pendingAdmin object (set during login)
+    const storedOTP = String(_pendingAdminOTP || '').trim();
     const enteredOTP = String(otp).trim();
-    console.log('Stored OTP:', storedOTP, '| Entered OTP:', enteredOTP);
+    console.log('Stored OTP:', storedOTP, '| Entered:', enteredOTP);
+    if (!storedOTP) { throw new Error('OTP not found. Please try again.'); }
     if (storedOTP !== enteredOTP) {
       $('li-err').style.color = '#991b1b';
-      $('li-err').textContent = 'Invalid OTP. Stored: ' + storedOTP + ' | Entered: ' + enteredOTP;
+      $('li-err').textContent = 'Invalid OTP. Please try again.';
       $('otp-btn').innerHTML = '<i class="ti ti-shield-check" style="margin-right:6px"></i> Verify OTP';
       $('otp-btn').disabled = false;
       return;
     }
-    if (admin.otp_expiry && new Date(admin.otp_expiry) < new Date()) {
-      $('li-err').textContent = 'OTP expired. Please request a new one.';
+    if (_pendingAdminOTPExpiry && new Date(_pendingAdminOTPExpiry) < new Date()) {
+      $('li-err').textContent = 'OTP expired. Please click Resend.';
       $('otp-btn').innerHTML = '<i class="ti ti-shield-check" style="margin-right:6px"></i> Verify OTP';
       $('otp-btn').disabled = false;
       return;
     }
-    // Clear OTP
-    await PATCH('admins', admin.id, { otp: null, otp_expiry: null });
-    CU = admin;
+    // OTP verified — complete login
+    CU = _pendingAdmin;
     _pendingAdmin = null;
+    _pendingAdminOTP = null;
+    _pendingAdminOTPExpiry = null;
+    // Clear OTP in background (don't await — avoid hanging)
+    PATCH('admins', CU.id, { otp: null, otp_expiry: null }).catch(e => console.warn('OTP clear failed:', e));
     // Show app
     $('login-screen').style.display = 'none';
     $('app-screen').classList.add('show');
@@ -1670,7 +1674,8 @@ async function resendOTP() {
   try {
     const otp = String(Math.floor(1000 + Math.random() * 9000));
     const expiry = new Date(Date.now() + 5 * 60 * 1000).toISOString();
-    await PATCH('admins', _pendingAdmin.id, { otp: otp, otp_expiry: expiry });
+    _pendingAdminOTP = otp;
+    _pendingAdminOTPExpiry = expiry;
     $('li-err').style.color = '#16a34a';
     $('li-err').textContent = '🔐 TEST MODE — OTP: ' + otp + ' (valid 5 mins)';
     toast('New OTP: ' + otp, true);
@@ -1683,6 +1688,8 @@ async function resendOTP() {
 
 function backToLogin() {
   _pendingAdmin = null;
+  _pendingAdminOTP = null;
+  _pendingAdminOTPExpiry = null;
   $('login-step1').style.display = 'block';
   $('login-step2').style.display = 'none';
   $('li-err').textContent = '';
