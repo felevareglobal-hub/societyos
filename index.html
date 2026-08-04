@@ -251,6 +251,15 @@ tr:hover td{background:#fafafa}
     <div class="sb-sec">Finance</div>
     <div class="ni" id="nav-accounts" data-page="accounts"><i class="ti ti-cash"></i> Accounts</div>
     <div class="ni" id="nav-fd" data-page="fd"><i class="ti ti-building-bank"></i> Fixed Deposits</div>
+    <div class="sb-sec">Premium Features</div>
+    <div class="ni" id="nav-invoices" data-page="invoices"><i class="ti ti-file-invoice"></i> Billing & E-Invoice</div>
+    <div class="ni" id="nav-collections" data-page="collections"><i class="ti ti-cash"></i> E-Collections</div>
+    <div class="ni" id="nav-tax" data-page="tax"><i class="ti ti-receipt-tax"></i> E-Tax</div>
+    <div class="ni" id="nav-minutes" data-page="minutes"><i class="ti ti-notes"></i> Meeting Minutes</div>
+    <div class="ni" id="nav-documents" data-page="documents"><i class="ti ti-files"></i> Documents Vault</div>
+    <div class="ni" id="nav-statutory" data-page="statutory"><i class="ti ti-book"></i> Statutory Register</div>
+    <div class="ni" id="nav-helpdesk" data-page="helpdesk"><i class="ti ti-headset"></i> Digital Helpdesk</div>
+    <div class="ni" id="nav-staff" data-page="staff"><i class="ti ti-users-group"></i> Staff Attendance</div>
     <div class="sb-sec">Reports</div>
     <div class="ni" id="nav-reports" data-page="reports"><i class="ti ti-chart-bar"></i> Reports & Analytics</div>
     <div class="ni" id="nav-pricing" style="display:none" data-page="pricing"><i class="ti ti-crown"></i> Upgrade Plan</div>
@@ -617,6 +626,201 @@ tr:hover td{background:#fafafa}
               </thead>
               <tbody id="fd-tbody"></tbody>
             </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- INVOICES -->
+      <div class="page" id="page-invoices">
+        <div class="stats" style="margin-bottom:16px">
+          <div class="sc"><div class="lb">Total Invoices</div><div class="vl" id="inv-count">0</div></div>
+          <div class="sc"><div class="lb">Total Billed</div><div class="vl" id="inv-total" style="color:#2563eb">₹0</div></div>
+          <div class="sc"><div class="lb">Paid</div><div class="vl" id="inv-paid" style="color:#16a34a">₹0</div></div>
+          <div class="sc"><div class="lb">Unpaid</div><div class="vl" id="inv-unpaid" style="color:#991b1b">₹0</div></div>
+        </div>
+        <div class="card">
+          <div class="card-head">
+            <h3 id="inv-lbl">Invoices</h3>
+            <div style="display:flex;gap:8px">
+              <button class="btn" onclick="exportInvoicesCSV()"><i class="ti ti-download"></i> Export CSV</button>
+              <button class="btn btn-p" onclick="openInvoiceModal(-1)"><i class="ti ti-plus"></i> New Invoice</button>
+            </div>
+          </div>
+          <div class="tbl-wrap"><table>
+            <thead><tr><th>Invoice No</th><th>Flat</th><th>Member</th><th>Date</th><th>Due Date</th><th>Amount (₹)</th><th>Tax (₹)</th><th>Total (₹)</th><th>Status</th><th></th></tr></thead>
+            <tbody id="inv-tbody"></tbody>
+          </table></div>
+        </div>
+      </div>
+
+      <!-- E-COLLECTIONS -->
+      <div class="page" id="page-collections">
+        <div class="stats" style="margin-bottom:16px">
+          <div class="sc"><div class="lb">Total Collections</div><div class="vl" id="col-count">0</div></div>
+          <div class="sc"><div class="lb">Total Amount</div><div class="vl" id="col-total" style="color:#16a34a">₹0</div></div>
+          <div class="sc"><div class="lb">This Month</div><div class="vl" id="col-month">₹0</div></div>
+          <div class="sc"><div class="lb">Types</div><div class="vl" id="col-types">0</div></div>
+        </div>
+        <div class="card">
+          <div class="card-head">
+            <h3 id="col-lbl">Collections</h3>
+            <div style="display:flex;gap:8px">
+              <button class="btn" onclick="exportCollectionsCSV()"><i class="ti ti-download"></i> Export CSV</button>
+              <button class="btn btn-p" onclick="openCollectionModal(-1)"><i class="ti ti-plus"></i> Add Collection</button>
+            </div>
+          </div>
+          <div class="tbl-wrap"><table>
+            <thead><tr><th>Date</th><th>Flat</th><th>Member</th><th>Type</th><th>Amount (₹)</th><th>Mode</th><th>Reference</th><th>Collected By</th><th>Status</th><th></th></tr></thead>
+            <tbody id="col-tbody"></tbody>
+          </table></div>
+        </div>
+      </div>
+
+      <!-- E-TAX -->
+      <div class="page" id="page-tax">
+        <div class="stats" style="margin-bottom:16px">
+          <div class="sc"><div class="lb">Total Records</div><div class="vl" id="tax-count">0</div></div>
+          <div class="sc"><div class="lb">Pending</div><div class="vl" id="tax-pending" style="color:#991b1b">0</div></div>
+          <div class="sc"><div class="lb">Filed</div><div class="vl" id="tax-filed" style="color:#16a34a">0</div></div>
+          <div class="sc"><div class="lb">Total Amount</div><div class="vl" id="tax-total">₹0</div></div>
+        </div>
+        <div class="card">
+          <div class="card-head">
+            <h3>Tax Records</h3>
+            <div style="display:flex;gap:8px">
+              <button class="btn" onclick="exportTaxCSV()"><i class="ti ti-download"></i> Export CSV</button>
+              <button class="btn btn-p" onclick="openTaxModal(-1)"><i class="ti ti-plus"></i> Add Tax Record</button>
+            </div>
+          </div>
+          <div class="tbl-wrap"><table>
+            <thead><tr><th>Type</th><th>Financial Year</th><th>Quarter</th><th>Amount (₹)</th><th>Due Date</th><th>Filed Date</th><th>Reference No</th><th>Status</th><th></th></tr></thead>
+            <tbody id="tax-tbody"></tbody>
+          </table></div>
+        </div>
+      </div>
+
+      <!-- MINUTES OF MEETING -->
+      <div class="page" id="page-minutes">
+        <div class="stats" style="margin-bottom:16px">
+          <div class="sc"><div class="lb">Total Meetings</div><div class="vl" id="min-count">0</div></div>
+          <div class="sc"><div class="lb">AGM</div><div class="vl" id="min-agm">0</div></div>
+          <div class="sc"><div class="lb">SGM</div><div class="vl" id="min-sgm">0</div></div>
+          <div class="sc"><div class="lb">Committee</div><div class="vl" id="min-comm">0</div></div>
+        </div>
+        <div class="card">
+          <div class="card-head">
+            <h3 id="min-lbl">Meeting Minutes</h3>
+            <button class="btn btn-p" onclick="openMinutesModal(-1)"><i class="ti ti-plus"></i> Add Minutes</button>
+          </div>
+          <div id="min-list"></div>
+        </div>
+      </div>
+
+      <!-- DOCUMENTS VAULT -->
+      <div class="page" id="page-documents">
+        <div class="stats" style="margin-bottom:16px">
+          <div class="sc"><div class="lb">Total Documents</div><div class="vl" id="doc-count">0</div></div>
+          <div class="sc"><div class="lb">Legal</div><div class="vl" id="doc-legal">0</div></div>
+          <div class="sc"><div class="lb">Financial</div><div class="vl" id="doc-financial">0</div></div>
+          <div class="sc"><div class="lb">Expiring Soon</div><div class="vl" id="doc-expiring" style="color:#991b1b">0</div></div>
+        </div>
+        <div class="card">
+          <div class="card-head">
+            <h3 id="doc-lbl">Documents Vault</h3>
+            <button class="btn btn-p" onclick="openDocModal(-1)"><i class="ti ti-plus"></i> Upload Document</button>
+          </div>
+          <div class="tbl-wrap"><table>
+            <thead><tr><th>Category</th><th>Title</th><th>Description</th><th>File</th><th>Uploaded By</th><th>Expiry</th><th>Confidential</th><th></th></tr></thead>
+            <tbody id="doc-tbody"></tbody>
+          </table></div>
+        </div>
+      </div>
+
+      <!-- STATUTORY REGISTER -->
+      <div class="page" id="page-statutory">
+        <div class="fb" style="margin-bottom:12px">
+          <div class="fc active" data-filter="stat-all">All</div>
+          <div class="fc" data-filter="stat-members">Member Register</div>
+          <div class="fc" data-filter="stat-transfers">Transfers</div>
+          <div class="fc" data-filter="stat-nominees">Nominees</div>
+          <div class="fc" data-filter="stat-charges">Charges</div>
+        </div>
+        <div class="card">
+          <div class="card-head">
+            <h3 id="stat-lbl">Statutory Register</h3>
+            <div style="display:flex;gap:8px">
+              <button class="btn" onclick="exportStatutoryCSV()"><i class="ti ti-download"></i> Export CSV</button>
+              <button class="btn btn-p" onclick="openStatModal(-1)"><i class="ti ti-plus"></i> Add Entry</button>
+            </div>
+          </div>
+          <div class="tbl-wrap"><table>
+            <thead><tr><th>Date</th><th>Register Type</th><th>Flat</th><th>Member Name</th><th>Details</th><th>Remarks</th><th></th></tr></thead>
+            <tbody id="stat-tbody"></tbody>
+          </table></div>
+        </div>
+      </div>
+
+      <!-- DIGITAL HELPDESK -->
+      <div class="page" id="page-helpdesk">
+        <div class="stats" style="margin-bottom:16px">
+          <div class="sc"><div class="lb">Total Tickets</div><div class="vl" id="hd-count">0</div></div>
+          <div class="sc"><div class="lb">Open</div><div class="vl" id="hd-open" style="color:#991b1b">0</div></div>
+          <div class="sc"><div class="lb">In Progress</div><div class="vl" id="hd-progress" style="color:#92400e">0</div></div>
+          <div class="sc"><div class="lb">Resolved</div><div class="vl" id="hd-resolved" style="color:#16a34a">0</div></div>
+        </div>
+        <div class="fb" style="margin-bottom:12px">
+          <div class="fc active" data-filter="hd-all">All</div>
+          <div class="fc" data-filter="hd-open">Open</div>
+          <div class="fc" data-filter="hd-in-progress">In Progress</div>
+          <div class="fc" data-filter="hd-resolved">Resolved</div>
+          <div class="fc" data-filter="hd-closed">Closed</div>
+        </div>
+        <div class="card">
+          <div class="card-head">
+            <h3 id="hd-lbl">Helpdesk Tickets</h3>
+            <div style="display:flex;gap:8px">
+              <button class="btn" onclick="exportHelpdeskCSV()"><i class="ti ti-download"></i> Export CSV</button>
+              <button class="btn btn-p" onclick="openHelpdeskModal(-1)"><i class="ti ti-plus"></i> New Ticket</button>
+            </div>
+          </div>
+          <div class="tbl-wrap"><table>
+            <thead><tr><th>Ticket No</th><th>Flat</th><th>Member</th><th>Category</th><th>Subject</th><th>Priority</th><th>Assigned To</th><th>Status</th><th></th></tr></thead>
+            <tbody id="hd-tbody"></tbody>
+          </table></div>
+        </div>
+      </div>
+
+      <!-- STAFF ATTENDANCE -->
+      <div class="page" id="page-staff">
+        <div class="stats" style="margin-bottom:16px">
+          <div class="sc"><div class="lb">Total Staff</div><div class="vl" id="st-count">0</div></div>
+          <div class="sc"><div class="lb">Present Today</div><div class="vl" id="st-present" style="color:#16a34a">0</div></div>
+          <div class="sc"><div class="lb">Absent Today</div><div class="vl" id="st-absent" style="color:#991b1b">0</div></div>
+          <div class="sc"><div class="lb">On Leave</div><div class="vl" id="st-leave" style="color:#92400e">0</div></div>
+        </div>
+        <div class="tw">
+          <div class="card">
+            <div class="card-head">
+              <h3>Staff List</h3>
+              <button class="btn btn-p" onclick="openStaffModal(-1)"><i class="ti ti-plus"></i> Add Staff</button>
+            </div>
+            <div class="tbl-wrap"><table>
+              <thead><tr><th>Name</th><th>Role</th><th>Department</th><th>Mobile</th><th>Salary (₹)</th><th>Status</th><th></th></tr></thead>
+              <tbody id="st-tbody"></tbody>
+            </table></div>
+          </div>
+          <div class="card">
+            <div class="card-head">
+              <h3>Today's Attendance</h3>
+              <div style="display:flex;gap:8px">
+                <input type="date" id="att-date" style="padding:6px 10px;border:1px solid #e2e8f0;border-radius:7px;font-size:12px" onchange="renderAttendance()">
+                <button class="btn btn-p" onclick="markBulkAttendance()"><i class="ti ti-check"></i> Mark All Present</button>
+              </div>
+            </div>
+            <div class="tbl-wrap"><table>
+              <thead><tr><th>Staff</th><th>Role</th><th>Status</th><th>In Time</th><th>Out Time</th><th></th></tr></thead>
+              <tbody id="att-tbody"></tbody>
+            </table></div>
           </div>
         </div>
       </div>
@@ -1176,6 +1380,175 @@ tr:hover td{background:#fafafa}
   </div>
 </div>
 
+<!-- INVOICE MODAL -->
+<div class="mo" id="mo-invoice">
+  <div class="md" style="max-width:600px">
+    <div class="md-head"><h3 id="inv-modal-title">New Invoice</h3><button class="md-close" onclick="closeModal('mo-invoice')"><i class="ti ti-x"></i></button></div>
+    <div class="md-body"><div class="fg">
+      <div class="fi"><label>Invoice No *</label><input id="iv-no" placeholder="INV-2026-001"></div>
+      <div class="fi"><label>Invoice Date *</label><input id="iv-date" type="date"></div>
+      <div class="fi"><label>Wing</label><select id="iv-wing"></select></div>
+      <div class="fi"><label>Flat *</label><input id="iv-flat"></div>
+      <div class="fi full"><label>Member Name</label><input id="iv-name"></div>
+      <div class="fi"><label>Due Date</label><input id="iv-due" type="date"></div>
+      <div class="fi"><label>Description *</label><input id="iv-desc" placeholder="e.g. Maintenance charges"></div>
+      <div class="fi"><label>Amount (₹) *</label><input id="iv-amt" type="number" oninput="calcInvoiceTotal()"></div>
+      <div class="fi"><label>Tax (%)</label><input id="iv-tax" type="number" value="18" oninput="calcInvoiceTotal()"></div>
+      <div class="fi"><label>Tax Amount (₹)</label><input id="iv-taxamt" readonly style="background:#f8fafc"></div>
+      <div class="fi"><label>Total (₹)</label><input id="iv-total" readonly style="background:#f8fafc;font-weight:700"></div>
+      <div class="fi"><label>Status</label><select id="iv-status"><option value="unpaid">Unpaid</option><option value="paid">Paid</option><option value="partial">Partial</option></select></div>
+      <div class="fi"><label>Payment Mode</label><select id="iv-mode"><option>UPI</option><option>Cash</option><option>Bank Transfer</option><option>Cheque</option></select></div>
+      <div class="fi full"><label>Notes</label><textarea id="iv-notes" rows="2"></textarea></div>
+    </div></div>
+    <div class="md-foot"><button class="btn" onclick="closeModal('mo-invoice')">Cancel</button><button class="btn btn-p" onclick="saveInvoice()"><i class="ti ti-check"></i> Save Invoice</button></div>
+  </div>
+</div>
+
+<!-- COLLECTION MODAL -->
+<div class="mo" id="mo-collection">
+  <div class="md" style="max-width:560px">
+    <div class="md-head"><h3 id="col-modal-title">Add Collection</h3><button class="md-close" onclick="closeModal('mo-collection')"><i class="ti ti-x"></i></button></div>
+    <div class="md-body"><div class="fg">
+      <div class="fi"><label>Collection Date *</label><input id="cl-date" type="date"></div>
+      <div class="fi"><label>Wing</label><select id="cl-wing"></select></div>
+      <div class="fi"><label>Flat *</label><input id="cl-flat"></div>
+      <div class="fi"><label>Member Name</label><input id="cl-name"></div>
+      <div class="fi"><label>Collection Type *</label><select id="cl-type"><option>Maintenance</option><option>Water Charges</option><option>Parking Charges</option><option>NOC Fee</option><option>Transfer Fee</option><option>Sinking Fund</option><option>Repair Fund</option><option>Other</option></select></div>
+      <div class="fi"><label>Amount (₹) *</label><input id="cl-amt" type="number"></div>
+      <div class="fi"><label>Payment Mode *</label><select id="cl-mode"><option>UPI</option><option>Cash</option><option>Bank Transfer</option><option>Cheque</option><option>NEFT</option><option>RTGS</option></select></div>
+      <div class="fi"><label>Reference No</label><input id="cl-ref"></div>
+      <div class="fi"><label>Collected By</label><input id="cl-by"></div>
+      <div class="fi"><label>Status</label><select id="cl-status"><option value="collected">Collected</option><option value="pending">Pending</option><option value="refunded">Refunded</option></select></div>
+      <div class="fi full"><label>Notes</label><textarea id="cl-notes" rows="2"></textarea></div>
+    </div></div>
+    <div class="md-foot"><button class="btn" onclick="closeModal('mo-collection')">Cancel</button><button class="btn btn-p" onclick="saveCollection()"><i class="ti ti-check"></i> Save</button></div>
+  </div>
+</div>
+
+<!-- TAX MODAL -->
+<div class="mo" id="mo-tax">
+  <div class="md" style="max-width:520px">
+    <div class="md-head"><h3 id="tax-modal-title">Add Tax Record</h3><button class="md-close" onclick="closeModal('mo-tax')"><i class="ti ti-x"></i></button></div>
+    <div class="md-body"><div class="fg">
+      <div class="fi"><label>Tax Type *</label><select id="tx-type"><option>GST</option><option>TDS</option><option>Property Tax</option><option>Professional Tax</option><option>Income Tax</option><option>Other</option></select></div>
+      <div class="fi"><label>Financial Year *</label><input id="tx-fy" placeholder="2025-26"></div>
+      <div class="fi"><label>Quarter</label><select id="tx-qtr"><option>Q1 (Apr-Jun)</option><option>Q2 (Jul-Sep)</option><option>Q3 (Oct-Dec)</option><option>Q4 (Jan-Mar)</option><option>Annual</option></select></div>
+      <div class="fi"><label>Amount (₹) *</label><input id="tx-amt" type="number"></div>
+      <div class="fi"><label>Due Date</label><input id="tx-due" type="date"></div>
+      <div class="fi"><label>Filed Date</label><input id="tx-filed" type="date"></div>
+      <div class="fi"><label>Reference No</label><input id="tx-ref" placeholder="Acknowledgement no."></div>
+      <div class="fi"><label>Status</label><select id="tx-status"><option value="pending">Pending</option><option value="filed">Filed</option><option value="paid">Paid</option><option value="overdue">Overdue</option></select></div>
+      <div class="fi full"><label>Notes</label><textarea id="tx-notes" rows="2"></textarea></div>
+    </div></div>
+    <div class="md-foot"><button class="btn" onclick="closeModal('mo-tax')">Cancel</button><button class="btn btn-p" onclick="saveTax()"><i class="ti ti-check"></i> Save</button></div>
+  </div>
+</div>
+
+<!-- MINUTES MODAL -->
+<div class="mo" id="mo-minutes">
+  <div class="md" style="max-width:680px">
+    <div class="md-head"><h3 id="min-modal-title">Add Meeting Minutes</h3><button class="md-close" onclick="closeModal('mo-minutes')"><i class="ti ti-x"></i></button></div>
+    <div class="md-body"><div class="fg">
+      <div class="fi"><label>Meeting Type *</label><select id="mn-type"><option>AGM (Annual General Meeting)</option><option>SGM (Special General Meeting)</option><option>Committee Meeting</option><option>Emergency Meeting</option><option>Other</option></select></div>
+      <div class="fi"><label>Meeting Date *</label><input id="mn-date" type="date"></div>
+      <div class="fi"><label>Venue</label><input id="mn-venue" placeholder="e.g. Society Hall"></div>
+      <div class="fi"><label>Chairman</label><input id="mn-chair"></div>
+      <div class="fi"><label>Secretary</label><input id="mn-sec"></div>
+      <div class="fi full"><label>Attendees</label><textarea id="mn-attend" rows="2" placeholder="Names of members present"></textarea></div>
+      <div class="fi full"><label>Agenda</label><textarea id="mn-agenda" rows="3" placeholder="Meeting agenda points"></textarea></div>
+      <div class="fi full"><label>Minutes / Discussion</label><textarea id="mn-mins" rows="4" placeholder="Detailed minutes of discussion"></textarea></div>
+      <div class="fi full"><label>Resolutions Passed</label><textarea id="mn-res" rows="3" placeholder="List of resolutions passed"></textarea></div>
+      <div class="fi"><label>Next Meeting Date</label><input id="mn-next" type="date"></div>
+      <div class="fi"><label>Status</label><select id="mn-status"><option value="draft">Draft</option><option value="approved">Approved</option><option value="published">Published</option></select></div>
+    </div></div>
+    <div class="md-foot"><button class="btn" onclick="closeModal('mo-minutes')">Cancel</button><button class="btn btn-p" onclick="saveMinutes()"><i class="ti ti-check"></i> Save Minutes</button></div>
+  </div>
+</div>
+
+<!-- DOCUMENT MODAL -->
+<div class="mo" id="mo-document">
+  <div class="md" style="max-width:560px">
+    <div class="md-head"><h3 id="doc-modal-title">Upload Document</h3><button class="md-close" onclick="closeModal('mo-document')"><i class="ti ti-x"></i></button></div>
+    <div class="md-body"><div class="fg">
+      <div class="fi"><label>Category *</label><select id="dc-cat"><option>Legal</option><option>Financial</option><option>Insurance</option><option>Government</option><option>Maintenance</option><option>Agreement</option><option>Certificate</option><option>Other</option></select></div>
+      <div class="fi full"><label>Title *</label><input id="dc-title" placeholder="Document title"></div>
+      <div class="fi full"><label>Description</label><textarea id="dc-desc" rows="2"></textarea></div>
+      <div class="fi"><label>Tags</label><input id="dc-tags" placeholder="e.g. registration, legal"></div>
+      <div class="fi"><label>Expiry Date</label><input id="dc-exp" type="date"></div>
+      <div class="fi"><label>Confidential</label><select id="dc-conf"><option value="false">No</option><option value="true">Yes</option></select></div>
+      <div class="fi full"><label>Upload File (PDF/Image, max 2MB)</label>
+        <div class="photo-upload-area photo-upload-area-fix" id="dc-upload-area" onclick="document.getElementById('dc-file').click()">
+          <div id="dc-file-preview"><i class="ti ti-upload" style="font-size:30px;color:#cbd5e1;display:block;margin-bottom:6px"></i>
+          <div style="font-size:12px;color:#64748b">Click to upload document</div></div>
+        </div>
+        <input type="file" id="dc-file" accept=".pdf,.jpg,.jpeg,.png" style="display:none" onchange="previewDocFile()">
+        <input type="hidden" id="dc-filedata">
+        <input type="hidden" id="dc-filename">
+        <input type="hidden" id="dc-filetype">
+      </div>
+      <div class="fi full"><label>Uploaded By</label><input id="dc-by"></div>
+    </div></div>
+    <div class="md-foot"><button class="btn" onclick="closeModal('mo-document')">Cancel</button><button class="btn btn-p" onclick="saveDocument()"><i class="ti ti-check"></i> Save Document</button></div>
+  </div>
+</div>
+
+<!-- STATUTORY MODAL -->
+<div class="mo" id="mo-statutory">
+  <div class="md" style="max-width:560px">
+    <div class="md-head"><h3 id="stat-modal-title">Add Statutory Entry</h3><button class="md-close" onclick="closeModal('mo-statutory')"><i class="ti ti-x"></i></button></div>
+    <div class="md-body"><div class="fg">
+      <div class="fi"><label>Register Type *</label><select id="sr-type"><option>Member Register</option><option>Share Certificate Register</option><option>Transfer Register</option><option>Nominee Register</option><option>Charges Register</option><option>Meeting Register</option><option>Audit Register</option></select></div>
+      <div class="fi"><label>Entry Date *</label><input id="sr-date" type="date"></div>
+      <div class="fi"><label>Wing</label><select id="sr-wing"></select></div>
+      <div class="fi"><label>Flat</label><input id="sr-flat"></div>
+      <div class="fi full"><label>Member Name</label><input id="sr-name"></div>
+      <div class="fi full"><label>Details / Description *</label><textarea id="sr-details" rows="3"></textarea></div>
+      <div class="fi full"><label>Remarks</label><textarea id="sr-remarks" rows="2"></textarea></div>
+    </div></div>
+    <div class="md-foot"><button class="btn" onclick="closeModal('mo-statutory')">Cancel</button><button class="btn btn-p" onclick="saveStatutory()"><i class="ti ti-check"></i> Save Entry</button></div>
+  </div>
+</div>
+
+<!-- HELPDESK MODAL -->
+<div class="mo" id="mo-helpdesk">
+  <div class="md" style="max-width:560px">
+    <div class="md-head"><h3 id="hd-modal-title">New Helpdesk Ticket</h3><button class="md-close" onclick="closeModal('mo-helpdesk')"><i class="ti ti-x"></i></button></div>
+    <div class="md-body"><div class="fg">
+      <div class="fi"><label>Ticket No</label><input id="hk-no" placeholder="Auto-generated"></div>
+      <div class="fi"><label>Date</label><input id="hk-date" type="date"></div>
+      <div class="fi"><label>Wing</label><select id="hk-wing"></select></div>
+      <div class="fi"><label>Flat *</label><input id="hk-flat"></div>
+      <div class="fi"><label>Member Name *</label><input id="hk-name"></div>
+      <div class="fi"><label>Mobile</label><input id="hk-mob" type="tel"></div>
+      <div class="fi"><label>Category *</label><select id="hk-cat"><option>Plumbing</option><option>Electrical</option><option>Cleaning</option><option>Security</option><option>Lift</option><option>Parking</option><option>Water</option><option>Noise Complaint</option><option>Common Area</option><option>Other</option></select></div>
+      <div class="fi"><label>Priority</label><select id="hk-pri"><option value="low">Low</option><option value="medium" selected>Medium</option><option value="high">High</option><option value="urgent">Urgent</option></select></div>
+      <div class="fi full"><label>Subject *</label><input id="hk-sub"></div>
+      <div class="fi full"><label>Description</label><textarea id="hk-desc" rows="3"></textarea></div>
+      <div class="fi"><label>Assigned To</label><input id="hk-assign" placeholder="Staff name"></div>
+      <div class="fi"><label>Status</label><select id="hk-status"><option value="open">Open</option><option value="in-progress">In Progress</option><option value="resolved">Resolved</option><option value="closed">Closed</option></select></div>
+      <div class="fi full"><label>Resolution</label><textarea id="hk-res" rows="2"></textarea></div>
+    </div></div>
+    <div class="md-foot"><button class="btn" onclick="closeModal('mo-helpdesk')">Cancel</button><button class="btn btn-p" onclick="saveHelpdesk()"><i class="ti ti-check"></i> Save Ticket</button></div>
+  </div>
+</div>
+
+<!-- STAFF MODAL -->
+<div class="mo" id="mo-staff">
+  <div class="md" style="max-width:520px">
+    <div class="md-head"><h3 id="st-modal-title">Add Staff</h3><button class="md-close" onclick="closeModal('mo-staff')"><i class="ti ti-x"></i></button></div>
+    <div class="md-body"><div class="fg">
+      <div class="fi"><label>Full Name *</label><input id="sf-name"></div>
+      <div class="fi"><label>Role *</label><select id="sf-role"><option>Security Guard</option><option>Housekeeping</option><option>Gardener</option><option>Plumber</option><option>Electrician</option><option>Lift Operator</option><option>Accountant</option><option>Manager</option><option>Other</option></select></div>
+      <div class="fi"><label>Department</label><select id="sf-dept"><option>Security</option><option>Housekeeping</option><option>Maintenance</option><option>Administration</option><option>Other</option></select></div>
+      <div class="fi"><label>Mobile</label><input id="sf-mob" type="tel"></div>
+      <div class="fi"><label>Monthly Salary (₹)</label><input id="sf-sal" type="number"></div>
+      <div class="fi"><label>Join Date</label><input id="sf-join" type="date"></div>
+      <div class="fi"><label>Status</label><select id="sf-status"><option value="active">Active</option><option value="inactive">Inactive</option><option value="on-leave">On Leave</option></select></div>
+    </div></div>
+    <div class="md-foot"><button class="btn" onclick="closeModal('mo-staff')">Cancel</button><button class="btn btn-p" onclick="saveStaff()"><i class="ti ti-check"></i> Save Staff</button></div>
+  </div>
+</div>
+
 <!-- NOTICE MODAL -->
 <div class="mo" id="mo-notice">
   <div class="md" style="max-width:480px">
@@ -1391,7 +1764,7 @@ const PAGE_META = {
 
 function goPage(id) {
   // ── Plan lock check (for society admins only) ──
-  const lockedMods = ['services','amenities','tenants','rent','accounts','reports'];
+  const lockedMods = ['services','amenities','tenants','rent','accounts','reports','invoices','collections','tax','minutes','documents','statutory','helpdesk','staff'];
   const checkId = id==='rent' ? 'tenants' : id;
   if (lockedMods.includes(id) && CU && CU.role !== 'master' && !hasModule(checkId)) {
     document.querySelectorAll('.page').forEach(p=>p.classList.remove('show'));
@@ -1438,7 +1811,15 @@ function goPage(id) {
   if (id==='rent')      renderRent();
   if (id==='accounts')  renderAccounts();
   if (id==='reports')   renderReports();
-  if (id==='fd')        renderFD();
+  if (id==='fd')          renderFD();
+  if (id==='invoices')    renderInvoices();
+  if (id==='collections') renderCollections();
+  if (id==='tax')         renderTax();
+  if (id==='minutes')     renderMinutes();
+  if (id==='documents')   renderDocuments();
+  if (id==='statutory')   renderStatutory();
+  if (id==='helpdesk')    renderHelpdesk();
+  if (id==='staff')       renderStaff();
   if (window.innerWidth<768) { closeSidebar(); }
 }
 
@@ -2358,6 +2739,8 @@ document.addEventListener('DOMContentLoaded', function() {
     if (f.startsWith('acc-'))  { accFilter=f.replace('acc-','');  renderAccounts(); }
     if (f.startsWith('rent-')) { rentFilter=f.replace('rent-',''); renderRent(); }
     if (f.startsWith('req-'))  { reqFilter=f.replace('req-','');   renderSignupRequests(); }
+    if (f.startsWith('stat-')) { statFilter=f; renderStatutory(); }
+    if (f.startsWith('hd-'))   { hdFilter=f;   renderHelpdesk(); }
     if (f.startsWith('rep-')) { repFilter=f.replace('rep-',''); renderReports(); }
   });
 });
@@ -2834,11 +3217,15 @@ let allPlans = [];
 const PLAN_MODULES = {
   basic:    ['members','dues','notices'],
   standard: ['members','dues','notices','services','amenities','tenants'],
-  premium:  ['members','dues','notices','services','amenities','tenants','accounts','reports','photos']
+  premium:  ['members','dues','notices','services','amenities','tenants','accounts','reports','photos',
+             'invoices','collections','tax','minutes','documents','statutory','helpdesk','staff']
 };
 const MODULE_PLAN = {
   services:'standard', amenities:'standard', tenants:'standard',
-  accounts:'premium', reports:'premium', photos:'premium'
+  accounts:'premium', reports:'premium', photos:'premium',
+  invoices:'premium', collections:'premium', tax:'premium',
+  minutes:'premium', documents:'premium', statutory:'premium',
+  helpdesk:'premium', staff:'premium'
 };
 const PLAN_COLORS = { basic:'#475569', standard:'#1e40af', premium:'#5b21b6' };
 const PLAN_BG = { basic:'plan-basic', standard:'plan-standard', premium:'plan-premium' };
@@ -2934,15 +3321,23 @@ async function renderPlans() {
     // ── Plan Comparison Table ──
     const grid = $('plan-cards-grid');
     const featureList = [
-      {k:'members',    l:'Member Registry'},
-      {k:'dues',       l:'Maintenance Dues'},
-      {k:'notices',    l:'Notices & Complaints'},
-      {k:'services',   l:'Services & AMC'},
-      {k:'amenities',  l:'Amenities'},
-      {k:'tenants',    l:'Tenant Management'},
-      {k:'accounts',   l:'Accounts & Finance'},
-      {k:'reports',    l:'Reports & Analytics'},
-      {k:'photos',     l:'Member & Tenant Photos'}
+      {k:'members',     l:'Member Registry'},
+      {k:'dues',        l:'Maintenance Dues'},
+      {k:'notices',     l:'Notices & Complaints'},
+      {k:'services',    l:'Services & AMC'},
+      {k:'amenities',   l:'Amenities'},
+      {k:'tenants',     l:'Tenant Management'},
+      {k:'accounts',    l:'Accounts & Finance'},
+      {k:'reports',     l:'Reports & Analytics'},
+      {k:'photos',      l:'Member & Tenant Photos'},
+      {k:'invoices',    l:'Billing & E-Invoicing'},
+      {k:'collections', l:'E-Collections'},
+      {k:'tax',         l:'E-Tax Records'},
+      {k:'minutes',     l:'Meeting Minutes'},
+      {k:'documents',   l:'Documents Vault'},
+      {k:'statutory',   l:'Statutory Register'},
+      {k:'helpdesk',    l:'Digital Helpdesk'},
+      {k:'staff',       l:'Staff Attendance'}
     ];
 
     grid.innerHTML = `
@@ -3073,15 +3468,23 @@ async function renderPricing() {
     const currentPlan = getSocietyPlan();
     const GST = 0.18;
     const featureList = [
-      {k:'members',    l:'Member Registry'},
-      {k:'dues',       l:'Maintenance Dues'},
-      {k:'notices',    l:'Notices & Complaints'},
-      {k:'services',   l:'Services & AMC'},
-      {k:'amenities',  l:'Amenities'},
-      {k:'tenants',    l:'Tenant Management'},
-      {k:'accounts',   l:'Accounts & Finance'},
-      {k:'reports',    l:'Reports & Analytics'},
-      {k:'photos',     l:'Member & Tenant Photos'}
+      {k:'members',     l:'Member Registry'},
+      {k:'dues',        l:'Maintenance Dues'},
+      {k:'notices',     l:'Notices & Complaints'},
+      {k:'services',    l:'Services & AMC'},
+      {k:'amenities',   l:'Amenities'},
+      {k:'tenants',     l:'Tenant Management'},
+      {k:'accounts',    l:'Accounts & Finance'},
+      {k:'reports',     l:'Reports & Analytics'},
+      {k:'photos',      l:'Member & Tenant Photos'},
+      {k:'invoices',    l:'Billing & E-Invoicing'},
+      {k:'collections', l:'E-Collections'},
+      {k:'tax',         l:'E-Tax Records'},
+      {k:'minutes',     l:'Meeting Minutes'},
+      {k:'documents',   l:'Documents Vault'},
+      {k:'statutory',   l:'Statutory Register'},
+      {k:'helpdesk',    l:'Digital Helpdesk'},
+      {k:'staff',       l:'Staff Attendance'}
     ];
 
     const grid = $('pricing-cards');
@@ -4242,6 +4645,583 @@ async function handleRazorpaySuccess(response, planId, period, totalAmt, baseAmt
   }
 }
 
+// ═══════════════════════════════════════════════
+// 8 PREMIUM MODULES JS
+// ═══════════════════════════════════════════════
+
+// ── Helper: populate wing selects ──
+function populateWingSelect(id) {
+  const w = wings();
+  const el = $(id);
+  if (el) el.innerHTML = w.map(x=>`<option>${x}</option>`).join('');
+}
+
+// ══════════════════════════════
+// 1. BILLING & E-INVOICING
+// ══════════════════════════════
+let invoiceList=[], editInvIdx=-1;
+async function renderInvoices() {
+  try {
+    invoiceList = await GET('invoices',`?society_id=eq.${CS.id}&order=created_at.desc`);
+    const total  = invoiceList.reduce((s,i)=>s+Number(i.total||0),0);
+    const paid   = invoiceList.filter(i=>i.status==='paid').reduce((s,i)=>s+Number(i.total||0),0);
+    const unpaid = invoiceList.filter(i=>i.status==='unpaid').reduce((s,i)=>s+Number(i.total||0),0);
+    $('inv-count').textContent = invoiceList.length;
+    $('inv-total').textContent = '₹'+total.toLocaleString('en-IN');
+    $('inv-paid').textContent  = '₹'+paid.toLocaleString('en-IN');
+    $('inv-unpaid').textContent= '₹'+unpaid.toLocaleString('en-IN');
+    $('inv-lbl').textContent   = invoiceList.length+' Invoice'+(invoiceList.length!==1?'s':'');
+    const tb = $('inv-tbody');
+    if (!invoiceList.length) { tb.innerHTML='<tr><td colspan="10" class="empty">No invoices yet</td></tr>'; return; }
+    const sc = {paid:'bgr',unpaid:'br',partial:'ba'};
+    tb.innerHTML = invoiceList.map((i,idx)=>`<tr>
+      <td style="font-weight:600;font-size:11px">${i.invoice_no||'—'}</td>
+      <td><strong>${i.flat||'—'}</strong></td>
+      <td style="font-size:11px">${i.member_name||'—'}</td>
+      <td style="font-size:11px">${i.invoice_date||'—'}</td>
+      <td style="font-size:11px;color:${daysUntil(i.due_date)<0?'#991b1b':'inherit'}">${i.due_date||'—'}</td>
+      <td>₹${Number(i.subtotal||0).toLocaleString('en-IN')}</td>
+      <td>₹${Number(i.tax||0).toLocaleString('en-IN')}</td>
+      <td style="font-weight:700">₹${Number(i.total||0).toLocaleString('en-IN')}</td>
+      <td><span class="badge ${sc[i.status]||'bb'}">${(i.status||'unpaid').toUpperCase()}</span></td>
+      <td>
+        <button class="ab" onclick="openInvoiceModal(${idx})" title="Edit"><i class="ti ti-edit"></i></button>
+        <button class="ab" onclick="deleteRecord('invoices','${i.id}',renderInvoices)" style="color:#ef4444"><i class="ti ti-trash"></i></button>
+      </td></tr>`).join('');
+  } catch(e) { toast('Error: '+e.message,false); }
+}
+function calcInvoiceTotal() {
+  const amt = parseFloat(fv('iv-amt')||0);
+  const tax = parseFloat(fv('iv-tax')||0);
+  const taxAmt = Math.round(amt*tax/100);
+  sv('iv-taxamt', taxAmt);
+  sv('iv-total', amt+taxAmt);
+}
+function openInvoiceModal(idx=-1) {
+  editInvIdx=idx;
+  const i=idx>=0?invoiceList[idx]:null;
+  populateWingSelect('iv-wing');
+  sv('iv-no', i?.invoice_no||'INV-'+new Date().getFullYear()+'-'+String(invoiceList.length+1).padStart(3,'0'));
+  sv('iv-date', i?.invoice_date||new Date().toISOString().split('T')[0]);
+  sv('iv-flat',i?.flat); sv('iv-name',i?.member_name); sv('iv-due',i?.due_date);
+  sv('iv-desc',i?.items||''); sv('iv-amt',i?.subtotal); sv('iv-tax',i?.tax_rate||18);
+  sv('iv-taxamt',i?.tax); sv('iv-total',i?.total); sv('iv-status',i?.status||'unpaid');
+  sv('iv-mode',i?.payment_mode); sv('iv-notes',i?.notes);
+  $('inv-modal-title').textContent=idx>=0?'Edit Invoice':'New Invoice';
+  openModal('mo-invoice');
+}
+async function saveInvoice() {
+  const flat=fv('iv-flat').trim(), no=fv('iv-no').trim();
+  if(!flat||!no){toast('Invoice no and flat required',false);return;}
+  const amt=parseFloat(fv('iv-amt')||0), taxPct=parseFloat(fv('iv-tax')||0);
+  const taxAmt=Math.round(amt*taxPct/100);
+  const d={society_id:CS.id,invoice_no:no,flat,member_name:fv('iv-name'),
+    invoice_date:fv('iv-date')||null,due_date:fv('iv-due')||null,
+    items:fv('iv-desc'),subtotal:amt,tax:taxAmt,tax_rate:taxPct,total:amt+taxAmt,
+    status:fv('iv-status'),payment_mode:fv('iv-mode'),notes:fv('iv-notes')};
+  try{
+    if(editInvIdx>=0) await PATCH('invoices',invoiceList[editInvIdx].id,d);
+    else await POST('invoices',d);
+    closeModal('mo-invoice'); renderInvoices(); toast('Invoice saved ✓');
+  }catch(e){toast('Error: '+e.message,false);}
+}
+function exportInvoicesCSV() {
+  const rows=[['Invoice No','Flat','Member','Date','Due Date','Amount','Tax','Total','Status']];
+  invoiceList.forEach(i=>rows.push([i.invoice_no,i.flat,i.member_name,i.invoice_date,i.due_date,i.subtotal,i.tax,i.total,i.status]));
+  downloadCSV(rows,`invoices_${CS?.name}_${new Date().toISOString().split('T')[0]}.csv`);
+}
+
+// ══════════════════════════════
+// 2. E-COLLECTIONS
+// ══════════════════════════════
+let collectionList=[], editColIdx=-1;
+async function renderCollections() {
+  try {
+    collectionList = await GET('collections',`?society_id=eq.${CS.id}&order=collected_date.desc`);
+    const total = collectionList.reduce((s,c)=>s+Number(c.amount||0),0);
+    const thisMonth = collectionList.filter(c=>c.collected_date?.startsWith(new Date().toISOString().substring(0,7))).reduce((s,c)=>s+Number(c.amount||0),0);
+    const types = [...new Set(collectionList.map(c=>c.collection_type))].length;
+    $('col-count').textContent = collectionList.length;
+    $('col-total').textContent = '₹'+total.toLocaleString('en-IN');
+    $('col-month').textContent = '₹'+thisMonth.toLocaleString('en-IN');
+    $('col-types').textContent = types;
+    $('col-lbl').textContent   = collectionList.length+' Collection'+(collectionList.length!==1?'s':'');
+    const tb=$('col-tbody');
+    if(!collectionList.length){tb.innerHTML='<tr><td colspan="10" class="empty">No collections yet</td></tr>';return;}
+    const sc={collected:'bgr',pending:'br',refunded:'ba'};
+    tb.innerHTML=collectionList.map((c,idx)=>`<tr>
+      <td style="font-size:11px">${c.collected_date||'—'}</td>
+      <td><strong>${c.flat||'—'}</strong></td>
+      <td style="font-size:11px">${c.member_name||'—'}</td>
+      <td style="font-size:11px">${c.collection_type||'—'}</td>
+      <td style="font-weight:700;color:#16a34a">₹${Number(c.amount||0).toLocaleString('en-IN')}</td>
+      <td style="font-size:11px">${c.payment_mode||'—'}</td>
+      <td style="font-size:11px">${c.reference||'—'}</td>
+      <td style="font-size:11px">${c.collected_by||'—'}</td>
+      <td><span class="badge ${sc[c.status]||'bb'}">${(c.status||'collected').toUpperCase()}</span></td>
+      <td>
+        <button class="ab" onclick="openCollectionModal(${idx})"><i class="ti ti-edit"></i></button>
+        <button class="ab" onclick="deleteRecord('collections','${c.id}',renderCollections)" style="color:#ef4444"><i class="ti ti-trash"></i></button>
+      </td></tr>`).join('');
+  }catch(e){toast('Error: '+e.message,false);}
+}
+function openCollectionModal(idx=-1) {
+  editColIdx=idx; const c=idx>=0?collectionList[idx]:null;
+  populateWingSelect('cl-wing');
+  sv('cl-date',c?.collected_date||new Date().toISOString().split('T')[0]);
+  sv('cl-flat',c?.flat); sv('cl-name',c?.member_name); sv('cl-type',c?.collection_type);
+  sv('cl-amt',c?.amount); sv('cl-mode',c?.payment_mode); sv('cl-ref',c?.reference);
+  sv('cl-by',c?.collected_by||CU?.name); sv('cl-status',c?.status||'collected'); sv('cl-notes',c?.notes);
+  $('col-modal-title').textContent=idx>=0?'Edit Collection':'Add Collection';
+  openModal('mo-collection');
+}
+async function saveCollection() {
+  const flat=fv('cl-flat').trim(), amt=fv('cl-amt');
+  if(!flat||!amt){toast('Flat and amount required',false);return;}
+  const d={society_id:CS.id,flat,member_name:fv('cl-name'),collection_type:fv('cl-type'),
+    amount:parseFloat(amt),collected_date:fv('cl-date')||null,collected_by:fv('cl-by'),
+    payment_mode:fv('cl-mode'),reference:fv('cl-ref'),status:fv('cl-status'),notes:fv('cl-notes')};
+  try{
+    if(editColIdx>=0) await PATCH('collections',collectionList[editColIdx].id,d);
+    else await POST('collections',d);
+    closeModal('mo-collection'); renderCollections(); toast('Collection saved ✓');
+  }catch(e){toast('Error: '+e.message,false);}
+}
+function exportCollectionsCSV() {
+  const rows=[['Date','Flat','Member','Type','Amount','Mode','Reference','Collected By','Status']];
+  collectionList.forEach(c=>rows.push([c.collected_date,c.flat,c.member_name,c.collection_type,c.amount,c.payment_mode,c.reference,c.collected_by,c.status]));
+  downloadCSV(rows,`collections_${CS?.name}_${new Date().toISOString().split('T')[0]}.csv`);
+}
+
+// ══════════════════════════════
+// 3. E-TAX
+// ══════════════════════════════
+let taxList=[], editTaxIdx=-1;
+async function renderTax() {
+  try {
+    taxList = await GET('tax_records',`?society_id=eq.${CS.id}&order=due_date`);
+    const pending = taxList.filter(t=>t.status==='pending'||t.status==='overdue').length;
+    const filed   = taxList.filter(t=>t.status==='filed'||t.status==='paid').length;
+    const total   = taxList.reduce((s,t)=>s+Number(t.amount||0),0);
+    $('tax-count').textContent   = taxList.length;
+    $('tax-pending').textContent = pending;
+    $('tax-filed').textContent   = filed;
+    $('tax-total').textContent   = '₹'+total.toLocaleString('en-IN');
+    const tb=$('tax-tbody');
+    if(!taxList.length){tb.innerHTML='<tr><td colspan="9" class="empty">No tax records yet</td></tr>';return;}
+    const sc={pending:'ba',filed:'bgr',paid:'bgr',overdue:'br'};
+    tb.innerHTML=taxList.map((t,idx)=>`<tr>
+      <td style="font-weight:600">${t.tax_type||'—'}</td>
+      <td style="font-size:11px">${t.financial_year||'—'}</td>
+      <td style="font-size:11px">${t.quarter||'—'}</td>
+      <td style="font-weight:600">₹${Number(t.amount||0).toLocaleString('en-IN')}</td>
+      <td style="font-size:11px;color:${daysUntil(t.due_date)<0?'#991b1b':'inherit'}">${t.due_date||'—'}</td>
+      <td style="font-size:11px">${t.filed_date||'—'}</td>
+      <td style="font-size:11px">${t.reference_no||'—'}</td>
+      <td><span class="badge ${sc[t.status]||'bb'}">${(t.status||'pending').toUpperCase()}</span></td>
+      <td>
+        <button class="ab" onclick="openTaxModal(${idx})"><i class="ti ti-edit"></i></button>
+        <button class="ab" onclick="deleteRecord('tax_records','${t.id}',renderTax)" style="color:#ef4444"><i class="ti ti-trash"></i></button>
+      </td></tr>`).join('');
+  }catch(e){toast('Error: '+e.message,false);}
+}
+function openTaxModal(idx=-1) {
+  editTaxIdx=idx; const t=idx>=0?taxList[idx]:null;
+  sv('tx-type',t?.tax_type); sv('tx-fy',t?.financial_year||'2025-26');
+  sv('tx-qtr',t?.quarter); sv('tx-amt',t?.amount); sv('tx-due',t?.due_date);
+  sv('tx-filed',t?.filed_date); sv('tx-ref',t?.reference_no);
+  sv('tx-status',t?.status||'pending'); sv('tx-notes',t?.notes);
+  $('tax-modal-title').textContent=idx>=0?'Edit Tax Record':'Add Tax Record';
+  openModal('mo-tax');
+}
+async function saveTax() {
+  const type=fv('tx-type'), amt=fv('tx-amt');
+  if(!type||!amt){toast('Tax type and amount required',false);return;}
+  const d={society_id:CS.id,tax_type:type,financial_year:fv('tx-fy'),quarter:fv('tx-qtr'),
+    amount:parseFloat(amt),due_date:fv('tx-due')||null,filed_date:fv('tx-filed')||null,
+    reference_no:fv('tx-ref'),status:fv('tx-status'),notes:fv('tx-notes')};
+  try{
+    if(editTaxIdx>=0) await PATCH('tax_records',taxList[editTaxIdx].id,d);
+    else await POST('tax_records',d);
+    closeModal('mo-tax'); renderTax(); toast('Tax record saved ✓');
+  }catch(e){toast('Error: '+e.message,false);}
+}
+function exportTaxCSV() {
+  const rows=[['Type','FY','Quarter','Amount','Due Date','Filed Date','Reference','Status']];
+  taxList.forEach(t=>rows.push([t.tax_type,t.financial_year,t.quarter,t.amount,t.due_date,t.filed_date,t.reference_no,t.status]));
+  downloadCSV(rows,`tax_records_${CS?.name}_${new Date().toISOString().split('T')[0]}.csv`);
+}
+
+// ══════════════════════════════
+// 4. MINUTES OF MEETING
+// ══════════════════════════════
+let minutesList=[], editMinIdx=-1;
+async function renderMinutes() {
+  try {
+    minutesList = await GET('meeting_minutes',`?society_id=eq.${CS.id}&order=meeting_date.desc`);
+    $('min-count').textContent = minutesList.length;
+    $('min-agm').textContent   = minutesList.filter(m=>m.meeting_type?.includes('AGM')).length;
+    $('min-sgm').textContent   = minutesList.filter(m=>m.meeting_type?.includes('SGM')).length;
+    $('min-comm').textContent  = minutesList.filter(m=>m.meeting_type?.includes('Committee')).length;
+    $('min-lbl').textContent   = minutesList.length+' Meeting'+(minutesList.length!==1?'s':'');
+    const list=$('min-list');
+    if(!minutesList.length){list.innerHTML='<div class="empty">No meeting minutes yet</div>';return;}
+    const sc={draft:'ba',approved:'bgr',published:'bp'};
+    list.innerHTML=minutesList.map((m,idx)=>`<div class="nc" style="margin-bottom:10px">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap">
+        <div style="flex:1">
+          <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:6px">
+            <span class="badge bb">${m.meeting_type||'Meeting'}</span>
+            <span class="badge ${sc[m.status]||'ba'}">${(m.status||'draft').toUpperCase()}</span>
+            <span style="font-size:10px;color:#94a3b8">${m.meeting_date||'—'}</span>
+          </div>
+          <div style="font-weight:600;margin-bottom:4px">${m.venue||'—'}</div>
+          <div style="font-size:12px;color:#64748b;margin-bottom:4px">Chairman: ${m.chairman||'—'} | Secretary: ${m.secretary||'—'}</div>
+          ${m.agenda?`<div style="font-size:12px;margin-top:6px"><strong>Agenda:</strong> ${m.agenda.substring(0,150)}${m.agenda.length>150?'…':''}</div>`:''}
+          ${m.resolutions?`<div style="font-size:12px;margin-top:4px;color:#16a34a"><strong>Resolutions:</strong> ${m.resolutions.substring(0,100)}${m.resolutions.length>100?'…':''}</div>`:''}
+        </div>
+        <div style="display:flex;gap:6px;flex-shrink:0">
+          <button class="ab" onclick="openMinutesModal(${idx})"><i class="ti ti-edit"></i></button>
+          <button class="ab" onclick="deleteRecord('meeting_minutes','${m.id}',renderMinutes)" style="color:#ef4444"><i class="ti ti-trash"></i></button>
+        </div>
+      </div>
+    </div>`).join('');
+  }catch(e){toast('Error: '+e.message,false);}
+}
+function openMinutesModal(idx=-1) {
+  editMinIdx=idx; const m=idx>=0?minutesList[idx]:null;
+  sv('mn-type',m?.meeting_type); sv('mn-date',m?.meeting_date||new Date().toISOString().split('T')[0]);
+  sv('mn-venue',m?.venue); sv('mn-chair',m?.chairman||CS?.secretary_name);
+  sv('mn-sec',m?.secretary); sv('mn-attend',m?.attendees); sv('mn-agenda',m?.agenda);
+  sv('mn-mins',m?.minutes); sv('mn-res',m?.resolutions); sv('mn-next',m?.next_meeting);
+  sv('mn-status',m?.status||'draft');
+  $('min-modal-title').textContent=idx>=0?'Edit Minutes':'Add Meeting Minutes';
+  openModal('mo-minutes');
+}
+async function saveMinutes() {
+  const type=fv('mn-type'), date=fv('mn-date');
+  if(!type||!date){toast('Meeting type and date required',false);return;}
+  const d={society_id:CS.id,meeting_type:type,meeting_date:date,venue:fv('mn-venue'),
+    chairman:fv('mn-chair'),secretary:fv('mn-sec'),attendees:fv('mn-attend'),
+    agenda:fv('mn-agenda'),minutes:fv('mn-mins'),resolutions:fv('mn-res'),
+    next_meeting:fv('mn-next')||null,status:fv('mn-status')};
+  try{
+    if(editMinIdx>=0) await PATCH('meeting_minutes',minutesList[editMinIdx].id,d);
+    else await POST('meeting_minutes',d);
+    closeModal('mo-minutes'); renderMinutes(); toast('Minutes saved ✓');
+  }catch(e){toast('Error: '+e.message,false);}
+}
+
+// ══════════════════════════════
+// 5. DOCUMENTS VAULT
+// ══════════════════════════════
+let documentList=[], editDocIdx=-1;
+async function renderDocuments() {
+  try {
+    documentList = await GET('documents',`?society_id=eq.${CS.id}&order=created_at.desc`);
+    const legal   = documentList.filter(d=>d.category==='Legal').length;
+    const fin     = documentList.filter(d=>d.category==='Financial').length;
+    const expiring= documentList.filter(d=>d.expiry_date && daysUntil(d.expiry_date)<=30 && daysUntil(d.expiry_date)>=0).length;
+    $('doc-count').textContent    = documentList.length;
+    $('doc-legal').textContent    = legal;
+    $('doc-financial').textContent= fin;
+    $('doc-expiring').textContent = expiring;
+    $('doc-lbl').textContent      = documentList.length+' Document'+(documentList.length!==1?'s':'');
+    const tb=$('doc-tbody');
+    if(!documentList.length){tb.innerHTML='<tr><td colspan="8" class="empty">No documents yet</td></tr>';return;}
+    tb.innerHTML=documentList.map((d,idx)=>`<tr>
+      <td><span class="badge bb">${d.category||'—'}</span></td>
+      <td style="font-weight:600">${d.title||'—'}</td>
+      <td style="font-size:11px">${d.description||'—'}</td>
+      <td style="font-size:11px">
+        ${d.file_data?`<button class="btn" style="padding:2px 8px;font-size:10px" onclick="viewDocument('${d.id}')"><i class="ti ti-eye"></i> View</button>`:'—'}
+      </td>
+      <td style="font-size:11px">${d.uploaded_by||'—'}</td>
+      <td style="font-size:11px;color:${d.expiry_date&&daysUntil(d.expiry_date)<=30?'#991b1b':'inherit'}">${d.expiry_date||'—'}</td>
+      <td style="text-align:center">${d.is_confidential?'🔒':'—'}</td>
+      <td>
+        <button class="ab" onclick="openDocModal(${idx})"><i class="ti ti-edit"></i></button>
+        <button class="ab" onclick="deleteRecord('documents','${d.id}',renderDocuments)" style="color:#ef4444"><i class="ti ti-trash"></i></button>
+      </td></tr>`).join('');
+  }catch(e){toast('Error: '+e.message,false);}
+}
+function previewDocFile() {
+  const file=$('dc-file').files[0];
+  if(!file)return;
+  if(file.size>2*1024*1024){toast('File too large. Max 2MB',false);return;}
+  const reader=new FileReader();
+  reader.onload=e=>{
+    $('dc-filedata').value=e.target.result;
+    $('dc-filename').value=file.name;
+    $('dc-filetype').value=file.type;
+    $('dc-file-preview').innerHTML=`<i class="ti ti-file-check" style="font-size:30px;color:#16a34a;display:block;margin-bottom:6px"></i><div style="font-size:12px;color:#16a34a;font-weight:500">${file.name}</div>`;
+  };
+  reader.readAsDataURL(file);
+}
+function viewDocument(id) {
+  const doc=documentList.find(d=>d.id===id);
+  if(!doc?.file_data)return;
+  const win=window.open();
+  win.document.write(`<iframe src="${doc.file_data}" width="100%" height="100%" style="border:none"></iframe>`);
+}
+function openDocModal(idx=-1) {
+  editDocIdx=idx; const d=idx>=0?documentList[idx]:null;
+  sv('dc-cat',d?.category); sv('dc-title',d?.title); sv('dc-desc',d?.description);
+  sv('dc-tags',d?.tags); sv('dc-exp',d?.expiry_date); sv('dc-conf',d?.is_confidential?'true':'false');
+  sv('dc-by',d?.uploaded_by||CU?.name); sv('dc-filedata',d?.file_data||''); sv('dc-filename',d?.file_name||'');
+  $('dc-file-preview').innerHTML=d?.file_name?`<i class="ti ti-file" style="font-size:30px;color:#2563eb;display:block;margin-bottom:6px"></i><div style="font-size:12px;color:#2563eb">${d.file_name}</div>`:`<i class="ti ti-upload" style="font-size:30px;color:#cbd5e1;display:block;margin-bottom:6px"></i><div style="font-size:12px;color:#64748b">Click to upload document</div>`;
+  $('doc-modal-title').textContent=idx>=0?'Edit Document':'Upload Document';
+  openModal('mo-document');
+}
+async function saveDocument() {
+  const title=fv('dc-title').trim();
+  if(!title){toast('Title required',false);return;}
+  const d={society_id:CS.id,category:fv('dc-cat'),title,description:fv('dc-desc'),
+    file_name:fv('dc-filename')||null,file_type:fv('dc-filetype')||null,
+    file_data:fv('dc-filedata')||null,uploaded_by:fv('dc-by'),tags:fv('dc-tags'),
+    expiry_date:fv('dc-exp')||null,is_confidential:fv('dc-conf')==='true'};
+  try{
+    if(editDocIdx>=0) await PATCH('documents',documentList[editDocIdx].id,d);
+    else await POST('documents',d);
+    closeModal('mo-document'); renderDocuments(); toast('Document saved ✓');
+  }catch(e){toast('Error: '+e.message,false);}
+}
+
+// ══════════════════════════════
+// 6. STATUTORY REGISTER
+// ══════════════════════════════
+let statutoryList=[], editStatIdx=-1, statFilter='all';
+async function renderStatutory() {
+  try {
+    statutoryList = await GET('statutory_register',`?society_id=eq.${CS.id}&order=entry_date.desc`);
+    const fl = statFilter==='all' ? statutoryList : statutoryList.filter(s=>s.register_type?.toLowerCase().includes(statFilter.replace('stat-','')));
+    $('stat-lbl').textContent = fl.length+' Entr'+(fl.length!==1?'ies':'y');
+    const tb=$('stat-tbody');
+    if(!fl.length){tb.innerHTML='<tr><td colspan="7" class="empty">No entries yet</td></tr>';return;}
+    tb.innerHTML=fl.map((s,idx)=>`<tr>
+      <td style="font-size:11px">${s.entry_date||'—'}</td>
+      <td><span class="badge bb" style="font-size:10px">${s.register_type||'—'}</span></td>
+      <td><strong>${s.flat||'—'}</strong></td>
+      <td style="font-size:11px">${s.member_name||'—'}</td>
+      <td style="font-size:11px">${s.details||'—'}</td>
+      <td style="font-size:11px;color:#64748b">${s.remarks||'—'}</td>
+      <td>
+        <button class="ab" onclick="openStatModal(${statutoryList.indexOf(s)})"><i class="ti ti-edit"></i></button>
+        <button class="ab" onclick="deleteRecord('statutory_register','${s.id}',renderStatutory)" style="color:#ef4444"><i class="ti ti-trash"></i></button>
+      </td></tr>`).join('');
+  }catch(e){toast('Error: '+e.message,false);}
+}
+function openStatModal(idx=-1) {
+  editStatIdx=idx; const s=idx>=0?statutoryList[idx]:null;
+  populateWingSelect('sr-wing');
+  sv('sr-type',s?.register_type); sv('sr-date',s?.entry_date||new Date().toISOString().split('T')[0]);
+  sv('sr-flat',s?.flat); sv('sr-name',s?.member_name); sv('sr-details',s?.details); sv('sr-remarks',s?.remarks);
+  $('stat-modal-title').textContent=idx>=0?'Edit Entry':'Add Statutory Entry';
+  openModal('mo-statutory');
+}
+async function saveStatutory() {
+  const type=fv('sr-type'), details=fv('sr-details').trim();
+  if(!type||!details){toast('Register type and details required',false);return;}
+  const d={society_id:CS.id,register_type:type,entry_date:fv('sr-date')||null,
+    flat:fv('sr-flat'),member_name:fv('sr-name'),details,remarks:fv('sr-remarks')};
+  try{
+    if(editStatIdx>=0) await PATCH('statutory_register',statutoryList[editStatIdx].id,d);
+    else await POST('statutory_register',d);
+    closeModal('mo-statutory'); renderStatutory(); toast('Entry saved ✓');
+  }catch(e){toast('Error: '+e.message,false);}
+}
+function exportStatutoryCSV() {
+  const rows=[['Date','Register Type','Flat','Member','Details','Remarks']];
+  statutoryList.forEach(s=>rows.push([s.entry_date,s.register_type,s.flat,s.member_name,s.details,s.remarks]));
+  downloadCSV(rows,`statutory_register_${CS?.name}_${new Date().toISOString().split('T')[0]}.csv`);
+}
+
+// ══════════════════════════════
+// 7. DIGITAL HELPDESK
+// ══════════════════════════════
+let helpdeskList=[], editHdIdx=-1, hdFilter='all';
+async function renderHelpdesk() {
+  try {
+    helpdeskList = await GET('helpdesk',`?society_id=eq.${CS.id}&order=created_at.desc`);
+    const open   = helpdeskList.filter(h=>h.status==='open').length;
+    const prog   = helpdeskList.filter(h=>h.status==='in-progress').length;
+    const res    = helpdeskList.filter(h=>h.status==='resolved').length;
+    $('hd-count').textContent    = helpdeskList.length;
+    $('hd-open').textContent     = open;
+    $('hd-progress').textContent = prog;
+    $('hd-resolved').textContent = res;
+    $('hd-lbl').textContent      = helpdeskList.length+' Ticket'+(helpdeskList.length!==1?'s':'');
+    const fl = hdFilter==='all' ? helpdeskList : helpdeskList.filter(h=>h.status===hdFilter.replace('hd-',''));
+    const tb=$('hd-tbody');
+    if(!fl.length){tb.innerHTML='<tr><td colspan="9" class="empty">No tickets yet</td></tr>';return;}
+    const pc={low:'#16a34a',medium:'#92400e',high:'#991b1b',urgent:'#7c3aed'};
+    const sc={open:'br','in-progress':'ba',resolved:'bgr',closed:'bb'};
+    tb.innerHTML=fl.map((h,idx)=>`<tr>
+      <td style="font-size:10px;font-weight:600">${h.ticket_no||'—'}</td>
+      <td><strong>${h.flat||'—'}</strong></td>
+      <td style="font-size:11px">${h.member_name||'—'}</td>
+      <td style="font-size:11px">${h.category||'—'}</td>
+      <td style="font-size:11px;font-weight:500">${h.subject||'—'}</td>
+      <td><span style="font-size:10px;font-weight:700;color:${pc[h.priority]||'#64748b'}">${(h.priority||'medium').toUpperCase()}</span></td>
+      <td style="font-size:11px">${h.assigned_to||'—'}</td>
+      <td><span class="badge ${sc[h.status]||'bb'}">${(h.status||'open').toUpperCase()}</span></td>
+      <td>
+        <button class="ab" onclick="openHelpdeskModal(${helpdeskList.indexOf(h)})"><i class="ti ti-edit"></i></button>
+        ${h.mobile?`<button class="ab" onclick="sendWhatsApp('${h.mobile}','Dear ${h.member_name}, your helpdesk ticket #${h.ticket_no} for: ${h.subject} is now ${h.status}. — ${CS?.name}')" style="color:#25D366"><i class="ti ti-brand-whatsapp"></i></button>`:''}
+        <button class="ab" onclick="deleteRecord('helpdesk','${h.id}',renderHelpdesk)" style="color:#ef4444"><i class="ti ti-trash"></i></button>
+      </td></tr>`).join('');
+  }catch(e){toast('Error: '+e.message,false);}
+}
+function openHelpdeskModal(idx=-1) {
+  editHdIdx=idx; const h=idx>=0?helpdeskList[idx]:null;
+  populateWingSelect('hk-wing');
+  sv('hk-no',h?.ticket_no||'TKT-'+String(helpdeskList.length+1).padStart(4,'0'));
+  sv('hk-date',h?.created_at?.split('T')[0]||new Date().toISOString().split('T')[0]);
+  sv('hk-flat',h?.flat); sv('hk-name',h?.member_name); sv('hk-mob',h?.mobile);
+  sv('hk-cat',h?.category); sv('hk-pri',h?.priority||'medium'); sv('hk-sub',h?.subject);
+  sv('hk-desc',h?.description); sv('hk-assign',h?.assigned_to); sv('hk-status',h?.status||'open'); sv('hk-res',h?.resolution);
+  $('hd-modal-title').textContent=idx>=0?'Edit Ticket':'New Helpdesk Ticket';
+  openModal('mo-helpdesk');
+}
+async function saveHelpdesk() {
+  const sub=fv('hk-sub').trim(), flat=fv('hk-flat').trim();
+  if(!sub||!flat){toast('Subject and flat required',false);return;}
+  const d={society_id:CS.id,ticket_no:fv('hk-no'),flat,member_name:fv('hk-name'),mobile:fv('hk-mob'),
+    category:fv('hk-cat'),priority:fv('hk-pri'),subject:sub,description:fv('hk-desc'),
+    assigned_to:fv('hk-assign'),status:fv('hk-status'),resolution:fv('hk-res'),
+    resolved_date:fv('hk-status')==='resolved'?new Date().toISOString().split('T')[0]:null};
+  try{
+    if(editHdIdx>=0) await PATCH('helpdesk',helpdeskList[editHdIdx].id,d);
+    else await POST('helpdesk',d);
+    closeModal('mo-helpdesk'); renderHelpdesk(); toast('Ticket saved ✓');
+  }catch(e){toast('Error: '+e.message,false);}
+}
+function exportHelpdeskCSV() {
+  const rows=[['Ticket No','Flat','Member','Category','Subject','Priority','Assigned To','Status','Resolution']];
+  helpdeskList.forEach(h=>rows.push([h.ticket_no,h.flat,h.member_name,h.category,h.subject,h.priority,h.assigned_to,h.status,h.resolution]));
+  downloadCSV(rows,`helpdesk_${CS?.name}_${new Date().toISOString().split('T')[0]}.csv`);
+}
+
+// ══════════════════════════════
+// 8. STAFF ATTENDANCE
+// ══════════════════════════════
+let staffList=[], attendanceList=[], editStaffIdx=-1;
+async function renderStaff() {
+  try {
+    staffList = await GET('staff',`?society_id=eq.${CS.id}&order=name`);
+    $('st-count').textContent = staffList.length;
+    const tb=$('st-tbody');
+    if(!staffList.length){tb.innerHTML='<tr><td colspan="7" class="empty">No staff added yet</td></tr>';return;}
+    const sc={active:'bgr','on-leave':'ba',inactive:'br'};
+    tb.innerHTML=staffList.map((s,idx)=>`<tr>
+      <td style="font-weight:600">${s.name||'—'}</td>
+      <td style="font-size:11px">${s.role||'—'}</td>
+      <td style="font-size:11px">${s.department||'—'}</td>
+      <td style="font-size:11px">${s.mobile||'—'}</td>
+      <td style="font-size:11px">₹${Number(s.salary||0).toLocaleString('en-IN')}</td>
+      <td><span class="badge ${sc[s.status]||'bb'}">${(s.status||'active').toUpperCase()}</span></td>
+      <td>
+        <button class="ab" onclick="openStaffModal(${idx})"><i class="ti ti-edit"></i></button>
+        <button class="ab" onclick="deleteRecord('staff','${s.id}',renderStaff)" style="color:#ef4444"><i class="ti ti-trash"></i></button>
+      </td></tr>`).join('');
+    // Set today's date and render attendance
+    if (!$('att-date').value) sv('att-date', new Date().toISOString().split('T')[0]);
+    renderAttendance();
+  }catch(e){toast('Error: '+e.message,false);}
+}
+async function renderAttendance() {
+  const date = fv('att-date') || new Date().toISOString().split('T')[0];
+  try {
+    attendanceList = await GET('staff_attendance',`?society_id=eq.${CS.id}&date=eq.${date}`);
+    const present = attendanceList.filter(a=>a.status==='present').length;
+    const absent  = attendanceList.filter(a=>a.status==='absent').length;
+    const leave   = attendanceList.filter(a=>a.status==='leave').length;
+    $('st-present').textContent = present;
+    $('st-absent').textContent  = absent;
+    $('st-leave').textContent   = leave;
+    const tb=$('att-tbody');
+    if(!staffList.length){tb.innerHTML='<tr><td colspan="6" class="empty">No staff added</td></tr>';return;}
+    const sc={present:'bgr',absent:'br',leave:'ba','half-day':'bb'};
+    tb.innerHTML=staffList.map(s=>{
+      const att = attendanceList.find(a=>a.staff_id===s.id);
+      return `<tr>
+        <td style="font-weight:600">${s.name}</td>
+        <td style="font-size:11px">${s.role||'—'}</td>
+        <td>
+          <select onchange="markAttendance('${s.id}','${s.name}',this.value,'${date}')"
+            style="padding:4px 8px;border:1px solid #e2e8f0;border-radius:6px;font-size:11px;background:#fff">
+            <option value="present" ${att?.status==='present'||!att?'selected':''}>Present</option>
+            <option value="absent"  ${att?.status==='absent'?'selected':''}>Absent</option>
+            <option value="leave"   ${att?.status==='leave'?'selected':''}>Leave</option>
+            <option value="half-day"${att?.status==='half-day'?'selected':''}>Half Day</option>
+          </select>
+        </td>
+        <td><input type="time" value="${att?.in_time||''}" onchange="updateAttTime('${s.id}','${date}','in_time',this.value)" style="padding:4px;border:1px solid #e2e8f0;border-radius:6px;font-size:11px;width:90px"></td>
+        <td><input type="time" value="${att?.out_time||''}" onchange="updateAttTime('${s.id}','${date}','out_time',this.value)" style="padding:4px;border:1px solid #e2e8f0;border-radius:6px;font-size:11px;width:90px"></td>
+        <td><span class="badge ${sc[att?.status]||'bb'}">${(att?.status||'present').toUpperCase()}</span></td>
+      </tr>`;
+    }).join('');
+  }catch(e){toast('Error: '+e.message,false);}
+}
+async function markAttendance(staffId, staffName, status, date) {
+  const existing = attendanceList.find(a=>a.staff_id===staffId);
+  const d={society_id:CS.id,staff_id:staffId,staff_name:staffName,date,status};
+  try{
+    if(existing) await PATCH('staff_attendance',existing.id,d);
+    else await POST('staff_attendance',d);
+    renderAttendance();
+  }catch(e){toast('Error: '+e.message,false);}
+}
+async function updateAttTime(staffId, date, field, value) {
+  const existing = attendanceList.find(a=>a.staff_id===staffId);
+  if(existing) {
+    const upd={}; upd[field]=value;
+    try{ await PATCH('staff_attendance',existing.id,upd); }catch(e){toast('Error: '+e.message,false);}
+  }
+}
+async function markBulkAttendance() {
+  const date = fv('att-date')||new Date().toISOString().split('T')[0];
+  if(!staffList.length){toast('No staff added',false);return;}
+  if(!confirm(`Mark all ${staffList.length} staff as Present for ${date}?`))return;
+  try{
+    for(const s of staffList){
+      const existing=attendanceList.find(a=>a.staff_id===s.id);
+      const d={society_id:CS.id,staff_id:s.id,staff_name:s.name,date,status:'present'};
+      if(existing) await PATCH('staff_attendance',existing.id,d);
+      else await POST('staff_attendance',d);
+    }
+    renderAttendance(); toast('All staff marked Present ✓');
+  }catch(e){toast('Error: '+e.message,false);}
+}
+function openStaffModal(idx=-1) {
+  editStaffIdx=idx; const s=idx>=0?staffList[idx]:null;
+  sv('sf-name',s?.name); sv('sf-role',s?.role); sv('sf-dept',s?.department);
+  sv('sf-mob',s?.mobile); sv('sf-sal',s?.salary); sv('sf-join',s?.join_date);
+  sv('sf-status',s?.status||'active');
+  $('st-modal-title').textContent=idx>=0?'Edit Staff':'Add Staff';
+  openModal('mo-staff');
+}
+async function saveStaff() {
+  const name=fv('sf-name').trim();
+  if(!name){toast('Name required',false);return;}
+  const d={society_id:CS.id,name,role:fv('sf-role'),department:fv('sf-dept'),
+    mobile:fv('sf-mob'),salary:parseFloat(fv('sf-sal'))||null,
+    join_date:fv('sf-join')||null,status:fv('sf-status')};
+  try{
+    if(editStaffIdx>=0) await PATCH('staff',staffList[editStaffIdx].id,d);
+    else await POST('staff',d);
+    closeModal('mo-staff'); renderStaff(); toast('Staff saved ✓');
+  }catch(e){toast('Error: '+e.message,false);}
+}
+
+// ── Universal delete helper ──
+async function deleteRecord(table, id, refreshFn) {
+  if(!confirm('Delete this record permanently?'))return;
+  try{ await DELETE(table,id); if(refreshFn) refreshFn(); toast('Deleted'); }
+  catch(e){ toast('Error: '+e.message,false); }
+}
+
+// ── Add stat filter handling ──
 // ── MOBILE SIDEBAR ────────────────────────────────────────
 function toggleSidebar() {
   const sb = $('sidebar');
