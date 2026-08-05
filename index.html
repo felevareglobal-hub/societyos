@@ -1382,25 +1382,80 @@ tr:hover td{background:#fafafa}
 
 <!-- INVOICE MODAL -->
 <div class="mo" id="mo-invoice">
-  <div class="md" style="max-width:600px">
+  <div class="md" style="max-width:680px">
     <div class="md-head"><h3 id="inv-modal-title">New Invoice</h3><button class="md-close" onclick="closeModal('mo-invoice')"><i class="ti ti-x"></i></button></div>
-    <div class="md-body"><div class="fg">
-      <div class="fi"><label>Invoice No *</label><input id="iv-no" placeholder="INV-2026-001"></div>
-      <div class="fi"><label>Invoice Date *</label><input id="iv-date" type="date"></div>
-      <div class="fi"><label>Wing</label><select id="iv-wing"></select></div>
-      <div class="fi"><label>Flat *</label><input id="iv-flat"></div>
-      <div class="fi full"><label>Member Name</label><input id="iv-name"></div>
-      <div class="fi"><label>Due Date</label><input id="iv-due" type="date"></div>
-      <div class="fi"><label>Description *</label><input id="iv-desc" placeholder="e.g. Maintenance charges"></div>
-      <div class="fi"><label>Amount (₹) *</label><input id="iv-amt" type="number" oninput="calcInvoiceTotal()"></div>
-      <div class="fi"><label>Tax (%)</label><input id="iv-tax" type="number" value="18" oninput="calcInvoiceTotal()"></div>
-      <div class="fi"><label>Tax Amount (₹)</label><input id="iv-taxamt" readonly style="background:#f8fafc"></div>
-      <div class="fi"><label>Total (₹)</label><input id="iv-total" readonly style="background:#f8fafc;font-weight:700"></div>
-      <div class="fi"><label>Status</label><select id="iv-status"><option value="unpaid">Unpaid</option><option value="paid">Paid</option><option value="partial">Partial</option></select></div>
-      <div class="fi"><label>Payment Mode</label><select id="iv-mode"><option>UPI</option><option>Cash</option><option>Bank Transfer</option><option>Cheque</option></select></div>
-      <div class="fi full"><label>Notes</label><textarea id="iv-notes" rows="2"></textarea></div>
-    </div></div>
-    <div class="md-foot"><button class="btn" onclick="closeModal('mo-invoice')">Cancel</button><button class="btn btn-p" onclick="saveInvoice()"><i class="ti ti-check"></i> Save Invoice</button></div>
+    <div class="md-body">
+      <div class="fg">
+        <div class="fi"><label>Invoice No *</label><input id="iv-no" placeholder="INV-2026-001"></div>
+        <div class="fi"><label>Invoice Date *</label><input id="iv-date" type="date"></div>
+        <div class="fi"><label>Wing</label><select id="iv-wing"></select></div>
+        <div class="fi"><label>Flat *</label><input id="iv-flat"></div>
+        <div class="fi"><label>Member Name</label><input id="iv-name"></div>
+        <div class="fi"><label>Due Date</label><input id="iv-due" type="date"></div>
+      </div>
+
+      <!-- Dynamic Line Items -->
+      <div style="margin-top:14px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+          <label style="font-size:12px;font-weight:600;color:#475569">Charge Heads</label>
+          <button type="button" class="btn" style="padding:4px 10px;font-size:11px" onclick="addInvoiceItem()">
+            <i class="ti ti-plus"></i> Add Charge
+          </button>
+        </div>
+        <div style="border:1px solid #e2e8f0;border-radius:8px;overflow:hidden">
+          <table style="width:100%;border-collapse:collapse;font-size:12px">
+            <thead>
+              <tr style="background:#f8fafc">
+                <th style="padding:8px 10px;text-align:left;font-weight:600;color:#64748b;width:45%">Description</th>
+                <th style="padding:8px 10px;text-align:right;font-weight:600;color:#64748b;width:20%">Amount (₹)</th>
+                <th style="padding:8px 10px;text-align:right;font-weight:600;color:#64748b;width:15%">GST %</th>
+                <th style="padding:8px 10px;text-align:right;font-weight:600;color:#64748b;width:15%">Total (₹)</th>
+                <th style="padding:8px 10px;width:5%"></th>
+              </tr>
+            </thead>
+            <tbody id="iv-items-body"></tbody>
+            <tfoot>
+              <tr style="background:#f0fdf4;border-top:2px solid #e2e8f0">
+                <td colspan="2" style="padding:8px 10px;font-weight:600;font-size:12px">Grand Total</td>
+                <td style="padding:8px 10px;text-align:right;font-size:11px;color:#64748b" id="iv-gst-total"></td>
+                <td style="padding:8px 10px;text-align:right;font-weight:700;color:#1a3c6e;font-size:13px" id="iv-grand-total">₹0</td>
+                <td></td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+        <div style="font-size:11px;color:#94a3b8;margin-top:6px"><i class="ti ti-info-circle"></i> Click on any field to edit. GST is calculated per line item.</div>
+      </div>
+
+      <!-- Quick Add Common Charges -->
+      <div style="margin-top:12px">
+        <div style="font-size:12px;font-weight:600;color:#475569;margin-bottom:6px">Quick Add Common Charges:</div>
+        <div style="display:flex;flex-wrap:wrap;gap:6px" id="iv-quick-btns"></div>
+      </div>
+
+      <div class="fg" style="margin-top:14px">
+        <div class="fi"><label>Status</label><select id="iv-status"><option value="unpaid">Unpaid</option><option value="paid">Paid</option><option value="partial">Partial</option></select></div>
+        <div class="fi"><label>Payment Mode</label><select id="iv-mode"><option>UPI</option><option>Cash</option><option>Bank Transfer</option><option>Cheque</option><option>NEFT</option><option>RTGS</option></select></div>
+        <div class="fi full"><label>Notes</label><textarea id="iv-notes" rows="2" placeholder="e.g. Please pay before due date to avoid late fees"></textarea></div>
+      </div>
+    </div>
+    <div class="md-foot">
+      <button class="btn" onclick="closeModal('mo-invoice')">Cancel</button>
+      <button class="btn" onclick="previewInvoice()" style="background:#f0f9ff;color:#0369a1;border-color:#bae6fd"><i class="ti ti-eye"></i> Preview</button>
+      <button class="btn btn-p" onclick="saveInvoice()"><i class="ti ti-check"></i> Save Invoice</button>
+    </div>
+  </div>
+</div>
+
+<!-- INVOICE PREVIEW MODAL -->
+<div class="mo" id="mo-inv-preview">
+  <div class="md" style="max-width:680px">
+    <div class="md-head"><h3>Invoice Preview</h3><button class="md-close" onclick="closeModal('mo-inv-preview')"><i class="ti ti-x"></i></button></div>
+    <div class="md-body" id="inv-preview-body" style="padding:0"></div>
+    <div class="md-foot">
+      <button class="btn" onclick="closeModal('mo-inv-preview')">Close</button>
+      <button class="btn btn-p" onclick="printInvoice()"><i class="ti ti-printer"></i> Print / Save PDF</button>
+    </div>
   </div>
 </div>
 
@@ -4657,9 +4712,26 @@ function populateWingSelect(id) {
 }
 
 // ══════════════════════════════
-// 1. BILLING & E-INVOICING
+// 1. BILLING & E-INVOICING (Dynamic Line Items)
 // ══════════════════════════════
 let invoiceList=[], editInvIdx=-1;
+let invItems=[]; // current invoice line items
+
+const DEFAULT_CHARGES = [
+  {desc:'Maintenance Charges', amt:0, gst:0},
+  {desc:'Municipal Charges Collection', amt:0, gst:0},
+  {desc:'Compound Maintenance Charges', amt:0, gst:0},
+  {desc:'Pest Control Charges', amt:0, gst:18},
+  {desc:'Sinking Fund', amt:0, gst:0},
+  {desc:'NOC / Parking Charges', amt:0, gst:0},
+  {desc:'Repair & Maintenance Fund', amt:0, gst:0},
+  {desc:'Cultural Society Charges', amt:0, gst:0},
+  {desc:'Water Charges', amt:0, gst:0},
+  {desc:'Electricity Charges', amt:0, gst:0},
+  {desc:'Late Payment Fee', amt:0, gst:0},
+  {desc:'Transfer Fee', amt:0, gst:18},
+];
+
 async function renderInvoices() {
   try {
     invoiceList = await GET('invoices',`?society_id=eq.${CS.id}&order=created_at.desc`);
@@ -4671,10 +4743,10 @@ async function renderInvoices() {
     $('inv-paid').textContent  = '₹'+paid.toLocaleString('en-IN');
     $('inv-unpaid').textContent= '₹'+unpaid.toLocaleString('en-IN');
     $('inv-lbl').textContent   = invoiceList.length+' Invoice'+(invoiceList.length!==1?'s':'');
-    const tb = $('inv-tbody');
-    if (!invoiceList.length) { tb.innerHTML='<tr><td colspan="10" class="empty">No invoices yet</td></tr>'; return; }
-    const sc = {paid:'bgr',unpaid:'br',partial:'ba'};
-    tb.innerHTML = invoiceList.map((i,idx)=>`<tr>
+    const tb=$('inv-tbody');
+    if(!invoiceList.length){tb.innerHTML='<tr><td colspan="10" class="empty">No invoices yet</td></tr>';return;}
+    const sc={paid:'bgr',unpaid:'br',partial:'ba'};
+    tb.innerHTML=invoiceList.map((i,idx)=>`<tr>
       <td style="font-weight:600;font-size:11px">${i.invoice_no||'—'}</td>
       <td><strong>${i.flat||'—'}</strong></td>
       <td style="font-size:11px">${i.member_name||'—'}</td>
@@ -4686,47 +4758,230 @@ async function renderInvoices() {
       <td><span class="badge ${sc[i.status]||'bb'}">${(i.status||'unpaid').toUpperCase()}</span></td>
       <td>
         <button class="ab" onclick="openInvoiceModal(${idx})" title="Edit"><i class="ti ti-edit"></i></button>
+        <button class="ab" onclick="viewInvoice(${idx})" style="color:#2563eb" title="Preview"><i class="ti ti-eye"></i></button>
         <button class="ab" onclick="deleteRecord('invoices','${i.id}',renderInvoices)" style="color:#ef4444"><i class="ti ti-trash"></i></button>
       </td></tr>`).join('');
-  } catch(e) { toast('Error: '+e.message,false); }
+  }catch(e){toast('Error: '+e.message,false);}
 }
-function calcInvoiceTotal() {
-  const amt = parseFloat(fv('iv-amt')||0);
-  const tax = parseFloat(fv('iv-tax')||0);
-  const taxAmt = Math.round(amt*tax/100);
-  sv('iv-taxamt', taxAmt);
-  sv('iv-total', amt+taxAmt);
+
+function addInvoiceItem(desc='', amt=0, gst=0) {
+  invItems.push({desc, amt, gst});
+  renderInvItems();
 }
+
+function removeInvoiceItem(idx) {
+  invItems.splice(idx,1);
+  renderInvItems();
+}
+
+function renderInvItems() {
+  const tb=$('iv-items-body');
+  if(!invItems.length){
+    tb.innerHTML=`<tr><td colspan="5" style="padding:12px;text-align:center;color:#94a3b8;font-size:12px">No charges added. Click "Add Charge" or use Quick Add below.</td></tr>`;
+    $('iv-grand-total').textContent='₹0';
+    $('iv-gst-total').textContent='';
+    return;
+  }
+  tb.innerHTML=invItems.map((item,i)=>{
+    const gstAmt=Math.round(Number(item.amt||0)*Number(item.gst||0)/100);
+    const lineTotal=Number(item.amt||0)+gstAmt;
+    return`<tr style="border-bottom:0.5px solid #f1f5f9">
+      <td style="padding:6px 10px">
+        <input value="${item.desc||''}" placeholder="Charge description"
+          style="width:100%;border:none;background:transparent;font-size:12px;outline:none;color:#0f172a"
+          oninput="invItems[${i}].desc=this.value">
+      </td>
+      <td style="padding:6px 10px">
+        <input type="number" value="${item.amt||''}" placeholder="0"
+          style="width:100%;border:none;background:transparent;font-size:12px;text-align:right;outline:none;color:#0f172a"
+          oninput="invItems[${i}].amt=parseFloat(this.value)||0;renderInvItems()">
+      </td>
+      <td style="padding:6px 10px">
+        <input type="number" value="${item.gst||0}" placeholder="0"
+          style="width:100%;border:none;background:transparent;font-size:12px;text-align:right;outline:none;color:#0f172a"
+          oninput="invItems[${i}].gst=parseFloat(this.value)||0;renderInvItems()">
+      </td>
+      <td style="padding:6px 10px;text-align:right;font-weight:500;font-size:12px;color:#0f172a;white-space:nowrap">
+        ₹${lineTotal.toLocaleString('en-IN')}
+      </td>
+      <td style="padding:6px 10px;text-align:center">
+        <button onclick="removeInvoiceItem(${i})" style="background:none;border:none;cursor:pointer;color:#ef4444;font-size:14px">
+          <i class="ti ti-trash"></i>
+        </button>
+      </td>
+    </tr>`;
+  }).join('');
+  // Update totals
+  const subtotal = invItems.reduce((s,it)=>s+Number(it.amt||0),0);
+  const gstTotal = invItems.reduce((s,it)=>s+Math.round(Number(it.amt||0)*Number(it.gst||0)/100),0);
+  const grand    = subtotal+gstTotal;
+  $('iv-gst-total').textContent = gstTotal>0?'GST: ₹'+gstTotal.toLocaleString('en-IN'):'';
+  $('iv-grand-total').textContent = '₹'+grand.toLocaleString('en-IN');
+}
+
+function renderQuickBtns() {
+  const qb=$('iv-quick-btns');
+  if(!qb)return;
+  qb.innerHTML=DEFAULT_CHARGES.map(c=>`
+    <button type="button" onclick="addInvoiceItem('${c.desc}',0,${c.gst})"
+      style="padding:4px 10px;font-size:11px;background:#f1f5f9;color:#475569;border:1px solid #e2e8f0;border-radius:6px;cursor:pointer;white-space:nowrap">
+      + ${c.desc}
+    </button>`).join('');
+}
+
 function openInvoiceModal(idx=-1) {
   editInvIdx=idx;
-  const i=idx>=0?invoiceList[idx]:null;
+  const inv=idx>=0?invoiceList[idx]:null;
   populateWingSelect('iv-wing');
-  sv('iv-no', i?.invoice_no||'INV-'+new Date().getFullYear()+'-'+String(invoiceList.length+1).padStart(3,'0'));
-  sv('iv-date', i?.invoice_date||new Date().toISOString().split('T')[0]);
-  sv('iv-flat',i?.flat); sv('iv-name',i?.member_name); sv('iv-due',i?.due_date);
-  sv('iv-desc',i?.items||''); sv('iv-amt',i?.subtotal); sv('iv-tax',i?.tax_rate||18);
-  sv('iv-taxamt',i?.tax); sv('iv-total',i?.total); sv('iv-status',i?.status||'unpaid');
-  sv('iv-mode',i?.payment_mode); sv('iv-notes',i?.notes);
+  sv('iv-no', inv?.invoice_no||'INV-'+new Date().getFullYear()+'-'+String(invoiceList.length+1).padStart(3,'0'));
+  sv('iv-date', inv?.invoice_date||new Date().toISOString().split('T')[0]);
+  sv('iv-flat', inv?.flat); sv('iv-name',inv?.member_name); sv('iv-due',inv?.due_date);
+  sv('iv-status',inv?.status||'unpaid'); sv('iv-mode',inv?.payment_mode||'UPI'); sv('iv-notes',inv?.notes);
+  // Load line items
+  try {
+    invItems = inv?.items ? (typeof inv.items==='string'?JSON.parse(inv.items):inv.items) : [];
+  } catch(e) { invItems=[]; }
+  renderInvItems();
+  renderQuickBtns();
   $('inv-modal-title').textContent=idx>=0?'Edit Invoice':'New Invoice';
   openModal('mo-invoice');
 }
+
 async function saveInvoice() {
   const flat=fv('iv-flat').trim(), no=fv('iv-no').trim();
   if(!flat||!no){toast('Invoice no and flat required',false);return;}
-  const amt=parseFloat(fv('iv-amt')||0), taxPct=parseFloat(fv('iv-tax')||0);
-  const taxAmt=Math.round(amt*taxPct/100);
-  const d={society_id:CS.id,invoice_no:no,flat,member_name:fv('iv-name'),
-    invoice_date:fv('iv-date')||null,due_date:fv('iv-due')||null,
-    items:fv('iv-desc'),subtotal:amt,tax:taxAmt,tax_rate:taxPct,total:amt+taxAmt,
-    status:fv('iv-status'),payment_mode:fv('iv-mode'),notes:fv('iv-notes')};
+  if(!invItems.length){toast('Add at least one charge',false);return;}
+  const subtotal = invItems.reduce((s,it)=>s+Number(it.amt||0),0);
+  const gstTotal = invItems.reduce((s,it)=>s+Math.round(Number(it.amt||0)*Number(it.gst||0)/100),0);
+  const grand    = subtotal+gstTotal;
+  const d={
+    society_id:CS.id, invoice_no:no, flat, member_name:fv('iv-name'),
+    invoice_date:fv('iv-date')||null, due_date:fv('iv-due')||null,
+    items:JSON.stringify(invItems), subtotal, tax:gstTotal, total:grand,
+    status:fv('iv-status'), payment_mode:fv('iv-mode'), notes:fv('iv-notes')
+  };
   try{
     if(editInvIdx>=0) await PATCH('invoices',invoiceList[editInvIdx].id,d);
     else await POST('invoices',d);
     closeModal('mo-invoice'); renderInvoices(); toast('Invoice saved ✓');
   }catch(e){toast('Error: '+e.message,false);}
 }
+
+function viewInvoice(idx) {
+  const inv = invoiceList[idx];
+  if(!inv) return;
+  openInvoiceModal(idx);
+  setTimeout(()=>{ closeModal('mo-invoice'); previewInvoice(inv); }, 100);
+}
+
+function previewInvoice(inv=null) {
+  // Use current modal data if no inv passed
+  const data = inv || {
+    invoice_no: fv('iv-no'),
+    invoice_date: fv('iv-date'),
+    due_date: fv('iv-due'),
+    flat: fv('iv-flat'),
+    member_name: fv('iv-name'),
+    status: fv('iv-status'),
+    notes: fv('iv-notes'),
+    items: invItems
+  };
+  let items = [];
+  try { items = typeof data.items==='string'?JSON.parse(data.items):data.items||[]; } catch(e){ items=invItems; }
+  const subtotal = items.reduce((s,it)=>s+Number(it.amt||0),0);
+  const gstTotal = items.reduce((s,it)=>s+Math.round(Number(it.amt||0)*Number(it.gst||0)/100),0);
+  const grand    = subtotal+gstTotal;
+  const statusColor={paid:'#16a34a',unpaid:'#991b1b',partial:'#92400e'}[data.status]||'#64748b';
+  $('inv-preview-body').innerHTML=`
+    <div style="font-family:Arial,sans-serif;font-size:13px" id="inv-print-area">
+      <div style="background:#1a3c6e;color:#fff;padding:20px 24px;display:flex;justify-content:space-between;align-items:flex-start">
+        <div>
+          <div style="font-size:18px;font-weight:700;margin-bottom:4px">🏢 ${CS?.name||'Society'}</div>
+          <div style="font-size:11px;opacity:0.8">${CS?.address||''}</div>
+          <div style="font-size:11px;opacity:0.7">${[CS?.city,CS?.state,CS?.pincode].filter(Boolean).join(', ')}</div>
+          ${CS?.reg_no?`<div style="font-size:11px;opacity:0.7">Reg No: ${CS.reg_no}</div>`:''}
+        </div>
+        <div style="text-align:right">
+          <div style="font-size:22px;font-weight:700;letter-spacing:1px">INVOICE</div>
+          <div style="font-size:13px;opacity:0.9">${data.invoice_no||''}</div>
+          <div style="font-size:11px;opacity:0.8">Date: ${data.invoice_date||''}</div>
+          <div style="font-size:11px;opacity:0.8">Due: ${data.due_date||''}</div>
+        </div>
+      </div>
+      <div style="padding:14px 24px;display:grid;grid-template-columns:1fr 1fr;gap:16px;border-bottom:1px solid #e2e8f0">
+        <div>
+          <div style="font-size:10px;color:#94a3b8;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:5px">Bill To</div>
+          <div style="font-weight:700;font-size:14px">${data.member_name||''}</div>
+          <div style="color:#475569;font-size:12px">Flat: ${data.flat||''}</div>
+          <div style="color:#475569;font-size:12px">${CS?.name||''}</div>
+        </div>
+        <div style="text-align:right">
+          <div style="font-size:10px;color:#94a3b8;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:5px">Status</div>
+          <div style="display:inline-block;background:${statusColor}20;color:${statusColor};border:1px solid ${statusColor}40;padding:4px 12px;border-radius:20px;font-size:12px;font-weight:700">${(data.status||'unpaid').toUpperCase()}</div>
+        </div>
+      </div>
+      <div style="padding:0 24px">
+        <table style="width:100%;border-collapse:collapse;font-size:12px">
+          <thead>
+            <tr style="border-bottom:1px solid #e2e8f0">
+              <th style="padding:10px 0;text-align:left;color:#64748b;font-weight:600">Description</th>
+              <th style="padding:10px 0;text-align:right;color:#64748b;font-weight:600">Amount</th>
+              <th style="padding:10px 0;text-align:right;color:#64748b;font-weight:600">GST%</th>
+              <th style="padding:10px 0;text-align:right;color:#64748b;font-weight:600">GST Amt</th>
+              <th style="padding:10px 0;text-align:right;color:#64748b;font-weight:600">Total</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${items.map(it=>{
+              const g=Math.round(Number(it.amt||0)*Number(it.gst||0)/100);
+              const t=Number(it.amt||0)+g;
+              return`<tr style="border-bottom:0.5px solid #f1f5f9">
+                <td style="padding:8px 0">${it.desc||''}</td>
+                <td style="padding:8px 0;text-align:right">₹${Number(it.amt||0).toLocaleString('en-IN')}</td>
+                <td style="padding:8px 0;text-align:right;color:#64748b">${it.gst||0}%</td>
+                <td style="padding:8px 0;text-align:right;color:#64748b">₹${g.toLocaleString('en-IN')}</td>
+                <td style="padding:8px 0;text-align:right;font-weight:600">₹${t.toLocaleString('en-IN')}</td>
+              </tr>`;
+            }).join('')}
+          </tbody>
+          <tfoot>
+            <tr style="border-top:2px solid #e2e8f0">
+              <td colspan="3" style="padding:10px 0;font-weight:700">Total GST</td>
+              <td style="padding:10px 0;text-align:right;font-weight:600">₹${gstTotal.toLocaleString('en-IN')}</td>
+              <td></td>
+            </tr>
+            <tr style="background:#f0fdf4">
+              <td colspan="4" style="padding:10px 0;font-weight:700;font-size:14px">Grand Total</td>
+              <td style="padding:10px 0;text-align:right;font-weight:700;font-size:16px;color:#1a3c6e">₹${grand.toLocaleString('en-IN')}</td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+      ${data.notes?`<div style="padding:10px 24px;border-top:1px solid #e2e8f0;background:#fafafa">
+        <div style="font-size:11px;color:#94a3b8;margin-bottom:3px">Notes</div>
+        <div style="font-size:12px;color:#475569">${data.notes}</div>
+      </div>`:''}
+      <div style="padding:10px 24px;background:#f8fafc;border-top:1px solid #e2e8f0;display:flex;justify-content:space-between;font-size:10px;color:#94a3b8">
+        <span>Generated by SocietyOS</span>
+        <span>© 2026 Felevare Global Ventures LLP</span>
+      </div>
+    </div>`;
+  openModal('mo-inv-preview');
+}
+
+function printInvoice() {
+  const content = $('inv-print-area')?.innerHTML;
+  if(!content)return;
+  const w=window.open('','_blank');
+  w.document.write(`<!DOCTYPE html><html><head><title>Invoice</title>
+    <style>body{font-family:Arial,sans-serif;margin:0;padding:20px}table{width:100%;border-collapse:collapse}@media print{body{padding:0}button{display:none}}</style>
+    </head><body>${content}</body></html>`);
+  w.document.close();
+  setTimeout(()=>w.print(),500);
+}
+
 function exportInvoicesCSV() {
-  const rows=[['Invoice No','Flat','Member','Date','Due Date','Amount','Tax','Total','Status']];
+  const rows=[['Invoice No','Flat','Member','Date','Due Date','Subtotal','GST','Total','Status']];
   invoiceList.forEach(i=>rows.push([i.invoice_no,i.flat,i.member_name,i.invoice_date,i.due_date,i.subtotal,i.tax,i.total,i.status]));
   downloadCSV(rows,`invoices_${CS?.name}_${new Date().toISOString().split('T')[0]}.csv`);
 }
