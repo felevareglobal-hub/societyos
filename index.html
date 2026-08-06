@@ -4867,12 +4867,12 @@ function renderInvItems() {
       <td style="padding:6px 10px">
         <input type="number" value="${item.amt||''}" placeholder="0"
           style="width:100%;border:none;background:transparent;font-size:12px;text-align:right;outline:none;color:#0f172a"
-          oninput="invItems[${i}].amt=parseFloat(this.value)||0;renderInvItems()">
+          oninput="invItems[${i}].amt=parseFloat(this.value)||0;updateInvTotals()">
       </td>
       <td style="padding:6px 10px">
         <input type="number" value="${item.gst||0}" placeholder="0"
           style="width:100%;border:none;background:transparent;font-size:12px;text-align:right;outline:none;color:#0f172a"
-          oninput="invItems[${i}].gst=parseFloat(this.value)||0;renderInvItems()">
+          oninput="invItems[${i}].gst=parseFloat(this.value)||0;updateInvTotals()">
       </td>
       <td style="padding:6px 10px;text-align:right;font-weight:500;font-size:12px;color:#0f172a;white-space:nowrap">
         ₹${lineTotal.toLocaleString('en-IN')}
@@ -4885,18 +4885,25 @@ function renderInvItems() {
     </tr>`;
   }).join('');
   // Update totals
+  updateInvTotals();
+}
+
+function updateInvTotals() {
   const subtotal = invItems.reduce((s,it)=>s+Number(it.amt||0),0);
   const gstTotal = invItems.reduce((s,it)=>s+Math.round(Number(it.amt||0)*Number(it.gst||0)/100),0);
   const grand    = subtotal+gstTotal;
-  $('iv-gst-total').textContent = gstTotal>0?'GST: ₹'+gstTotal.toLocaleString('en-IN'):'';
-  $('iv-grand-total').textContent = '₹'+grand.toLocaleString('en-IN');
-  // Show amount in words
-  const wordsEl = $('iv-amt-words');
-  if (wordsEl && grand > 0) {
-    wordsEl.style.display = 'block';
-    wordsEl.textContent = 'Rupees ' + numberToWords(grand) + ' Only';
-  } else if (wordsEl) {
-    wordsEl.style.display = 'none';
+  const gstEl    = $('iv-gst-total');
+  const grandEl  = $('iv-grand-total');
+  const wordsEl  = $('iv-amt-words');
+  if(gstEl)   gstEl.textContent   = gstTotal>0?'GST: ₹'+gstTotal.toLocaleString('en-IN'):'';
+  if(grandEl) grandEl.textContent = '₹'+grand.toLocaleString('en-IN');
+  if(wordsEl) {
+    if(grand > 0) {
+      wordsEl.style.display = 'block';
+      wordsEl.textContent   = 'Rupees ' + numberToWords(grand) + ' Only';
+    } else {
+      wordsEl.style.display = 'none';
+    }
   }
 }
 
