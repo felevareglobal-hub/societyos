@@ -1388,9 +1388,13 @@ tr:hover td{background:#fafafa}
       <div class="fg">
         <div class="fi"><label>Invoice No *</label><input id="iv-no" placeholder="INV-2026-001"></div>
         <div class="fi"><label>Invoice Date *</label><input id="iv-date" type="date"></div>
-        <div class="fi"><label>Wing</label><select id="iv-wing"></select></div>
-        <div class="fi"><label>Flat *</label><input id="iv-flat"></div>
-        <div class="fi"><label>Member Name</label><input id="iv-name"></div>
+        <div class="fi"><label>Wing</label><select id="iv-wing" onchange="autoFillInvMember()"></select></div>
+        <div class="fi"><label>Flat *</label><input id="iv-flat" placeholder="e.g. 101" oninput="autoFillInvMember()"></div>
+        <div class="fi full">
+          <label>Member Name</label>
+          <input id="iv-name" placeholder="Auto-filled when flat is entered">
+          <div id="iv-member-hint" style="font-size:11px;color:#16a34a;margin-top:4px;display:none;padding:6px 10px;background:#f0fdf4;border-radius:6px;border:1px solid #bbf7d0"></div>
+        </div>
         <div class="fi"><label>Due Date</label><input id="iv-due" type="date"></div>
       </div>
 
