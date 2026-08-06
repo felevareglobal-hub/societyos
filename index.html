@@ -1465,9 +1465,9 @@ tr:hover td{background:#fafafa}
     <div class="md-head"><h3 id="col-modal-title">Add Collection</h3><button class="md-close" onclick="closeModal('mo-collection')"><i class="ti ti-x"></i></button></div>
     <div class="md-body"><div class="fg">
       <div class="fi"><label>Collection Date *</label><input id="cl-date" type="date"></div>
-      <div class="fi"><label>Wing</label><select id="cl-wing"></select></div>
-      <div class="fi"><label>Flat *</label><input id="cl-flat"></div>
-      <div class="fi"><label>Member Name</label><input id="cl-name"></div>
+      <div class="fi"><label>Wing</label><select id="cl-wing" onchange="autoFillClMember()"></select></div>
+      <div class="fi"><label>Flat *</label><input id="cl-flat" oninput="autoFillClMember()"></div>
+      <div class="fi"><label>Member Name</label><input id="cl-name" placeholder="Auto-filled from Members"></div>
       <div class="fi"><label>Collection Type *</label><select id="cl-type"><option>Maintenance</option><option>Water Charges</option><option>Parking Charges</option><option>NOC Fee</option><option>Transfer Fee</option><option>Sinking Fund</option><option>Repair Fund</option><option>Other</option></select></div>
       <div class="fi"><label>Amount (₹) *</label><input id="cl-amt" type="number"></div>
       <div class="fi"><label>Payment Mode *</label><select id="cl-mode"><option>UPI</option><option>Cash</option><option>Bank Transfer</option><option>Cheque</option><option>NEFT</option><option>RTGS</option></select></div>
@@ -1571,10 +1571,10 @@ tr:hover td{background:#fafafa}
     <div class="md-body"><div class="fg">
       <div class="fi"><label>Ticket No</label><input id="hk-no" placeholder="Auto-generated"></div>
       <div class="fi"><label>Date</label><input id="hk-date" type="date"></div>
-      <div class="fi"><label>Wing</label><select id="hk-wing"></select></div>
-      <div class="fi"><label>Flat *</label><input id="hk-flat"></div>
-      <div class="fi"><label>Member Name *</label><input id="hk-name"></div>
-      <div class="fi"><label>Mobile</label><input id="hk-mob" type="tel"></div>
+      <div class="fi"><label>Wing</label><select id="hk-wing" onchange="autoFillHdMember()"></select></div>
+      <div class="fi"><label>Flat *</label><input id="hk-flat" oninput="autoFillHdMember()"></div>
+      <div class="fi"><label>Member Name *</label><input id="hk-name" placeholder="Auto-filled from Members"></div>
+      <div class="fi"><label>Mobile</label><input id="hk-mob" type="tel" placeholder="Auto-filled from Members"></div>
       <div class="fi"><label>Category *</label><select id="hk-cat"><option>Plumbing</option><option>Electrical</option><option>Cleaning</option><option>Security</option><option>Lift</option><option>Parking</option><option>Water</option><option>Noise Complaint</option><option>Common Area</option><option>Other</option></select></div>
       <div class="fi"><label>Priority</label><select id="hk-pri"><option value="low">Low</option><option value="medium" selected>Medium</option><option value="high">High</option><option value="urgent">Urgent</option></select></div>
       <div class="fi full"><label>Subject *</label><input id="hk-sub"></div>
@@ -4764,6 +4764,37 @@ async function renderInvoices() {
   }catch(e){toast('Error: '+e.message,false);}
 }
 
+function autoFillInvMember() {
+  const wing = fv('iv-wing').trim();
+  const flat = fv('iv-flat').trim().toLowerCase();
+  if (!flat) return;
+  // Search members by flat number and wing
+  const match = members.find(m => {
+    const mFlat = (m.flat||'').toLowerCase();
+    const mWing = (m.wing||'').toLowerCase();
+    // Match if flat matches and wing matches (or no wing entered)
+    return mFlat === flat && (!wing || mWing === wing.toLowerCase());
+  }) || members.find(m => {
+    // Try partial match — flat contains the input
+    return (m.flat||'').toLowerCase().includes(flat);
+  });
+  if (match) {
+    sv('iv-name', match.name||'');
+    const hint = $('iv-member-hint');
+    if (hint) {
+      hint.style.display = 'block';
+      hint.innerHTML = `<i class="ti ti-check"></i> Found: <strong>${match.name}</strong> — ${match.wing}-${match.flat} ${match.mobile?'• '+match.mobile:''}`;
+    }
+  } else {
+    const hint = $('iv-member-hint');
+    if (hint && flat.length >= 2) {
+      hint.style.display = 'block';
+      hint.style.color = '#94a3b8';
+      hint.textContent = 'No member found for this flat';
+    }
+  }
+}
+
 function addInvoiceItem(desc='', amt=0, gst=0) {
   invItems.push({desc, amt, gst});
   renderInvItems();
@@ -4836,6 +4867,7 @@ function openInvoiceModal(idx=-1) {
   sv('iv-no', inv?.invoice_no||'INV-'+new Date().getFullYear()+'-'+String(invoiceList.length+1).padStart(3,'0'));
   sv('iv-date', inv?.invoice_date||new Date().toISOString().split('T')[0]);
   sv('iv-flat', inv?.flat); sv('iv-name',inv?.member_name); sv('iv-due',inv?.due_date);
+  const ivHint=$('iv-member-hint'); if(ivHint){ivHint.style.display='none';}
   sv('iv-status',inv?.status||'unpaid'); sv('iv-mode',inv?.payment_mode||'UPI'); sv('iv-notes',inv?.notes);
   // Load line items
   try {
@@ -5327,6 +5359,25 @@ async function renderHelpdesk() {
       </td></tr>`).join('');
   }catch(e){toast('Error: '+e.message,false);}
 }
+function autoFillHdMember() {
+  const flat = fv('hk-flat').trim().toLowerCase();
+  if (!flat || flat.length < 1) return;
+  const match = members.find(m=>(m.flat||'').toLowerCase()===flat) ||
+                members.find(m=>(m.flat||'').toLowerCase().includes(flat));
+  if (match) {
+    sv('hk-name', match.name||'');
+    sv('hk-mob', match.mobile||'');
+  }
+}
+
+function autoFillClMember() {
+  const flat = fv('cl-flat').trim().toLowerCase();
+  if (!flat || flat.length < 1) return;
+  const match = members.find(m=>(m.flat||'').toLowerCase()===flat) ||
+                members.find(m=>(m.flat||'').toLowerCase().includes(flat));
+  if (match) { sv('cl-name', match.name||''); }
+}
+
 function openHelpdeskModal(idx=-1) {
   editHdIdx=idx; const h=idx>=0?helpdeskList[idx]:null;
   populateWingSelect('hk-wing');
