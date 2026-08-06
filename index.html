@@ -1428,6 +1428,7 @@ tr:hover td{background:#fafafa}
             </tfoot>
           </table>
         </div>
+        <div id="iv-amt-words" style="display:none;margin-top:8px;padding:8px 12px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:7px;font-size:12px;font-weight:600;color:#16a34a;font-style:italic"></div>
         <div style="font-size:11px;color:#94a3b8;margin-top:6px"><i class="ti ti-info-circle"></i> Click on any field to edit. GST is calculated per line item.</div>
       </div>
 
@@ -4771,30 +4772,45 @@ async function renderInvoices() {
 function autoFillInvMember() {
   const wing = fv('iv-wing').trim();
   const flat = fv('iv-flat').trim().toLowerCase();
-  if (!flat) return;
-  // Search members by flat number and wing
-  const match = members.find(m => {
-    const mFlat = (m.flat||'').toLowerCase();
-    const mWing = (m.wing||'').toLowerCase();
-    // Match if flat matches and wing matches (or no wing entered)
-    return mFlat === flat && (!wing || mWing === wing.toLowerCase());
-  }) || members.find(m => {
-    // Try partial match — flat contains the input
-    return (m.flat||'').toLowerCase().includes(flat);
-  });
+  const hint = $('iv-member-hint');
+  if (!flat) { if(hint) hint.style.display='none'; return; }
+
+  // If members not loaded yet — load them first
+  if (!members || !members.length) {
+    if (CS) GET('members', `?society_id=eq.${CS.id}&order=name`).then(m => {
+      members = m;
+      autoFillInvMember();
+    });
+    return;
+  }
+
+  // Try exact flat match with wing
+  let match = members.find(m =>
+    (m.flat||'').toLowerCase() === flat &&
+    (!wing || (m.wing||'').toLowerCase() === wing.toLowerCase())
+  );
+  // Try exact flat without wing
+  if (!match) match = members.find(m => (m.flat||'').toLowerCase() === flat);
+  // Try partial flat match
+  if (!match) match = members.find(m => (m.flat||'').toLowerCase().includes(flat) && flat.length >= 2);
+
   if (match) {
     sv('iv-name', match.name||'');
-    const hint = $('iv-member-hint');
     if (hint) {
       hint.style.display = 'block';
-      hint.innerHTML = `<i class="ti ti-check"></i> Found: <strong>${match.name}</strong> — ${match.wing}-${match.flat} ${match.mobile?'• '+match.mobile:''}`;
+      hint.style.color = '#16a34a';
+      hint.style.background = '#f0fdf4';
+      hint.style.border = '1px solid #bbf7d0';
+      hint.innerHTML = '<i class="ti ti-check" style="margin-right:4px"></i><strong>' + match.name + '</strong> — ' + match.wing + '-' + match.flat + (match.mobile?' &nbsp;•&nbsp; '+match.mobile:'');
     }
-  } else {
-    const hint = $('iv-member-hint');
-    if (hint && flat.length >= 2) {
+  } else if (flat.length >= 2) {
+    sv('iv-name', '');
+    if (hint) {
       hint.style.display = 'block';
-      hint.style.color = '#94a3b8';
-      hint.textContent = 'No member found for this flat';
+      hint.style.color = '#991b1b';
+      hint.style.background = '#fee2e2';
+      hint.style.border = '1px solid #fecaca';
+      hint.innerHTML = '<i class="ti ti-alert-circle" style="margin-right:4px"></i>No member found for flat: ' + flat.toUpperCase();
     }
   }
 }
@@ -4807,6 +4823,28 @@ function addInvoiceItem(desc='', amt=0, gst=0) {
 function removeInvoiceItem(idx) {
   invItems.splice(idx,1);
   renderInvItems();
+}
+
+// Convert number to Indian words
+function numberToWords(num) {
+  const ones = ['','One','Two','Three','Four','Five','Six','Seven','Eight','Nine',
+    'Ten','Eleven','Twelve','Thirteen','Fourteen','Fifteen','Sixteen','Seventeen',
+    'Eighteen','Nineteen'];
+  const tens = ['','','Twenty','Thirty','Forty','Fifty','Sixty','Seventy','Eighty','Ninety'];
+  if (num === 0) return 'Zero';
+  function helper(n) {
+    if (n === 0) return '';
+    else if (n < 20) return ones[n] + ' ';
+    else if (n < 100) return tens[Math.floor(n/10)] + ' ' + helper(n%10);
+    else return ones[Math.floor(n/100)] + ' Hundred ' + helper(n%100);
+  }
+  let result = '';
+  let n = Math.floor(num);
+  if (n >= 10000000) { result += helper(Math.floor(n/10000000)) + 'Crore '; n %= 10000000; }
+  if (n >= 100000)   { result += helper(Math.floor(n/100000))   + 'Lakh '; n %= 100000; }
+  if (n >= 1000)     { result += helper(Math.floor(n/1000))     + 'Thousand '; n %= 1000; }
+  result += helper(n);
+  return result.trim();
 }
 
 function renderInvItems() {
@@ -4852,6 +4890,14 @@ function renderInvItems() {
   const grand    = subtotal+gstTotal;
   $('iv-gst-total').textContent = gstTotal>0?'GST: ₹'+gstTotal.toLocaleString('en-IN'):'';
   $('iv-grand-total').textContent = '₹'+grand.toLocaleString('en-IN');
+  // Show amount in words
+  const wordsEl = $('iv-amt-words');
+  if (wordsEl && grand > 0) {
+    wordsEl.style.display = 'block';
+    wordsEl.textContent = 'Rupees ' + numberToWords(grand) + ' Only';
+  } else if (wordsEl) {
+    wordsEl.style.display = 'none';
+  }
 }
 
 function renderQuickBtns() {
@@ -4989,6 +5035,11 @@ function previewInvoice(inv=null) {
             <tr style="background:#f0fdf4">
               <td colspan="4" style="padding:10px 0;font-weight:700;font-size:14px">Grand Total</td>
               <td style="padding:10px 0;text-align:right;font-weight:700;font-size:16px;color:#1a3c6e">₹${grand.toLocaleString('en-IN')}</td>
+            </tr>
+            <tr>
+              <td colspan="5" style="padding:8px 0;font-style:italic;color:#16a34a;font-size:12px;font-weight:600">
+                Rupees ${numberToWords(grand)} Only
+              </td>
             </tr>
           </tfoot>
         </table>
