@@ -641,7 +641,9 @@ tr:hover td{background:#fafafa}
         <div class="card">
           <div class="card-head">
             <h3 id="inv-lbl">Invoices</h3>
-            <div style="display:flex;gap:8px">
+            <div style="display:flex;gap:8px;flex-wrap:wrap">
+              <button class="btn" style="color:#7c3aed;border-color:#7c3aed" onclick="openTemplateModal()"><i class="ti ti-template"></i> Manage Template</button>
+              <button class="btn" style="color:#2563eb;border-color:#2563eb" onclick="generateBulkInvoices()"><i class="ti ti-copy"></i> Bulk Generate</button>
               <button class="btn" onclick="exportInvoicesCSV()"><i class="ti ti-download"></i> Export CSV</button>
               <button class="btn btn-p" onclick="openInvoiceModal(-1)"><i class="ti ti-plus"></i> New Invoice</button>
             </div>
@@ -1380,6 +1382,82 @@ tr:hover td{background:#fafafa}
   </div>
 </div>
 
+<!-- INVOICE TEMPLATE MODAL -->
+<div class="mo" id="mo-inv-template">
+  <div class="md" style="max-width:620px">
+    <div class="md-head">
+      <div>
+        <h3>Invoice Template</h3>
+        <p style="font-size:11px;color:#64748b;margin-top:2px">Set default charge heads — auto-loaded for every new invoice</p>
+      </div>
+      <button class="md-close" onclick="closeModal('mo-inv-template')"><i class="ti ti-x"></i></button>
+    </div>
+    <div class="md-body">
+      <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;padding:10px 14px;margin-bottom:14px;font-size:12px;color:#1e40af">
+        <i class="ti ti-info-circle" style="margin-right:6px"></i>
+        These charge heads will be <strong>automatically loaded</strong> when you create a new invoice. Just enter the amounts!
+      </div>
+      <!-- Template Items -->
+      <div style="border:1px solid #e2e8f0;border-radius:8px;overflow:hidden;margin-bottom:12px">
+        <table style="width:100%;border-collapse:collapse;font-size:12px">
+          <thead>
+            <tr style="background:#f8fafc">
+              <th style="padding:8px 12px;text-align:left;font-weight:600;color:#64748b;width:50%">Charge Head</th>
+              <th style="padding:8px 12px;text-align:right;font-weight:600;color:#64748b;width:20%">Default Amt (₹)</th>
+              <th style="padding:8px 12px;text-align:right;font-weight:600;color:#64748b;width:15%">GST %</th>
+              <th style="padding:8px 12px;text-align:center;font-weight:600;color:#64748b;width:10%">Active</th>
+              <th style="padding:8px 12px;width:5%"></th>
+            </tr>
+          </thead>
+          <tbody id="tmpl-items-body"></tbody>
+        </table>
+      </div>
+      <button type="button" class="btn" style="width:100%;justify-content:center" onclick="addTemplateItem()">
+        <i class="ti ti-plus"></i> Add Charge Head
+      </button>
+    </div>
+    <div class="md-foot">
+      <button class="btn" onclick="closeModal('mo-inv-template')">Cancel</button>
+      <button class="btn btn-p" onclick="saveInvoiceTemplate()"><i class="ti ti-check"></i> Save Template</button>
+    </div>
+  </div>
+</div>
+
+<!-- BULK INVOICE MODAL -->
+<div class="mo" id="mo-bulk-inv">
+  <div class="md" style="max-width:560px">
+    <div class="md-head">
+      <div>
+        <h3>Bulk Generate Invoices</h3>
+        <p style="font-size:11px;color:#64748b;margin-top:2px">Generate invoices for all members using the saved template</p>
+      </div>
+      <button class="md-close" onclick="closeModal('mo-bulk-inv')"><i class="ti ti-x"></i></button>
+    </div>
+    <div class="md-body">
+      <div class="fg">
+        <div class="fi"><label>Invoice Month / Period *</label><input id="bulk-period" placeholder="e.g. August 2026"></div>
+        <div class="fi"><label>Invoice Date *</label><input id="bulk-date" type="date"></div>
+        <div class="fi"><label>Due Date</label><input id="bulk-due" type="date"></div>
+        <div class="fi"><label>Starting Invoice No *</label><input id="bulk-start-no" placeholder="e.g. INV-2026-001"></div>
+        <div class="fi full"><label>Notes (same for all)</label><textarea id="bulk-notes" rows="2" placeholder="e.g. Please pay before due date"></textarea></div>
+      </div>
+      <div style="background:#fef3c7;border:1px solid #fde68a;border-radius:8px;padding:10px 14px;font-size:12px;color:#92400e;margin-top:8px">
+        <i class="ti ti-alert-triangle" style="margin-right:6px"></i>
+        This will generate <strong id="bulk-count">0</strong> invoices — one for each active member using the saved template charges.
+      </div>
+      <!-- Preview template charges -->
+      <div style="margin-top:12px">
+        <div style="font-size:12px;font-weight:600;color:#475569;margin-bottom:6px">Template Charges (amounts editable):</div>
+        <div id="bulk-tmpl-preview" style="border:1px solid #e2e8f0;border-radius:8px;overflow:hidden"></div>
+      </div>
+    </div>
+    <div class="md-foot">
+      <button class="btn" onclick="closeModal('mo-bulk-inv')">Cancel</button>
+      <button class="btn btn-p" onclick="confirmBulkGenerate()"><i class="ti ti-copy"></i> Generate All Invoices</button>
+    </div>
+  </div>
+</div>
+
 <!-- INVOICE MODAL -->
 <div class="mo" id="mo-invoice">
   <div class="md" style="max-width:680px">
@@ -1459,6 +1537,8 @@ tr:hover td{background:#fafafa}
     <div class="md-body" id="inv-preview-body" style="padding:0"></div>
     <div class="md-foot">
       <button class="btn" onclick="closeModal('mo-inv-preview')">Close</button>
+      <button class="btn" style="color:#25D366;border-color:#25D366" onclick="shareCurrentInvoiceWhatsApp()"><i class="ti ti-brand-whatsapp"></i> WhatsApp</button>
+      <button class="btn" style="color:#ea4335;border-color:#ea4335" onclick="shareCurrentInvoiceEmail()"><i class="ti ti-mail"></i> Email</button>
       <button class="btn btn-p" onclick="printInvoice()"><i class="ti ti-printer"></i> Print / Save PDF</button>
     </div>
   </div>
@@ -4764,6 +4844,8 @@ async function renderInvoices() {
       <td>
         <button class="ab" onclick="openInvoiceModal(${idx})" title="Edit"><i class="ti ti-edit"></i></button>
         <button class="ab" onclick="viewInvoice(${idx})" style="color:#2563eb" title="Preview"><i class="ti ti-eye"></i></button>
+        <button class="ab" onclick="shareInvoiceWhatsApp(${idx})" style="color:#25D366" title="Send WhatsApp"><i class="ti ti-brand-whatsapp"></i></button>
+        <button class="ab" onclick="shareInvoiceEmail(${idx})" style="color:#ea4335" title="Send Email"><i class="ti ti-mail"></i></button>
         <button class="ab" onclick="deleteRecord('invoices','${i.id}',renderInvoices)" style="color:#ef4444"><i class="ti ti-trash"></i></button>
       </td></tr>`).join('');
   }catch(e){toast('Error: '+e.message,false);}
@@ -4926,9 +5008,14 @@ function openInvoiceModal(idx=-1) {
   sv('iv-flat', inv?.flat); sv('iv-name',inv?.member_name); sv('iv-due',inv?.due_date);
   const ivHint=$('iv-member-hint'); if(ivHint){ivHint.style.display='none';}
   sv('iv-status',inv?.status||'unpaid'); sv('iv-mode',inv?.payment_mode||'UPI'); sv('iv-notes',inv?.notes);
-  // Load line items
+  // Load line items — use template for new invoices
   try {
-    invItems = inv?.items ? (typeof inv.items==='string'?JSON.parse(inv.items):inv.items) : [];
+    if (inv?.items) {
+      invItems = typeof inv.items==='string' ? JSON.parse(inv.items) : inv.items;
+    } else {
+      // Load from saved template
+      invItems = getActiveTemplateItems();
+    }
   } catch(e) { invItems=[]; }
   renderInvItems();
   renderQuickBtns();
@@ -4959,8 +5046,8 @@ async function saveInvoice() {
 function viewInvoice(idx) {
   const inv = invoiceList[idx];
   if(!inv) return;
-  openInvoiceModal(idx);
-  setTimeout(()=>{ closeModal('mo-invoice'); previewInvoice(inv); }, 100);
+  _currentShareInv = idx;
+  previewInvoice(inv);
 }
 
 function previewInvoice(inv=null) {
@@ -5590,6 +5677,296 @@ async function deleteRecord(table, id, refreshFn) {
 }
 
 // ── Add stat filter handling ──
+// ═══════════════════════════════════════════════
+// INVOICE TEMPLATE SYSTEM
+// ═══════════════════════════════════════════════
+let invTemplate = []; // saved template items
+
+async function loadInvoiceTemplate() {
+  try {
+    const res = await GET('app_settings', `?id=eq.inv_template_${CS.id}`);
+    if (res.length && res[0].value) {
+      invTemplate = JSON.parse(res[0].value);
+    } else {
+      // Default template with common charges
+      invTemplate = [
+        {desc:'Maintenance Charges',        amt:0, gst:0,  active:true},
+        {desc:'Municipal Charges Collection',amt:0, gst:0,  active:true},
+        {desc:'Compound Maintenance Charges',amt:0, gst:0,  active:true},
+        {desc:'Pest Control Charges',        amt:0, gst:18, active:true},
+        {desc:'Sinking Fund',                amt:0, gst:0,  active:true},
+        {desc:'NOC / Parking Charges',       amt:0, gst:0,  active:false},
+        {desc:'Repair & Maintenance Fund',   amt:0, gst:0,  active:true},
+        {desc:'Cultural Society Charges',    amt:0, gst:0,  active:false},
+      ];
+    }
+  } catch(e) { invTemplate = []; }
+}
+
+function getActiveTemplateItems() {
+  return invTemplate
+    .filter(t => t.active)
+    .map(t => ({desc: t.desc, amt: t.amt||0, gst: t.gst||0}));
+}
+
+async function openTemplateModal() {
+  if (!invTemplate.length) await loadInvoiceTemplate();
+  renderTemplateItems();
+  openModal('mo-inv-template');
+}
+
+function addTemplateItem() {
+  invTemplate.push({desc:'', amt:0, gst:0, active:true});
+  renderTemplateItems();
+}
+
+function renderTemplateItems() {
+  const tb = $('tmpl-items-body');
+  if (!tb) return;
+  tb.innerHTML = invTemplate.map((t,i) => `<tr style="border-bottom:0.5px solid #f1f5f9">
+    <td style="padding:6px 10px">
+      <input value="${t.desc||''}" placeholder="Charge head name"
+        style="width:100%;border:none;background:transparent;font-size:12px;outline:none;color:#0f172a"
+        oninput="invTemplate[${i}].desc=this.value">
+    </td>
+    <td style="padding:6px 10px">
+      <input type="number" value="${t.amt||0}"
+        style="width:100%;border:none;background:transparent;font-size:12px;text-align:right;outline:none;color:#0f172a"
+        oninput="invTemplate[${i}].amt=parseFloat(this.value)||0">
+    </td>
+    <td style="padding:6px 10px">
+      <input type="number" value="${t.gst||0}"
+        style="width:100%;border:none;background:transparent;font-size:12px;text-align:right;outline:none;color:#0f172a"
+        oninput="invTemplate[${i}].gst=parseFloat(this.value)||0">
+    </td>
+    <td style="padding:6px 10px;text-align:center">
+      <input type="checkbox" ${t.active?'checked':''} onchange="invTemplate[${i}].active=this.checked"
+        style="width:16px;height:16px;cursor:pointer">
+    </td>
+    <td style="padding:6px 10px;text-align:center">
+      <button onclick="invTemplate.splice(${i},1);renderTemplateItems()" 
+        style="background:none;border:none;cursor:pointer;color:#ef4444;font-size:14px">
+        <i class="ti ti-trash"></i>
+      </button>
+    </td>
+  </tr>`).join('');
+}
+
+async function saveInvoiceTemplate() {
+  try {
+    const val = JSON.stringify(invTemplate);
+    const key = `inv_template_${CS.id}`;
+    const existing = await GET('app_settings', `?id=eq.${key}`);
+    if (existing.length) {
+      await PATCH('app_settings', existing[0].id, {value: val});
+    } else {
+      await POST('app_settings', {id: key, value: val});
+    }
+    closeModal('mo-inv-template');
+    toast('Template saved ✓ — will auto-load for new invoices');
+  } catch(e) { toast('Error: '+e.message, false); }
+}
+
+// ── BULK INVOICE GENERATION ──
+let bulkItems = [];
+
+async function generateBulkInvoices() {
+  if (!invTemplate.length) await loadInvoiceTemplate();
+  if (!members.length) {
+    const m = await GET('members', `?society_id=eq.${CS.id}&order=wing,flat`);
+    members = m;
+  }
+  const activeMembers = members.filter(m=>m.status!=='inactive');
+  $('bulk-count').textContent = activeMembers.length;
+  // Set defaults
+  const today = new Date();
+  sv('bulk-date', today.toISOString().split('T')[0]);
+  const due = new Date(today); due.setDate(15);
+  sv('bulk-due', due.toISOString().split('T')[0]);
+  const month = today.toLocaleString('en-IN',{month:'long',year:'numeric'});
+  sv('bulk-period', month);
+  sv('bulk-start-no', 'INV-'+today.getFullYear()+'-'+String(invoiceList.length+1).padStart(3,'0'));
+  sv('bulk-notes', 'Please pay before the due date to avoid late fees.');
+  // Show template preview with editable amounts
+  bulkItems = getActiveTemplateItems();
+  const preview = $('bulk-tmpl-preview');
+  if (preview) {
+    preview.innerHTML = `<table style="width:100%;border-collapse:collapse;font-size:12px">
+      <thead><tr style="background:#f8fafc">
+        <th style="padding:7px 10px;text-align:left;color:#64748b">Charge Head</th>
+        <th style="padding:7px 10px;text-align:right;color:#64748b">Amount (₹)</th>
+        <th style="padding:7px 10px;text-align:right;color:#64748b">GST %</th>
+      </tr></thead>
+      <tbody>${bulkItems.map((t,i)=>`<tr style="border-bottom:0.5px solid #f1f5f9">
+        <td style="padding:6px 10px;font-size:12px">${t.desc}</td>
+        <td style="padding:6px 10px">
+          <input type="number" value="${t.amt||0}"
+            style="width:100%;border:1px solid #e2e8f0;border-radius:5px;padding:3px 6px;font-size:12px;text-align:right"
+            oninput="bulkItems[${i}].amt=parseFloat(this.value)||0">
+        </td>
+        <td style="padding:6px 10px">
+          <input type="number" value="${t.gst||0}"
+            style="width:80px;border:1px solid #e2e8f0;border-radius:5px;padding:3px 6px;font-size:12px;text-align:right"
+            oninput="bulkItems[${i}].gst=parseFloat(this.value)||0">
+        </td>
+      </tr>`).join('')}</tbody>
+    </table>`;
+  }
+  openModal('mo-bulk-inv');
+}
+
+async function confirmBulkGenerate() {
+  const period  = fv('bulk-period').trim();
+  const date    = fv('bulk-date');
+  const due     = fv('bulk-due');
+  const startNo = fv('bulk-start-no').trim();
+  const notes   = fv('bulk-notes');
+  if (!period||!date||!startNo) { toast('Period, date and starting invoice no required', false); return; }
+  if (!bulkItems.length) { toast('No charge heads in template. Please set up template first.', false); return; }
+  const activeMembers = members.filter(m=>m.status!=='inactive');
+  if (!activeMembers.length) { toast('No active members found', false); return; }
+  if (!confirm(`Generate ${activeMembers.length} invoices for ${period}?\n\nThis will create one invoice per member.`)) return;
+
+  const subtotal = bulkItems.reduce((s,it)=>s+Number(it.amt||0),0);
+  const gstTotal = bulkItems.reduce((s,it)=>s+Math.round(Number(it.amt||0)*Number(it.gst||0)/100),0);
+  const grand    = subtotal+gstTotal;
+
+  // Parse starting invoice number
+  const noPrefix = startNo.replace(/\d+$/, '');
+  const noStart  = parseInt(startNo.match(/\d+$/)?.[0]||'1');
+
+  let created = 0;
+  let errors  = 0;
+  toast(`Generating ${activeMembers.length} invoices…`);
+
+  for (let i=0; i<activeMembers.length; i++) {
+    const m = activeMembers[i];
+    const invNo = noPrefix + String(noStart+i).padStart(3,'0');
+    try {
+      await POST('invoices', {
+        society_id:   CS.id,
+        invoice_no:   invNo,
+        flat:         m.flat,
+        member_name:  m.name,
+        invoice_date: date,
+        due_date:     due||null,
+        items:        JSON.stringify(bulkItems),
+        subtotal,
+        tax:          gstTotal,
+        total:        grand,
+        status:       'unpaid',
+        notes:        notes
+      });
+      created++;
+    } catch(e) { errors++; }
+  }
+  closeModal('mo-bulk-inv');
+  renderInvoices();
+  toast(`✓ ${created} invoices generated${errors>0?' ('+errors+' failed)':''}!`);
+}
+
+// Load template when invoice page opens
+const _origRenderInvoices = renderInvoices;
+async function renderInvoices() {
+  if (!invTemplate.length && CS) await loadInvoiceTemplate();
+  await _origRenderInvoices();
+}
+
+// ═══════════════════════════════════════════════
+// INVOICE SHARING — WhatsApp & Email
+// ═══════════════════════════════════════════════
+let _currentShareInv = null; // invoice being previewed
+
+function getInvoiceSummaryText(inv) {
+  let items = [];
+  try { items = typeof inv.items==='string' ? JSON.parse(inv.items) : inv.items||[]; } catch(e){}
+  const subtotal = items.reduce((s,it)=>s+Number(it.amt||0),0);
+  const gstTotal = items.reduce((s,it)=>s+Math.round(Number(it.amt||0)*Number(it.gst||0)/100),0);
+  const grand    = subtotal+gstTotal;
+
+  let itemLines = items.map(it => {
+    const g = Math.round(Number(it.amt||0)*Number(it.gst||0)/100);
+    const t = Number(it.amt||0)+g;
+    return `  • ${it.desc}: ₹${Number(it.amt||0).toLocaleString('en-IN')}${g>0?' + GST ₹'+g.toLocaleString('en-IN'):''}  = ₹${t.toLocaleString('en-IN')}`;
+  }).join('\n');
+
+  return {
+    text: `*INVOICE — ${CS?.name||'Society'}*\n` +
+      `━━━━━━━━━━━━━━━━━━━━━━━\n` +
+      `Invoice No : ${inv.invoice_no||'—'}\n` +
+      `Date       : ${inv.invoice_date||'—'}\n` +
+      `Due Date   : ${inv.due_date||'—'}\n` +
+      `━━━━━━━━━━━━━━━━━━━━━━━\n` +
+      `Dear ${inv.member_name||'Member'},\n` +
+      `Flat: ${inv.flat||'—'}\n\n` +
+      `*Charge Details:*\n${itemLines}\n` +
+      `━━━━━━━━━━━━━━━━━━━━━━━\n` +
+      `*Total Amount: ₹${grand.toLocaleString('en-IN')}*\n` +
+      `(${numberToWords(grand)} Only)\n` +
+      `━━━━━━━━━━━━━━━━━━━━━━━\n` +
+      `${inv.notes||'Please pay before the due date.'}\n\n` +
+      `_Generated by SocietyOS_`,
+    grand, items, subtotal, gstTotal
+  };
+}
+
+function shareInvoiceWhatsApp(idx) {
+  const inv = invoiceList[idx];
+  if (!inv) return;
+  // Find member mobile
+  const member = members.find(m =>
+    (m.flat||'').toLowerCase() === (inv.flat||'').toLowerCase()
+  );
+  const mobile = member?.mobile || inv.mobile;
+  if (!mobile) {
+    toast('No mobile number found for this member', false);
+    return;
+  }
+  const {text} = getInvoiceSummaryText(inv);
+  sendWhatsApp(mobile, text);
+}
+
+function shareInvoiceEmail(idx) {
+  const inv = invoiceList[idx];
+  if (!inv) return;
+  // Find member email
+  const member = members.find(m =>
+    (m.flat||'').toLowerCase() === (inv.flat||'').toLowerCase()
+  );
+  const email = member?.email || inv.email;
+  const {text, grand} = getInvoiceSummaryText(inv);
+
+  const subject = encodeURIComponent(
+    `Invoice ${inv.invoice_no||''} — ${CS?.name||'Society'} — ₹${grand.toLocaleString('en-IN')}`
+  );
+  const body = encodeURIComponent(
+    `Dear ${inv.member_name||'Member'},\n\n` +
+    `Please find your invoice details below:\n\n` +
+    text.replace(/\*/g,'').replace(/_/g,'') +
+    `\n\nFor any queries, please contact the society office.\n\n` +
+    `Regards,\n${CS?.name||'Society Management'}`
+  );
+
+  if (email) {
+    window.open(`mailto:${email}?subject=${subject}&body=${body}`, '_blank');
+  } else {
+    // Open email compose without pre-filled recipient
+    if (confirm('No email found for this member.\n\nOpen email composer anyway so you can fill the address?')) {
+      window.open(`mailto:?subject=${subject}&body=${body}`, '_blank');
+    }
+  }
+}
+
+function shareCurrentInvoiceWhatsApp() {
+  if (_currentShareInv !== null) shareInvoiceWhatsApp(_currentShareInv);
+  else toast('No invoice selected', false);
+}
+
+function shareCurrentInvoiceEmail() {
+  if (_currentShareInv !== null) shareInvoiceEmail(_currentShareInv);
+  else toast('No invoice selected', false);
+}
+
 // ── MOBILE SIDEBAR ────────────────────────────────────────
 function toggleSidebar() {
   const sb = $('sidebar');
