@@ -5062,6 +5062,8 @@ function previewInvoice(inv=null) {
     notes: fv('iv-notes'),
     items: invItems
   };
+  // Store for sharing
+  _currentPreviewInv = data;
   let items = [];
   try { items = typeof data.items==='string'?JSON.parse(data.items):data.items||[]; } catch(e){ items=invItems; }
   const subtotal = items.reduce((s,it)=>s+Number(it.amt||0),0);
@@ -5875,7 +5877,8 @@ async function renderInvoices() {
 // ═══════════════════════════════════════════════
 // INVOICE SHARING — WhatsApp & Email
 // ═══════════════════════════════════════════════
-let _currentShareInv = null; // invoice being previewed
+let _currentShareInv = null; // invoice index
+let _currentPreviewInv = null; // full invoice data for sharing
 
 function getInvoiceSummaryText(inv) {
   let items = [];
@@ -5958,13 +5961,34 @@ function shareInvoiceEmail(idx) {
 }
 
 function shareCurrentInvoiceWhatsApp() {
-  if (_currentShareInv !== null) shareInvoiceWhatsApp(_currentShareInv);
-  else toast('No invoice selected', false);
+  if (!_currentPreviewInv) { toast('No invoice selected', false); return; }
+  const inv = _currentPreviewInv;
+  const member = members.find(m => (m.flat||'').toLowerCase() === (inv.flat||'').toLowerCase());
+  const mobile = member?.mobile;
+  if (!mobile) { toast('No mobile number found for this member', false); return; }
+  const {text} = getInvoiceSummaryText(inv);
+  sendWhatsApp(mobile, text);
 }
 
 function shareCurrentInvoiceEmail() {
-  if (_currentShareInv !== null) shareInvoiceEmail(_currentShareInv);
-  else toast('No invoice selected', false);
+  if (!_currentPreviewInv) { toast('No invoice selected', false); return; }
+  const inv = _currentPreviewInv;
+  const member = members.find(m => (m.flat||'').toLowerCase() === (inv.flat||'').toLowerCase());
+  const email = member?.email;
+  const {text, grand} = getInvoiceSummaryText(inv);
+  const subject = encodeURIComponent(`Invoice ${inv.invoice_no||''} — ${CS?.name||'Society'} — ₹${grand.toLocaleString('en-IN')}`);
+  const body = encodeURIComponent(
+    `Dear ${inv.member_name||'Member'},\n\nPlease find your invoice details below:\n\n` +
+    text.replace(/\*/g,'').replace(/_/g,'') +
+    `\n\nFor any queries, please contact the society office.\n\nRegards,\n${CS?.name||'Society Management'}`
+  );
+  if (email) {
+    window.open(`mailto:${email}?subject=${subject}&body=${body}`, '_blank');
+  } else {
+    if (confirm('No email found for this member.\nOpen email composer anyway?')) {
+      window.open(`mailto:?subject=${subject}&body=${body}`, '_blank');
+    }
+  }
 }
 
 // ── MOBILE SIDEBAR ────────────────────────────────────────
