@@ -638,6 +638,24 @@ tr:hover td{background:#fafafa}
           <div class="sc"><div class="lb">Paid</div><div class="vl" id="inv-paid" style="color:#16a34a">₹0</div></div>
           <div class="sc"><div class="lb">Unpaid</div><div class="vl" id="inv-unpaid" style="color:#991b1b">₹0</div></div>
         </div>
+        <!-- Filters -->
+        <div class="sb-bar" style="margin-bottom:12px;display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+          <select id="inv-fy-filter" onchange="filterInvoices()" style="padding:7px 12px;border:1px solid #e2e8f0;border-radius:8px;font-size:12px;background:#fff;min-width:160px">
+            <option value="all">All Financial Years</option>
+          </select>
+          <select id="inv-status-filter" onchange="filterInvoices()" style="padding:7px 12px;border:1px solid #e2e8f0;border-radius:8px;font-size:12px;background:#fff">
+            <option value="all">All Status</option>
+            <option value="unpaid">Unpaid</option>
+            <option value="paid">Paid</option>
+            <option value="partial">Partial</option>
+          </select>
+          <select id="inv-flat-filter" onchange="filterInvoices()" style="padding:7px 12px;border:1px solid #e2e8f0;border-radius:8px;font-size:12px;background:#fff;min-width:140px">
+            <option value="all">All Flats</option>
+          </select>
+          <input id="inv-search" placeholder="🔍 Search member / invoice no..." oninput="filterInvoices()"
+            style="padding:7px 12px;border:1px solid #e2e8f0;border-radius:8px;font-size:12px;flex:1;min-width:180px">
+          <button class="btn" onclick="clearInvFilters()" style="padding:7px 12px;font-size:11px"><i class="ti ti-x"></i> Clear</button>
+        </div>
         <div class="card">
           <div class="card-head">
             <h3 id="inv-lbl">Invoices</h3>
@@ -4817,22 +4835,80 @@ const DEFAULT_CHARGES = [
   {desc:'Transfer Fee', amt:0, gst:18},
 ];
 
+function getIndianFY(dateStr) {
+  if (!dateStr) return null;
+  const d = new Date(dateStr);
+  const month = d.getMonth(); // 0=Jan
+  const year  = d.getFullYear();
+  // Indian FY: Apr-Mar
+  if (month >= 3) return `${year}-${String(year+1).slice(2)}`; // Apr-Dec: FY 2026-27
+  else return `${year-1}-${String(year).slice(2)}`; // Jan-Mar: FY 2025-26
+}
+
 async function renderInvoices() {
   try {
-    invoiceList = await GET('invoices',`?society_id=eq.${CS.id}&order=created_at.desc`);
-    const total  = invoiceList.reduce((s,i)=>s+Number(i.total||0),0);
-    const paid   = invoiceList.filter(i=>i.status==='paid').reduce((s,i)=>s+Number(i.total||0),0);
-    const unpaid = invoiceList.filter(i=>i.status==='unpaid').reduce((s,i)=>s+Number(i.total||0),0);
-    $('inv-count').textContent = invoiceList.length;
-    $('inv-total').textContent = '₹'+total.toLocaleString('en-IN');
-    $('inv-paid').textContent  = '₹'+paid.toLocaleString('en-IN');
-    $('inv-unpaid').textContent= '₹'+unpaid.toLocaleString('en-IN');
-    $('inv-lbl').textContent   = invoiceList.length+' Invoice'+(invoiceList.length!==1?'s':'');
-    const tb=$('inv-tbody');
-    if(!invoiceList.length){tb.innerHTML='<tr><td colspan="10" class="empty">No invoices yet</td></tr>';return;}
-    const sc={paid:'bgr',unpaid:'br',partial:'ba'};
-    tb.innerHTML=invoiceList.map((i,idx)=>`<tr>
-      <td style="font-weight:600;font-size:11px">${i.invoice_no||'—'}</td>
+    // Load template if not loaded
+    if (!invTemplate.length && CS) await loadInvoiceTemplate();
+    invoiceList = await GET('invoices',`?society_id=eq.${CS.id}&order=invoice_date.desc,created_at.desc`);
+
+    // Populate FY filter
+    const fySet = [...new Set(invoiceList.map(i=>getIndianFY(i.invoice_date)).filter(Boolean))].sort().reverse();
+    const fyEl = $('inv-fy-filter');
+    if (fyEl) {
+      const curVal = fyEl.value;
+      fyEl.innerHTML = '<option value="all">All Financial Years</option>' +
+        fySet.map(fy=>`<option value="${fy}" ${fy===curVal?'selected':''}>FY ${fy}</option>`).join('');
+    }
+
+    // Populate Flat filter
+    const flatSet = [...new Set(invoiceList.map(i=>i.flat).filter(Boolean))].sort();
+    const flatEl = $('inv-flat-filter');
+    if (flatEl) {
+      const curFlat = flatEl.value;
+      flatEl.innerHTML = '<option value="all">All Flats</option>' +
+        flatSet.map(f=>`<option value="${f}" ${f===curFlat?'selected':''}>${f}</option>`).join('');
+    }
+
+    filterInvoices();
+  } catch(e) { toast('Error: '+e.message, false); }
+}
+
+function filterInvoices() {
+  const fy      = $('inv-fy-filter')?.value || 'all';
+  const status  = $('inv-status-filter')?.value || 'all';
+  const flat    = $('inv-flat-filter')?.value || 'all';
+  const search  = ($('inv-search')?.value||'').toLowerCase().trim();
+
+  let filtered = invoiceList.filter(i => {
+    if (fy !== 'all' && getIndianFY(i.invoice_date) !== fy) return false;
+    if (status !== 'all' && i.status !== status) return false;
+    if (flat !== 'all' && i.flat !== flat) return false;
+    if (search && !`${i.invoice_no||''} ${i.member_name||''} ${i.flat||''}`.toLowerCase().includes(search)) return false;
+    return true;
+  });
+
+  // Update stats based on filtered data
+  const total  = filtered.reduce((s,i)=>s+Number(i.total||0),0);
+  const paid   = filtered.filter(i=>i.status==='paid').reduce((s,i)=>s+Number(i.total||0),0);
+  const unpaid = filtered.filter(i=>i.status==='unpaid').reduce((s,i)=>s+Number(i.total||0),0);
+  $('inv-count').textContent = filtered.length;
+  $('inv-total').textContent = '₹'+total.toLocaleString('en-IN');
+  $('inv-paid').textContent  = '₹'+paid.toLocaleString('en-IN');
+  $('inv-unpaid').textContent= '₹'+unpaid.toLocaleString('en-IN');
+  $('inv-lbl').textContent   = filtered.length+' Invoice'+(filtered.length!==1?'s':'') +
+    (fy!=='all'?` — FY ${fy}`:'') + (status!=='all'?` (${status})`:'');
+
+  const tb=$('inv-tbody');
+  if(!filtered.length){
+    tb.innerHTML='<tr><td colspan="10" class="empty">No invoices found for selected filters</td></tr>';
+    return;
+  }
+  const sc={paid:'bgr',unpaid:'br',partial:'ba'};
+  tb.innerHTML=filtered.map((i)=>{
+    const idx=invoiceList.indexOf(i);
+    const fy = getIndianFY(i.invoice_date);
+    return`<tr>
+      <td style="font-weight:600;font-size:11px">${i.invoice_no||'—'}<br><span style="font-size:9px;color:#94a3b8;font-weight:400">FY ${fy||'—'}</span></td>
       <td><strong>${i.flat||'—'}</strong></td>
       <td style="font-size:11px">${i.member_name||'—'}</td>
       <td style="font-size:11px">${i.invoice_date||'—'}</td>
@@ -4847,8 +4923,17 @@ async function renderInvoices() {
         <button class="ab" onclick="shareInvoiceWhatsApp(${idx})" style="color:#25D366" title="Send WhatsApp"><i class="ti ti-brand-whatsapp"></i></button>
         <button class="ab" onclick="shareInvoiceEmail(${idx})" style="color:#ea4335" title="Send Email"><i class="ti ti-mail"></i></button>
         <button class="ab" onclick="deleteRecord('invoices','${i.id}',renderInvoices)" style="color:#ef4444"><i class="ti ti-trash"></i></button>
-      </td></tr>`).join('');
-  }catch(e){toast('Error: '+e.message,false);}
+      </td></tr>`;
+  }).join('');
+}
+
+function clearInvFilters() {
+  sv('inv-status-filter','all');
+  sv('inv-flat-filter','all');
+  sv('inv-search','');
+  const fyEl = $('inv-fy-filter');
+  if(fyEl) fyEl.value='all';
+  filterInvoices();
 }
 
 function autoFillInvMember() {
@@ -5867,12 +5952,7 @@ async function confirmBulkGenerate() {
   toast(`✓ ${created} invoices generated${errors>0?' ('+errors+' failed)':''}!`);
 }
 
-// Load template when invoice page opens
-const _origRenderInvoices = renderInvoices;
-async function renderInvoices() {
-  if (!invTemplate.length && CS) await loadInvoiceTemplate();
-  await _origRenderInvoices();
-}
+// Template auto-loads via openInvoiceModal — no override needed
 
 // ═══════════════════════════════════════════════
 // INVOICE SHARING — WhatsApp & Email
