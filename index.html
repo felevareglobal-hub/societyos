@@ -863,7 +863,10 @@ tr:hover td{background:#fafafa}
     <!-- FOOTER -->
     <div style="text-align:center;padding:10px 20px;font-size:11px;color:#94a3b8;border-top:1px solid #f1f5f9;background:#fff">
       © 2026 <strong style="color:#475569">Felevare Global Ventures LLP</strong> — All rights reserved &nbsp;•&nbsp;
-      <span style="color:#2563eb;font-weight:600">SocietyOS</span> v2.0
+      <span style="color:#2563eb;font-weight:600">SocietyOS</span> v2.0 &nbsp;•&nbsp;
+      <span onclick="openModal('mo-terms')" style="cursor:pointer;color:#2563eb">Terms</span> &nbsp;•&nbsp;
+      <span onclick="openModal('mo-privacy')" style="cursor:pointer;color:#2563eb">Privacy</span> &nbsp;•&nbsp;
+      <span onclick="openModal('mo-disclaimer')" style="cursor:pointer;color:#2563eb">Disclaimer</span>
     </div>
   </div>
 </div>
@@ -914,11 +917,188 @@ tr:hover td{background:#fafafa}
         <div class="fi full"><label>Message / Notes (optional)</label><textarea id="su-notes" rows="2" placeholder="Any specific requirements or questions…"></textarea></div>
       </div>
       <div id="su-msg" style="margin-top:12px;font-size:12px;padding:10px;border-radius:7px;display:none"></div>
+      <!-- T&C Checkbox -->
+      <div style="margin-top:14px;padding:12px 14px;background:#f8fafc;border-radius:8px;border:1px solid #e2e8f0">
+        <label style="display:flex;gap:10px;align-items:flex-start;cursor:pointer">
+          <input type="checkbox" id="su-agree" style="width:16px;height:16px;margin-top:2px;cursor:pointer;flex-shrink:0">
+          <span style="font-size:12px;color:#475569">
+            I agree to the
+            <span onclick="openModal('mo-terms')" style="color:#2563eb;cursor:pointer;font-weight:500">Terms & Conditions</span>,
+            <span onclick="openModal('mo-privacy')" style="color:#2563eb;cursor:pointer;font-weight:500">Privacy Policy</span> and
+            <span onclick="openModal('mo-disclaimer')" style="color:#2563eb;cursor:pointer;font-weight:500">Disclaimer</span>
+            of SocietyOS by Felevare Global Ventures LLP.
+          </span>
+        </label>
+      </div>
     </div>
     <div class="md-foot">
       <button class="btn" onclick="closeModal('mo-signup')">Cancel</button>
       <button class="btn btn-p" onclick="submitSignupRequest()" id="su-btn"><i class="ti ti-send"></i> Submit Request</button>
     </div>
+  </div>
+</div>
+
+<!-- TERMS & CONDITIONS -->
+<div class="mo" id="mo-terms">
+  <div class="md" style="max-width:660px">
+    <div class="md-head"><h3>Terms & Conditions</h3><button class="md-close" onclick="closeModal('mo-terms')"><i class="ti ti-x"></i></button></div>
+    <div class="md-body" style="max-height:70vh;overflow-y:auto">
+      <div style="font-size:12px;color:#475569;line-height:1.7">
+        <p style="font-weight:700;color:#0f172a;font-size:14px">SocietyOS — Terms & Conditions</p>
+        <p style="font-size:11px;color:#94a3b8">Last updated: January 2026 | Felevare Global Ventures LLP</p>
+
+        <p><strong>1. Acceptance of Terms</strong><br>
+        By registering on SocietyOS, you agree to these Terms & Conditions. If you do not agree, please do not use this platform.</p>
+
+        <p><strong>2. Service Description</strong><br>
+        SocietyOS is a cloud-based residential society management platform provided by Felevare Global Ventures LLP. The platform includes member management, billing, maintenance tracking, and related services.</p>
+
+        <p><strong>3. Subscription & Payments</strong><br>
+        • Subscription fees are as per the selected plan (Basic, Standard, Premium).<br>
+        • All prices are exclusive of GST (18%) unless stated otherwise.<br>
+        • Payments are non-refundable once the subscription period has commenced.<br>
+        • Felevare Global Ventures LLP reserves the right to modify pricing with 30 days notice.</p>
+
+        <p><strong>4. User Responsibilities</strong><br>
+        • You are responsible for maintaining confidentiality of your login credentials.<br>
+        • You must ensure all data entered is accurate and lawful.<br>
+        • Sharing login credentials with unauthorized persons is strictly prohibited.<br>
+        • You must not use the platform for any illegal, fraudulent or harmful activities.</p>
+
+        <p><strong>5. Data Ownership</strong><br>
+        • All society data entered remains the property of the respective society.<br>
+        • Felevare Global Ventures LLP does not claim ownership of your society's data.<br>
+        • Upon termination, data export will be available for 30 days.</p>
+
+        <p><strong>6. Service Availability</strong><br>
+        • We aim for 99.5% uptime but do not guarantee uninterrupted service.<br>
+        • Scheduled maintenance will be notified in advance where possible.<br>
+        • We are not liable for losses due to service interruptions.</p>
+
+        <p><strong>7. Termination</strong><br>
+        • We reserve the right to suspend accounts found violating these terms.<br>
+        • You may cancel your subscription at any time. Access continues till period end.<br>
+        • Upon cancellation, data will be retained for 90 days before deletion.</p>
+
+        <p><strong>8. Intellectual Property</strong><br>
+        All software, design, branding and content of SocietyOS is the intellectual property of Felevare Global Ventures LLP. Unauthorized reproduction is prohibited.</p>
+
+        <p><strong>9. Governing Law</strong><br>
+        These terms are governed by the laws of India. Any disputes shall be subject to the exclusive jurisdiction of courts in Mumbai, Maharashtra.</p>
+
+        <p><strong>10. Contact</strong><br>
+        For any queries: <a href="mailto:felevareglobal@gmail.com" style="color:#2563eb">felevareglobal@gmail.com</a></p>
+      </div>
+    </div>
+    <div class="md-foot"><button class="btn btn-p" onclick="closeModal('mo-terms')">I Understand</button></div>
+  </div>
+</div>
+
+<!-- PRIVACY POLICY -->
+<div class="mo" id="mo-privacy">
+  <div class="md" style="max-width:660px">
+    <div class="md-head"><h3>Privacy Policy</h3><button class="md-close" onclick="closeModal('mo-privacy')"><i class="ti ti-x"></i></button></div>
+    <div class="md-body" style="max-height:70vh;overflow-y:auto">
+      <div style="font-size:12px;color:#475569;line-height:1.7">
+        <p style="font-weight:700;color:#0f172a;font-size:14px">SocietyOS — Privacy Policy</p>
+        <p style="font-size:11px;color:#94a3b8">Last updated: January 2026 | Felevare Global Ventures LLP</p>
+
+        <p><strong>1. Information We Collect</strong><br>
+        • Society details: name, address, registration number.<br>
+        • Admin details: name, email, mobile number.<br>
+        • Member details: name, flat, contact, Aadhaar (optional).<br>
+        • Financial data: maintenance dues, invoices, payments.<br>
+        • Usage data: login times, actions performed (audit log).</p>
+
+        <p><strong>2. How We Use Your Information</strong><br>
+        • To provide and operate the SocietyOS platform.<br>
+        • To send OTP for secure login authentication.<br>
+        • To send invoices and notices via WhatsApp/Email (initiated by admin).<br>
+        • To improve our services and platform features.<br>
+        • We do NOT sell, rent or share your data with third parties for marketing.</p>
+
+        <p><strong>3. Data Storage & Security</strong><br>
+        • All data is stored securely on Supabase (PostgreSQL) with SSL encryption.<br>
+        • Row Level Security (RLS) ensures each society sees only their own data.<br>
+        • Passwords are stored with hashing. We recommend changing default passwords.<br>
+        • Regular backups are maintained to prevent data loss.</p>
+
+        <p><strong>4. Data Access</strong><br>
+        • Only authorized admins of your society can access your society's data.<br>
+        • Felevare Global Ventures LLP may access data only for support/maintenance with your consent.<br>
+        • Master Admin (Felevare) has platform-level access for operational purposes only.</p>
+
+        <p><strong>5. Cookies & Tracking</strong><br>
+        SocietyOS does not use tracking cookies. Session data is stored locally in your browser for login purposes only.</p>
+
+        <p><strong>6. Third Party Services</strong><br>
+        • <strong>Supabase</strong>: Database hosting (GDPR compliant).<br>
+        • <strong>Razorpay</strong>: Payment processing (PCI-DSS compliant).<br>
+        • <strong>2Factor.in</strong>: OTP SMS delivery.<br>
+        • <strong>WhatsApp</strong>: Message delivery via wa.me links.<br>
+        Each third party has their own privacy policy.</p>
+
+        <p><strong>7. Data Retention</strong><br>
+        • Active subscription: Data retained indefinitely.<br>
+        • After cancellation: Data retained for 90 days, then deleted.<br>
+        • You may request data deletion at any time by contacting us.</p>
+
+        <p><strong>8. Your Rights</strong><br>
+        Under applicable laws, you have the right to access, correct, port or delete your personal data. Contact us at <a href="mailto:felevareglobal@gmail.com" style="color:#2563eb">felevareglobal@gmail.com</a></p>
+
+        <p><strong>9. Changes to Privacy Policy</strong><br>
+        We may update this policy. Continued use after changes implies acceptance.</p>
+      </div>
+    </div>
+    <div class="md-foot"><button class="btn btn-p" onclick="closeModal('mo-privacy')">I Understand</button></div>
+  </div>
+</div>
+
+<!-- DISCLAIMER -->
+<div class="mo" id="mo-disclaimer">
+  <div class="md" style="max-width:660px">
+    <div class="md-head"><h3>Disclaimer</h3><button class="md-close" onclick="closeModal('mo-disclaimer')"><i class="ti ti-x"></i></button></div>
+    <div class="md-body" style="max-height:70vh;overflow-y:auto">
+      <div style="font-size:12px;color:#475569;line-height:1.7">
+        <p style="font-weight:700;color:#0f172a;font-size:14px">SocietyOS — Disclaimer</p>
+        <p style="font-size:11px;color:#94a3b8">Last updated: January 2026 | Felevare Global Ventures LLP</p>
+
+        <p><strong>1. General Disclaimer</strong><br>
+        SocietyOS is a software management tool designed to assist housing societies in their day-to-day operations. It is NOT a substitute for professional legal, financial or accounting advice.</p>
+
+        <p><strong>2. Financial Records</strong><br>
+        • Invoices, accounts and financial reports generated by SocietyOS are for internal management purposes only.<br>
+        • These records should be verified and certified by a qualified accountant before use for official, legal or statutory purposes.<br>
+        • Felevare Global Ventures LLP is not responsible for any financial decisions made based on data in the platform.</p>
+
+        <p><strong>3. Statutory Compliance</strong><br>
+        • Statutory registers maintained via SocietyOS should be verified against applicable CHS Act, MCS Act or other relevant legislation.<br>
+        • It is the responsibility of the society committee to ensure compliance with local laws.<br>
+        • SocietyOS does not guarantee legal compliance of records maintained through the platform.</p>
+
+        <p><strong>4. Accuracy of Data</strong><br>
+        • The platform is only as accurate as the data entered by your society admins.<br>
+        • Felevare Global Ventures LLP is not responsible for errors arising from incorrect data entry.<br>
+        • Regular data verification is recommended.</p>
+
+        <p><strong>5. Service Limitations</strong><br>
+        • SocietyOS is provided "as is" without warranty of any kind.<br>
+        • We do not guarantee uninterrupted, error-free service.<br>
+        • In no event shall Felevare Global Ventures LLP be liable for any indirect, incidental or consequential damages.</p>
+
+        <p><strong>6. WhatsApp & Email Communications</strong><br>
+        All WhatsApp messages and emails sent through SocietyOS are initiated by society admins. Felevare Global Ventures LLP is not responsible for the content of such communications.</p>
+
+        <p><strong>7. Payment Processing</strong><br>
+        Payments are processed by Razorpay. Felevare Global Ventures LLP is not responsible for payment failures, delays or disputes with Razorpay.</p>
+
+        <p><strong>8. Limitation of Liability</strong><br>
+        The maximum liability of Felevare Global Ventures LLP for any claim arising from use of SocietyOS shall be limited to the subscription fees paid by the society in the preceding 3 months.</p>
+
+        <p>For concerns, contact: <a href="mailto:felevareglobal@gmail.com" style="color:#2563eb">felevareglobal@gmail.com</a></p>
+      </div>
+    </div>
+    <div class="md-foot"><button class="btn btn-p" onclick="closeModal('mo-disclaimer')">I Understand</button></div>
   </div>
 </div>
 
@@ -2088,17 +2268,20 @@ async function doLogin() {
   const pass  = fv('li-pass').trim();
   $('li-err').textContent = '';
   if (!email||!pass) { $('li-err').textContent='Enter email and password'; return; }
+  // Check lockout
+  if (checkLoginLockout()) return;
   $('li-btn').innerHTML = '<i class="ti ti-loader" style="margin-right:6px"></i> Verifying…';
   $('li-btn').disabled = true;
   try {
     const all   = await GET('admins','?order=email');
     const match = all.filter(a => a.email.toLowerCase()===email && a.password_hash===pass);
     if (!match.length) {
-      $('li-err').textContent = 'Invalid email or password';
+      recordFailedLogin();
       $('li-btn').innerHTML = '<i class="ti ti-login" style="margin-right:6px"></i> Sign In';
       $('li-btn').disabled = false;
       return;
     }
+    resetLoginAttempts();
     const admin = match[0];
     console.log('Login admin:', admin.name, '| Mobile:', admin.mobile);
     toast('Mobile: ' + (admin.mobile || 'NOT SET — OTP skipped'));
@@ -4131,6 +4314,11 @@ async function submitSignupRequest() {
   if (!socName||!name||!email||!mobile||!city) {
     msg.style.display='block'; msg.style.background='#fee2e2'; msg.style.color='#991b1b';
     msg.textContent='Please fill in all required fields (Society Name, City, Your Name, Email, Mobile)';
+    return;
+  }
+  if (!$('su-agree')?.checked) {
+    msg.style.display='block'; msg.style.background='#fee2e2'; msg.style.color='#991b1b';
+    msg.textContent='Please read and agree to the Terms & Conditions, Privacy Policy and Disclaimer to continue.';
     return;
   }
 
@@ -6438,6 +6626,123 @@ async function exportAttendanceCSV() {
     rows.push([s.name,s.role,...dates.map(d=>sAtt.find(a=>a.date===d)?.status||'—'),P,A,L,pct+'%']);
   });
   downloadCSV(rows,`attendance_${month}_${CS?.name||'society'}.csv`);
+}
+
+// ═══════════════════════════════════════════════
+// SECURITY — Session Timeout + Login Protection
+// ═══════════════════════════════════════════════
+const SESSION_TIMEOUT_MS = 15 * 60 * 1000; // 15 minutes
+const MAX_LOGIN_ATTEMPTS = 5;
+const LOCKOUT_MS = 15 * 60 * 1000; // 15 min lockout
+
+let _sessionTimer = null;
+let _lastActivity  = Date.now();
+let _loginAttempts = 0;
+let _lockoutUntil  = 0;
+
+// ── Reset timer on any user activity ──
+function resetSessionTimer() {
+  _lastActivity = Date.now();
+  if (_sessionTimer) clearTimeout(_sessionTimer);
+  if (CU) {
+    _sessionTimer = setTimeout(() => {
+      if (CU) {
+        toast('Session expired due to inactivity. Please login again.', false);
+        setTimeout(doLogout, 2000);
+      }
+    }, SESSION_TIMEOUT_MS);
+  }
+}
+
+// ── Show session warning at 2 mins before timeout ──
+function startSessionWarning() {
+  if (_sessionTimer) clearTimeout(_sessionTimer);
+  _sessionTimer = setTimeout(() => {
+    if (!CU) return;
+    // Show warning banner
+    const existing = $('session-warning');
+    if (!existing) {
+      const w = document.createElement('div');
+      w.id = 'session-warning';
+      w.style.cssText = 'position:fixed;bottom:20px;right:20px;background:#1a3c6e;color:#fff;padding:14px 18px;border-radius:10px;font-size:12px;z-index:999;box-shadow:0 4px 20px rgba(0,0,0,.3);display:flex;gap:12px;align-items:center;max-width:320px';
+      w.innerHTML = `<div><i class="ti ti-clock" style="font-size:20px"></i></div>
+        <div>
+          <div style="font-weight:600;margin-bottom:2px">Session expiring soon</div>
+          <div style="opacity:0.8;font-size:11px">You will be logged out in 2 minutes due to inactivity.</div>
+        </div>
+        <button onclick="resetSessionTimer();startSessionWarning();this.parentElement.remove()"
+          style="background:#2563eb;border:none;color:#fff;padding:6px 12px;border-radius:6px;cursor:pointer;font-size:11px;white-space:nowrap">
+          Stay Logged In
+        </button>`;
+      document.body.appendChild(w);
+      // Auto remove warning and logout after 2 mins
+      setTimeout(() => {
+        if (CU) {
+          const wb = $('session-warning');
+          if (wb) wb.remove();
+          toast('Logged out due to inactivity.', false);
+          setTimeout(doLogout, 1500);
+        }
+      }, 2 * 60 * 1000);
+    }
+  }, SESSION_TIMEOUT_MS - 2 * 60 * 1000); // warn 2 mins before
+}
+
+// ── Track user activity ──
+function initActivityTracking() {
+  ['click','keydown','mousemove','touchstart','scroll'].forEach(evt => {
+    document.addEventListener(evt, () => {
+      if (CU) {
+        _lastActivity = Date.now();
+        // Remove warning if shown
+        const wb = $('session-warning');
+        if (wb) { wb.remove(); startSessionWarning(); }
+      }
+    }, { passive: true });
+  });
+}
+
+// ── Login attempt limiting ──
+function checkLoginLockout() {
+  if (_lockoutUntil > Date.now()) {
+    const mins = Math.ceil((_lockoutUntil - Date.now()) / 60000);
+    $('li-err').textContent = `Too many failed attempts. Try again in ${mins} minute(s).`;
+    return true; // locked out
+  }
+  return false;
+}
+
+function recordFailedLogin() {
+  _loginAttempts++;
+  if (_loginAttempts >= MAX_LOGIN_ATTEMPTS) {
+    _lockoutUntil = Date.now() + LOCKOUT_MS;
+    _loginAttempts = 0;
+    $('li-btn').disabled = true;
+    let countdown = 15 * 60;
+    const timer = setInterval(() => {
+      countdown--;
+      if (countdown <= 0) {
+        clearInterval(timer);
+        $('li-btn').disabled = false;
+        $('li-btn').innerHTML = '<i class="ti ti-login" style="margin-right:6px"></i> Sign In';
+        $('li-err').textContent = '';
+        _lockoutUntil = 0;
+      } else {
+        const m = Math.floor(countdown/60);
+        const s = countdown%60;
+        $('li-err').textContent = `Account locked. Try again in ${m}:${String(s).padStart(2,'0')}`;
+        $('li-btn').innerHTML = `🔒 Locked (${m}:${String(s).padStart(2,'0')})`;
+      }
+    }, 1000);
+  } else {
+    const remaining = MAX_LOGIN_ATTEMPTS - _loginAttempts;
+    $('li-err').textContent = `Invalid email or password. ${remaining} attempt(s) remaining.`;
+  }
+}
+
+function resetLoginAttempts() {
+  _loginAttempts = 0;
+  _lockoutUntil  = 0;
 }
 
 // ── MOBILE SIDEBAR ────────────────────────────────────────
